@@ -1,0 +1,106 @@
+@use '../../../shared/console-kit' as kit;
+
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.control {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 1px solid kit.$edge-strong;
+  border-radius: 8px;
+  background: #1e2526;
+  color: kit.$ink;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
+  svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  &:hover:not(:disabled) {
+    background: #283031;
+    border-color: #5d6a65;
+  }
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  &.primary {
+    border-color: kit.$amber;
+    background: #3a3224;
+    color: kit.$amber-soft;
+    &:hover:not(:disabled) {
+      background: #4a3f2b;
+    }
+  }
+  @include kit.focus-ring;
+  @include kit.tooltip;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.led {
+  @include kit.led(kit.$amber, 10px);
+  &.run {
+    @include kit.led(kit.$green, 10px);
+    background: kit.$green;
+    box-shadow: 0 0 8px kit.$green;
+    animation: kit-pulse 1.2s ease-in-out infinite;
+  }
+  &.halt {
+    background: kit.$red;
+    box-shadow: 0 0 8px kit.$red;
+  }
+}
+
+.label {
+  @include kit.kicker;
+  color: kit.$ink;
+}
+
+.count {
+  @include kit.readout;
+  color: kit.$dim;
+  font-size: 12px;
+}
+
+@keyframes kit-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}

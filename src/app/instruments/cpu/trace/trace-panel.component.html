@@ -1,0 +1,86 @@
+<section class="trace" aria-label="Cronoscopio y comparación de estados">
+  <div class="ribbon" role="list" aria-label="Pasos ejecutados">
+    <button
+      type="button"
+      role="listitem"
+      class="node start"
+      data-tip="Estado inicial"
+      [class.selected]="session.cursor() === -1"
+      [attr.aria-label]="'Estado inicial'"
+      [attr.aria-current]="session.cursor() === -1 ? 'step' : null"
+      (click)="session.restore(-1)"
+    >
+      <span>0</span>
+    </button>
+    @for (e of session.trace(); track $index; let i = $index) {
+      <button
+        type="button"
+        role="listitem"
+        class="node"
+        [class.selected]="session.cursor() === i"
+        [class.future]="i > session.cursor()"
+        [attr.data-tip]="h(e.instruction.address) + ' · ' + e.instruction.text"
+        [attr.aria-label]="'Paso ' + (i + 1) + ': ' + e.instruction.text"
+        [attr.aria-current]="session.cursor() === i ? 'step' : null"
+        (click)="session.restore(i)"
+      >
+        <span>{{ i + 1 }}</span>
+      </button>
+    } @empty {
+      <p class="empty">Ejecuta un paso para crear la primera entrada de la cinta.</p>
+    }
+  </div>
+
+  @if (session.cursor() >= 0 && session.trace()[session.cursor()]; as step) {
+    <div class="card">
+      <code>{{ h(step.instruction.address) }} · {{ step.instruction.text }}</code>
+      <p class="delta">
+        AX {{ h(step.before.registers.AX) }} → {{ h(step.after.registers.AX) }}
+        <span>IP {{ h(step.after.registers.IP) }}</span>
+      </p>
+    </div>
+  }
+
+  <button type="button" class="save" (click)="session.capture()">
+    Guardar estado A
+  </button>
+
+  @if (session.baseline()) {
+    <div class="compare">
+      <p class="kicker">Diferencias A / actual</p>
+      <div class="diff">
+        @for (d of session.comparison(); track d.name) {
+          <div>
+            <span>{{ d.name }}</span>
+            <del>{{ d.a }}</del>
+            <b>{{ d.b }}</b>
+          </div>
+        } @empty {
+          <p>Registros, flags y memoria coinciden.</p>
+        }
+      </div>
+    </div>
+  }
+
+  @if (session.branches().length) {
+    <div class="branches">
+      <p class="kicker">Futuros conservados</p>
+      @for (b of session.branches(); track b.id) {
+        <button type="button" class="branch" (click)="session.restoreBranch(b.id)">
+          <span>{{ b.id }}</span>
+          <small>{{ b.trace.length }} pasos</small>
+        </button>
+      }
+    </div>
+  }
+
+  <div class="ds">
+    <label class="kicker" for="ds">Segmento DS (hex)</label>
+    <input
+      id="ds"
+      [value]="h(session.state().registers.DS)"
+      (change)="editDs($any($event.target).value)"
+      maxlength="4"
+    />
+  </div>
+</section>

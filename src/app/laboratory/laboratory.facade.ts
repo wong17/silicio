@@ -1,5 +1,5 @@
 import { signal, computed } from '@angular/core';
-import type { LaboratorySources, LaboratoryHandlers, LaboratoryIntent } from './laboratory.types';
+import type { LaboratorySources } from './laboratory.types';
 import { Snapshot, Trace, hex, Registers } from '../simulation/cpu8086';
 export function projectLaboratory(s: Snapshot, e?: Trace) {
   return {
@@ -47,7 +47,6 @@ export class LaboratoryFacade {
   readonly session = signal(1);
   private pending?: number;
   private serial = 0;
-  private handlers?: LaboratoryHandlers;
   readonly view;
   constructor(private sources: LaboratorySources) {
     this.view = computed(() => ({
@@ -56,13 +55,6 @@ export class LaboratoryFacade {
       experience: sources.experience(),
       selectedPiece: sources.selection(),
     }));
-  }
-  bind(h: LaboratoryHandlers): void {
-    this.handlers = h;
-  }
-  dispatch(i: LaboratoryIntent): void {
-    if (i.kind === 'scene') this.handlers?.scene(i.command);
-    else this.handlers?.instrument(i.command);
   }
   request(): number | undefined {
     if (this.pending !== undefined) return;

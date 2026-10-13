@@ -15,7 +15,10 @@ import {
 import { WorldEngine } from './world-engine';
 import { readSceneInputs, type SceneInputs, type Section, type QualityTier } from './scene-inputs';
 import type { PieceDefinition } from './interaction-registry';
+import type { LampTarget } from './lamp-limits';
 export type { Section } from './scene-inputs';
+
+/** Angular adapter for the 3D bench: inputs go to the engine, callbacks return inside the zone. */
 @Component({
   selector: 'app-atrium-scene',
   templateUrl: './atrium-scene.component.html',
@@ -39,8 +42,13 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   @Input() signalChannel = 'ALE';
   @Input() readAccess = false;
   @Input() writeAccess = false;
+  @Input() lamp: LampTarget = { x: -0.8, z: 0.6, height: 5 };
+  @Input() lampOn = true;
   @Output() pieces = new EventEmitter<PieceDefinition[]>();
   @Output() picked = new EventEmitter<string>();
+  @Output() hovered = new EventEmitter<string | null>();
+  @Output() lampMoved = new EventEmitter<LampTarget>();
+  @Output() holding = new EventEmitter<string | null>();
   readonly supported = signal(true);
   private engine?: WorldEngine;
   constructor(private zone: NgZone) {}
@@ -50,6 +58,9 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
         this.engine = new WorldEngine(this.canvasRef.nativeElement, readSceneInputs(this), {
           pieces: (p) => this.zone.run(() => this.pieces.emit(p)),
           picked: (id) => this.zone.run(() => this.picked.emit(id)),
+          hovered: (id) => this.zone.run(() => this.hovered.emit(id)),
+          lampMoved: (target) => this.zone.run(() => this.lampMoved.emit(target)),
+          holding: (id) => this.zone.run(() => this.holding.emit(id)),
           unavailable: () => this.zone.run(() => this.supported.set(false)),
         });
         this.engine.initialize();
@@ -81,11 +92,14 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   focusSelected(): void {
     this.engine?.focusSelected();
   }
+  aimLampAt(id: string): 'aimed' | 'limit' | 'missing' {
+    return this.engine?.aimLampAt(id) ?? 'missing';
+  }
   resetTools(): void {
     this.engine?.resetTools();
   }
-  dropTool(): void {
-    void this.engine?.dropTool();
+  releaseTool(): void {
+    this.engine?.releaseTool();
   }
   toggleLatch(id: string): void {
     this.engine?.toggleLatch(id);

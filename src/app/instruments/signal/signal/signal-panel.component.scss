@@ -1,0 +1,91 @@
+@use '../../../shared/console-kit' as kit;
+
+.signal {
+  @include kit.module;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.kicker {
+  @include kit.kicker;
+  margin: 0;
+}
+
+.channels {
+  display: flex;
+  gap: 4px;
+  button {
+    min-width: 52px;
+    min-height: 40px;
+    font: 500 12px kit.$mono;
+    &.on {
+      border-color: kit.$amber;
+      background: #3a3224;
+      color: kit.$amber-soft;
+    }
+  }
+}
+
+.scope {
+  padding: 10px;
+  border: 1px solid #2d3533;
+  border-radius: 8px;
+  background: radial-gradient(ellipse at 50% 30%, #17241f, #0c1211 70%);
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.6);
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.grid {
+  fill: none;
+  stroke: #2b4a40;
+  stroke-width: 1;
+}
+
+.trace {
+  fill: none;
+  stroke: #c6d99b;
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px rgba(198, 217, 155, 0.7));
+  transition: d 0.35s ease;
+}
+
+.sweep {
+  stroke: rgba(198, 217, 155, 0.35);
+  stroke-width: 1.5;
+  animation: kit-sweep 3.2s linear infinite;
+}
+
+text {
+  fill: #7d9a8b;
+  font: 500 9px kit.$mono;
+  letter-spacing: 0.08em;
+}
+
+.note {
+  margin: 0;
+  color: kit.$dim;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@keyframes kit-sweep {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(280px);
+  }
+}

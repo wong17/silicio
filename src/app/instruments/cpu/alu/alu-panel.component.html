@@ -1,0 +1,67 @@
+<section class="alu" aria-label="Ruta aritmética con operandos reales">
+  <header class="head">
+    <p class="kicker">Ruta aritmética</p>
+    @if (instruction(); as i) {
+      <code class="mnemonic">{{ i.text }}</code>
+    }
+  </header>
+
+  @if (op(); as o) {
+    <svg viewBox="0 0 340 150" role="img" [attr.aria-label]="'Operación ' + (instruction()?.text ?? '')">
+      <g class="wires" fill="none">
+        <path class="wire" d="M74 52v22c0 8 6 14 14 14h40" />
+        <path class="wire" d="M266 52v22c0 8-6 14-14 14h-40" />
+        <path class="wire" d="M170 96v14" />
+      </g>
+      <rect class="operand" x="14" y="12" width="120" height="40" rx="6" />
+      <rect class="operand" x="206" y="12" width="120" height="40" rx="6" />
+      <text class="kicker-svg" x="24" y="27">OP A</text>
+      <text class="value" x="74" y="42">{{ h(o.operands[0]) }}</text>
+      <text class="kicker-svg" x="216" y="27">OP B</text>
+      <text class="value" x="266" y="42">{{ o.operands.length > 1 ? h(o.operands[1]) : '—' }}</text>
+      <path class="alu" d="M112 74h116l-22 34h-72z" />
+      <text class="op" x="170" y="95">{{ instruction()?.op }}</text>
+      <rect class="result" x="104" y="122" width="132" height="24" rx="5" />
+      <text class="value result-value" x="170" y="139">{{ h(o.result) }}h</text>
+      @for (dot of [0, 1]; track dot) {
+        <circle class="packet" r="3.5">
+          <animateMotion
+            [attr.dur]="'1.6s'"
+            [attr.begin]="dot ? '0.8s' : '0s'"
+            repeatCount="indefinite"
+            [attr.path]="dot ? 'M266 52v22c0 8-6 14-14 14h-40' : 'M74 52v22c0 8 6 14 14 14h40'"
+          />
+        </circle>
+      }
+    </svg>
+  } @else {
+    <p class="empty">Ejecuta un paso para ver los operandos que utiliza la máquina.</p>
+  }
+
+  <div class="flags" role="group" aria-label="Flags de estado">
+    @for (f of flags; track f) {
+      <span
+        class="flag"
+        tabindex="0"
+        [class.on]="session.state().flags[f]"
+        [attr.data-tip]="meaning[f]"
+        [attr.aria-label]="f + ': ' + (session.state().flags[f] ? '1' : '0') + '. ' + meaning[f]"
+      >
+        <span class="led" [class.on]="session.state().flags[f]" aria-hidden="true"></span>
+        <b>{{ f }}</b>
+        <small>{{ session.state().flags[f] ? '1' : '0' }}</small>
+      </span>
+    }
+  </div>
+
+  <div class="verdicts">
+    <p [class.active]="carry()">
+      <b>CF</b>
+      {{ carry() ? 'acarreo o préstamo sin signo' : 'sin acarreo sin signo' }}
+    </p>
+    <p [class.active]="overflow()">
+      <b>OF</b>
+      {{ overflow() ? 'desbordamiento con signo' : 'sin desbordamiento con signo' }}
+    </p>
+  </div>
+</section>

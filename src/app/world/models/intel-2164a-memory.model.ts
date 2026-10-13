@@ -1,6 +1,9 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MemoryGeometry } from './memory-geometry';
+/** Underside of the classic board, above the station origin; the station is grounded from here. */
+export const CLASSIC_BOARD_BASE = 0.155;
+
 export class Intel2164aMemoryModel extends MemoryGeometry {
   build(root: T.Group, parts: Map<string, T.Object3D>): void {
     const pcb = this.tools.material('memory-pcb', '#264a35', 0.78, 0.04),
@@ -30,7 +33,7 @@ export class Intel2164aMemoryModel extends MemoryGeometry {
       curveSegments: 8,
     });
     boardGeometry.rotateX(-Math.PI / 2);
-    boardGeometry.translate(0, 0.155, 0);
+    boardGeometry.translate(0, CLASSIC_BOARD_BASE, 0);
     const board = this.mesh(root, boardGeometry, pcb);
     board.name = 'classic-pcb';
     parts.set('memory-board', board);

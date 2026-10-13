@@ -29,7 +29,7 @@ export abstract class WorkshopGeometry {
   ): T.Mesh {
     const mesh = this.mesh(
       parent,
-      new RoundedBoxGeometry(w, h, d, 2, Math.min(w, h, d) * 0.13),
+      new RoundedBoxGeometry(w, h, d, 1, Math.min(w, h, d) * 0.13),
       m,
       x,
       y,

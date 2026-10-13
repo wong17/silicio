@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { APPLE_PARTS } from './station-layouts';
 import { WorkshopGeometry } from './workshop-geometry';
 export class AppleSocModel extends WorkshopGeometry {
   build(parent: T.Group): void {
@@ -69,5 +70,61 @@ export class AppleSocModel extends WorkshopGeometry {
         this.cylinder(parent, 0.11, 0.28, x, 0, z, metal);
       }
     this.tools.label(parent, 'SoC / MEMORIA COMPARTIDA', 0, 0.382, -2.9, 4.5);
+    this.blocks(parent);
+    this.support(parent);
+  }
+
+  /** The die's blocks on the carrier, each with a lit plate; the activity glow moves from block to block. */
+  private blocks(parent: T.Group): void {
+    const top = 0.585;
+    const glows: { material: T.MeshBasicMaterial; order: number }[] = [];
+    APPLE_PARTS.forEach((part, order) => {
+      this.box(
+        parent,
+        part.w - 0.1,
+        0.012,
+        part.d - 0.1,
+        part.x,
+        top + 0.006,
+        part.z,
+        this.tools.material('die-' + part.id, part.color, 0.45, 0.4, { finish: 'steel', size: 128 }),
+      );
+      this.tools.label(parent, part.label, part.x, top + 0.02, part.z, part.w * 0.8);
+      const material = this.tools.track(
+        new T.MeshBasicMaterial({ color: part.color, transparent: true, opacity: 0.04, depthWrite: false }),
+      );
+      const glow = this.mesh(parent, this.tools.track(new T.PlaneGeometry(part.w - 0.18, part.d - 0.18)), material, part.x, top + 0.0135, part.z);
+      glow.rotation.x = -Math.PI / 2;
+      glow.userData['dynamic'] = true;
+      glows.push({ material, order });
+    });
+    // Each block lights in turn, as the cores and the GPU take their share of the work.
+    this.tools.animate((t) => {
+      for (const g of glows) {
+        const phase = (t * 0.3 + g.order * 0.23) % 1;
+        g.material.opacity = 0.04 + 0.4 * (phase < 0.35 ? Math.sin((phase / 0.35) * Math.PI) : 0);
+      }
+    }, 'subject');
+  }
+
+  /** Power management IC, crystal, inductors, copper traces and test points in the free strips of the board. */
+  private support(parent: T.Group): void {
+    const black = this.tools.material('soc-pmic', '#171a1c', 0.6, 0.1, { finish: 'plastic', wear: 0.2, size: 64 });
+    const silver = this.tools.material('soc-can', '#b4b8bb', 0.3, 0.9, { finish: 'steel', size: 64 });
+    const copper = this.tools.material('soc-trace', '#b07a4a', 0.35, 0.8, { finish: 'steel', wear: 0.25, size: 64 });
+    const gold = this.tools.material('soc-test-point', '#c9a24a', 0.3, 0.9, { finish: 'steel', size: 64 });
+    this.box(parent, 0.9, 0.14, 0.5, -0.2, 0.45, -2.75, black);
+    this.tools.label(parent, 'PMIC', -0.2, 0.52, -2.75, 0.7);
+    this.box(parent, 0.5, 0.14, 0.26, 0, 0.45, 2.95, silver);
+    this.tools.label(parent, 'XTAL', 0, 0.52, 2.95, 0.6);
+    for (const x of [1.1, 1.6]) this.cylinder(parent, 0.13, 0.16, x, 0.44, -2.7, black);
+    for (let i = 0; i < 4; i++) this.box(parent, 6.6, 0.01, 0.02, 0, 0.37, -3.1 + i * 0.03, copper);
+    const points = new T.InstancedMesh(this.tools.track(new T.SphereGeometry(0.03, 8, 6)), gold, 10);
+    const matrix = new T.Matrix4();
+    for (let i = 0; i < 10; i++) {
+      matrix.makeTranslation(-3.15 + i * 0.7, 0.37, 3.05);
+      points.setMatrixAt(i, matrix);
+    }
+    parent.add(points);
   }
 }

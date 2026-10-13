@@ -24,6 +24,8 @@
     background: #242a28;
     padding: 10px 12px;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
     transition: background 0.18s;
   }
   button:hover {

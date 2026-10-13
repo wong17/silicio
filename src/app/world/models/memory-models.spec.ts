@@ -5,6 +5,7 @@ const tools = {
   track: <G extends T.Material | T.BufferGeometry | T.Texture>(g: G) => g,
   material: () => new T.MeshStandardMaterial(),
   label: () => {},
+  animate: () => {},
 };
 it('classic_bank_capacity_matches_organization', () => {
   const g = new T.Group(),

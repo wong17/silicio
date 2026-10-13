@@ -12,6 +12,7 @@ it('rendered_terminal_instances_remain_clickable', () => {
       track: <G extends T.Material | T.BufferGeometry | T.Texture>(r: G) => r,
       material: () => new T.MeshStandardMaterial(),
       label: () => {},
+      animate: () => {},
     };
   new ElectronicsWorkshop(tools).cpu(root, parts);
   for (const [id, o] of parts)

@@ -1,0 +1,122 @@
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-rotate-left" viewBox="0 0 24 24">
+    <path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4" />
+  </symbol>
+  <symbol id="i-rotate-right" viewBox="0 0 24 24">
+    <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4" />
+  </symbol>
+  <symbol id="i-zoom-in" viewBox="0 0 24 24">
+    <circle cx="10.5" cy="10.5" r="6" />
+    <path d="M15 15l5 5M10.5 8v5M8 10.5h5" />
+  </symbol>
+  <symbol id="i-zoom-out" viewBox="0 0 24 24">
+    <circle cx="10.5" cy="10.5" r="6" />
+    <path d="M15 15l5 5M8 10.5h5" />
+  </symbol>
+  <symbol id="i-frame" viewBox="0 0 24 24">
+    <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5M12 9.5v5M9.5 12h5" />
+  </symbol>
+  <symbol id="i-focus" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="6" />
+    <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
+  </symbol>
+  <symbol id="i-chip" viewBox="0 0 24 24">
+    <rect x="6.5" y="6.5" width="11" height="11" rx="1" />
+    <path d="M9.5 3v3.5M12 3v3.5M14.5 3v3.5M9.5 17.5V21M12 17.5V21M14.5 17.5V21M3 9.5h3.5M3 12h3.5M3 14.5h3.5M17.5 9.5H21M17.5 12H21M17.5 14.5H21" />
+  </symbol>
+  <symbol id="i-wire" viewBox="0 0 24 24">
+    <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" />
+    <path d="M4 7.5l8 4.5 8-4.5M12 12v9" />
+  </symbol>
+  <symbol id="i-magnifier" viewBox="0 0 24 24">
+    <circle cx="10.5" cy="10.5" r="6" />
+    <path d="M15 15l5.5 5.5M8 10.5a2.5 2.5 0 0 1 2.5-2.5" />
+  </symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24">
+    <path d="M9 17.5h6M10 20.5h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" />
+  </symbol>
+  <symbol id="i-move" viewBox="0 0 24 24">
+    <path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" />
+  </symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24">
+    <path d="M12 4v11M8 11l4 4 4-4M5 19.5h14" />
+  </symbol>
+  <symbol id="i-tray" viewBox="0 0 24 24">
+    <path d="M3 15h18v4.5H3zM6 11h12M8.5 7h7" />
+  </symbol>
+  <symbol id="i-more" viewBox="0 0 24 24">
+    <path d="M5 12h.01M12 12h.01M19 12h.01" />
+  </symbol>
+</svg>
+
+<!-- Wide stages: every command in one bar centred under the bench, grouped by purpose. -->
+<div class="bar">
+  @for (group of groups; track group.id; let last = $last) {
+    <div class="group" role="group" [attr.aria-label]="group.label">
+      @for (tool of group.tools; track tool.command) {
+        @if (visible(tool)) {
+          <button
+            type="button"
+            class="tool"
+            [attr.aria-label]="label(tool)"
+            [attr.aria-pressed]="pressed(tool)"
+            [disabled]="disabled(tool)"
+            (click)="run(tool.command)"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use [attr.href]="'#i-' + tool.icon" /></svg>
+            <span class="tip" aria-hidden="true">
+              {{ label(tool) }}
+              @if (tool.key) {
+                <kbd>{{ tool.key }}</kbd>
+              }
+            </span>
+          </button>
+        }
+      }
+    </div>
+    @if (!last) {
+      <span class="divider" aria-hidden="true"></span>
+    }
+  }
+</div>
+
+<!-- Narrow stages: the first commands plus one disclosure with the same button size. -->
+<div class="dock">
+  @for (tool of primaryTools; track tool.command) {
+    @if (visible(tool)) {
+      <button
+        type="button"
+        class="tool"
+        [attr.aria-label]="label(tool)"
+        [attr.data-tip]="label(tool)"
+        [disabled]="disabled(tool)"
+        (click)="run(tool.command, $event)"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use [attr.href]="'#i-' + tool.icon" /></svg>
+      </button>
+    }
+  }
+  <details class="more">
+    <summary class="tool" aria-label="Más herramientas">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-more" /></svg>
+    </summary>
+    <div class="more-grid">
+      @for (group of secondaryGroups; track group.id) {
+        @for (tool of group.tools; track tool.command) {
+          @if (visible(tool)) {
+            <button
+              type="button"
+              class="tool labelled"
+              [attr.aria-pressed]="pressed(tool)"
+              [disabled]="disabled(tool)"
+              (click)="run(tool.command, $event)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use [attr.href]="'#i-' + tool.icon" /></svg>
+              <span>{{ label(tool) }}</span>
+            </button>
+          }
+        }
+      }
+    </div>
+  </details>
+</div>

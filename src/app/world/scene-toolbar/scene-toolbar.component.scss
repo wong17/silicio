@@ -1,0 +1,260 @@
+// Scene toolbar, centred under the bench. A single bar when the stage has room for every command
+// (container query on .stage); a compact dock with one disclosure when it does not.
+// Controls are never selectable text, so hovering or double-clicking a tool cannot highlight labels.
+$ink: #e3ded2;
+$panel: rgba(14, 17, 18, 0.88);
+$line: #3a423f;
+$accent: #d7ac6f;
+$lift: 44px;
+
+:host {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.tool {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: $ink;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+  svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+}
+
+.scene-toolbar .tool:not(:disabled):hover {
+  background: #262e2c;
+  border-color: #46504b;
+}
+
+.scene-toolbar .tool[aria-pressed='true'] {
+  background: #3a3224;
+  border-color: $accent;
+  color: #f0d29c;
+}
+
+.scene-toolbar .tool:focus-visible {
+  outline: 2px solid #e8c184;
+  outline-offset: 2px;
+}
+
+// Unavailable, not hidden: the tooltip still says why (nothing is in hand).
+.scene-toolbar .tool:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+// Wide layout: all commands in one row, centred under the bench.
+.bar {
+  position: absolute;
+  left: 50%;
+  bottom: $lift;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100% - 16px);
+  padding: 5px 8px;
+  border: 1px solid $line;
+  border-radius: 10px;
+  background: $panel;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.divider {
+  width: 1px;
+  height: 26px;
+  margin: 0 6px;
+  background: $line;
+}
+
+// Tooltip above the control: the name and its shortcut, never selectable.
+.tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px 5px 10px;
+  border: 1px solid $line;
+  border-radius: 6px;
+  background: #0e1211;
+  color: #ede7d8;
+  font: 500 13px/1.2 'Barlow', sans-serif;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+.tip kbd {
+  min-width: 20px;
+  padding: 1px 6px;
+  border: 1px solid #4b544e;
+  border-radius: 4px;
+  background: #1a2120;
+  color: $accent;
+  font: 500 11px/1.4 'IBM Plex Mono', monospace;
+  text-align: center;
+}
+
+.tool:hover .tip,
+.tool:focus-visible .tip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+// Compact layout: the six primary commands plus one disclosure, every target 44 px.
+.dock {
+  position: absolute;
+  left: 50%;
+  bottom: $lift;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 16px);
+  padding: 4px;
+  border: 1px solid $line;
+  border-radius: 10px;
+  background: $panel;
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.dock .tool {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+// Narrow stages (small phones): the seven dock targets share the width and never drop below 32 px, so the bar
+// stays on screen. Wider stages keep the 44 px targets above.
+@container stage (max-width: 419px) {
+  .dock .tool,
+  .dock .more > summary {
+    width: clamp(32px, calc((100cqi - 64px) / 7), 44px);
+    height: clamp(32px, calc((100cqi - 64px) / 7), 44px);
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
+.more {
+  position: relative;
+}
+
+.more summary {
+  cursor: pointer;
+}
+
+.more summary::-webkit-details-marker {
+  display: none;
+}
+
+.more[open] > summary {
+  background: #3a3224;
+  border-color: $accent;
+  color: #f0d29c;
+}
+
+// Disclosure palette: icon above a short label, three per row, so every command reads at a glance.
+.more-grid {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: min(336px, calc(100vw - 24px));
+  padding: 8px;
+  border: 1px solid $line;
+  border-radius: 10px;
+  background: #111514;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.dock .more-grid .labelled {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 68px;
+  padding: 8px 4px;
+  span {
+    font: 400 12px/1.15 'Barlow', sans-serif;
+    color: $ink;
+    text-align: center;
+  }
+}
+
+// Phones: the dock sits at the bottom edge, below the caption that is hidden there.
+@media (max-width: 899px) {
+  .dock {
+    bottom: 12px;
+  }
+}
+
+// Stages wide enough for all fourteen commands use the bar; narrower ones keep the dock.
+@container stage (min-width: 660px) {
+  .bar {
+    display: flex;
+  }
+  .dock {
+    display: none;
+  }
+}

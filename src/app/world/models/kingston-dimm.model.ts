@@ -1,6 +1,9 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { MemoryGeometry } from './memory-geometry';
+/** Underside of the module board, above the station origin; the station is grounded from here. */
+export const KINGSTON_BOARD_BASE = 0.04;
+
 export class KingstonDimmModel extends MemoryGeometry {
   build(root: T.Group, parts: Map<string, T.Object3D>): void {
     const pcb = this.tools.material('dimm-soldermask', '#244d35', 0.76, 0.04),
@@ -141,7 +144,7 @@ export class KingstonDimmModel extends MemoryGeometry {
       );
       this.box(latch, 0.35, 0.09, 0.14, x < 0 ? 0.17 : -0.17, 0.2, 0, black);
     }
-    this.box(root, 7.7, 0.12, 2.3, 0, 0.1, 0, pcb);
+    this.box(root, 7.7, 0.12, 2.3, 0, KINGSTON_BOARD_BASE + 0.06, 0, pcb);
     for (const x of [-3.5, 3.5])
       for (const z of [-0.8, 0.8])
         this.mesh(root, new T.CylinderGeometry(0.09, 0.09, 0.18, 8), steel, x, -0.05, z);

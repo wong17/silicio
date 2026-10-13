@@ -1,0 +1,31 @@
+<section class="signal" aria-label="Captura didáctica de señales">
+  <header class="head">
+    <p class="kicker">Captura de bus</p>
+    <div class="channels" role="group" aria-label="Canal de señal">
+      @for (c of channels; track c) {
+        <button
+          type="button"
+          [class.on]="session.signalChannel() === c"
+          [attr.aria-pressed]="session.signalChannel() === c"
+          (click)="session.signalChannel.set(c)"
+        >
+          {{ c }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="scope">
+    <svg viewBox="0 0 320 100" role="img" [attr.aria-label]="'Canal ' + session.signalChannel() + ', pasos didácticos'">
+      <path class="grid" d="M20 10v65m70-65v65m70-65v65m70-65v65m70-65v65M20 25h280M20 50h280M20 75h280" />
+      <path class="trace" [attr.d]="trace()" />
+      <line class="sweep" x1="20" x2="20" y1="8" y2="78" />
+      <text x="40" y="94">DIRECCIÓN</text>
+      <text x="180" y="94">TRANSFERENCIA</text>
+    </svg>
+  </div>
+
+  <p class="note">
+    Pasos didácticos de la última instrucción. No son nanosegundos medidos ni temporización eléctrica.
+  </p>
+</section>

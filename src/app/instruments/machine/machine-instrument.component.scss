@@ -1,0 +1,178 @@
+@use '../../shared/console-kit' as kit;
+
+.machine {
+  @include kit.module;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.kicker {
+  @include kit.kicker;
+}
+
+.stage-count {
+  @include kit.readout;
+  font-size: 12px;
+  color: kit.$dim;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.unit {
+  fill: #101516;
+  stroke: #3f4a46;
+  stroke-width: 1.2;
+}
+
+.unit-title {
+  fill: kit.$dim;
+  font: 500 10px kit.$mono;
+  letter-spacing: 0.06em;
+  text-anchor: middle;
+}
+
+.value {
+  fill: kit.$amber-soft;
+  font: 600 20px kit.$mono;
+  text-anchor: middle;
+}
+
+.small {
+  fill: kit.$ink;
+  font: 500 11px kit.$mono;
+  text-anchor: middle;
+}
+
+.lane {
+  fill: none;
+  stroke: #3a4441;
+  stroke-width: 2;
+  transition: stroke 0.25s ease;
+  text {
+    fill: kit.$dim;
+    font: 500 9px kit.$mono;
+    letter-spacing: 0.08em;
+    text-anchor: middle;
+  }
+  &.active {
+    stroke: kit.$amber;
+    stroke-dasharray: 6 6;
+    animation: kit-flow 0.9s linear infinite;
+    text {
+      fill: kit.$amber-soft;
+    }
+  }
+}
+
+.arrow {
+  stroke: inherit;
+}
+
+.back {
+  opacity: 0.5;
+}
+
+.registers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  span {
+    display: grid;
+    gap: 4px;
+    padding: 8px 10px;
+    background: linear-gradient(90deg, rgba(58, 68, 65, 0.4), #101516 72%);
+    @include kit.kicker;
+    font-size: 11px;
+  }
+  code {
+    @include kit.readout;
+    font-size: 16px;
+  }
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  li {
+    @include kit.tooltip;
+    display: grid;
+    place-items: center;
+    height: 30px;
+    border: 1px solid #2d3533;
+    border-radius: 5px;
+    background: #101516;
+    color: kit.$dim;
+    font: 500 11px kit.$mono;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+  li.done {
+    border-color: #5d6a65;
+    color: kit.$ink;
+  }
+  li.current {
+    border-color: kit.$amber;
+    background: #3a3224;
+    color: kit.$amber-soft;
+  }
+}
+
+.result {
+  margin: 0;
+  @include kit.readout;
+  font-size: 13px;
+  color: kit.$amber-soft;
+  min-height: 1.4em;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 8px;
+  button {
+    min-height: 44px;
+  }
+  .primary {
+    border-color: kit.$amber;
+    background: #3a3224;
+    color: kit.$amber-soft;
+  }
+}
+
+.parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  button {
+    min-height: 40px;
+    font: 500 12px kit.$mono;
+  }
+}
+
+.note {
+  margin: 0;
+  color: kit.$dim;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@keyframes kit-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}

@@ -1,0 +1,62 @@
+@use '../../shared/console-kit' as kit;
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+h2 {
+  margin: 0;
+  font: 600 32px/1.02 kit.$display;
+  color: kit.$ink;
+  letter-spacing: 0.01em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border: 1px solid kit.$edge-strong;
+  border-radius: 4px;
+  font: 500 11px kit.$mono;
+  letter-spacing: 0.08em;
+  color: kit.$dim;
+}
+
+.led {
+  @include kit.led(kit.$amber, 8px);
+}
+
+.status.run {
+  color: kit.$green;
+  border-color: rgba(159, 214, 166, 0.45);
+  .led {
+    @include kit.led(kit.$green, 8px);
+    animation: kit-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+.status.halt {
+  color: kit.$red;
+  border-color: rgba(224, 139, 114, 0.5);
+  .led {
+    @include kit.led(kit.$red, 8px);
+  }
+}
+
+@keyframes kit-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}

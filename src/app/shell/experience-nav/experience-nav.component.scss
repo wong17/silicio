@@ -1,0 +1,163 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  min-width: 0;
+  height: 76px;
+  padding: 0 24px;
+  border-bottom: 1px solid #39403e;
+  background: #15191a;
+  color: #e3ded2;
+  z-index: 3;
+}
+
+.brand {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  white-space: nowrap;
+  svg {
+    width: 30px;
+    height: 30px;
+    fill: none;
+    stroke: #d7ac6f;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+  }
+  .name {
+    font: 600 26px/1 'Barlow Condensed', sans-serif;
+  }
+  small {
+    max-width: 72px;
+    font: 400 11px/1.2 'Barlow', sans-serif;
+    white-space: normal;
+    color: #b7b6ae;
+  }
+}
+
+.links {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: stretch;
+  gap: 20px;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    border-bottom: 2px solid transparent;
+    color: inherit;
+    font-size: 16px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease;
+    &:hover {
+      color: #f0d29c;
+    }
+    &.active {
+      color: var(--accent, #d7ac6f);
+      border-color: var(--accent, #d7ac6f);
+    }
+    &:focus-visible {
+      outline: 2px solid #e8c184;
+      outline-offset: 3px;
+    }
+  }
+}
+
+.version {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #b7b6ae;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+// Medium desktop: the version label and the small brand line leave room for five links.
+@media (min-width: 900px) and (max-width: 1279px) {
+  :host {
+    gap: 18px;
+    padding: 0 16px;
+  }
+  .brand small,
+  .version {
+    display: none;
+  }
+  .links {
+    gap: 16px;
+    a {
+      font-size: 15px;
+    }
+  }
+}
+
+// Narrow layout: the brand sits on its own row and the links scroll with snap points and no scrollbar.
+@media (max-width: 899px) {
+  :host {
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 0;
+    height: auto;
+    padding: 10px 16px 0;
+  }
+  .brand {
+    height: 40px;
+    gap: 8px;
+    .name {
+      font-size: 24px;
+    }
+    small {
+      max-width: none;
+      font-size: 11px;
+    }
+  }
+  .links {
+    order: 3;
+    flex: 0 0 100%;
+    gap: 22px;
+    height: 44px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-right: 12px;
+    mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 14px), transparent);
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    a {
+      font-size: 15px;
+      scroll-snap-align: start;
+    }
+  }
+  .version {
+    display: none;
+  }
+}
+
+// Short landscape phones: everything fits on one row again.
+@media (max-height: 500px) and (max-width: 899px) {
+  :host {
+    flex-wrap: nowrap;
+    gap: 18px;
+    height: 56px;
+    padding: 0 12px;
+  }
+  .brand small {
+    display: none;
+  }
+  .links {
+    order: 0;
+    flex: 1 1 auto;
+    height: 56px;
+    gap: 18px;
+    padding-right: 0;
+  }
+}

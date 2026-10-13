@@ -1,0 +1,16 @@
+<section class="inspector" aria-label="Pieza seleccionada">
+  <header>
+    <p class="kicker">Pieza seleccionada</p>
+    <h3>{{ name() }}</h3>
+  </header>
+  <p class="description">{{ session.selectedDescription() }}</p>
+  <div class="row">
+    <label class="kicker" for="piece">Inspeccionar en el banco</label>
+    <select id="piece" [ngModel]="session.activePart()" (ngModelChange)="session.part($event)">
+      @for (p of session.catalogPieces(); track p.id) {
+        <option [value]="p.id">{{ p.name }}</option>
+      }
+    </select>
+  </div>
+  <button type="button" class="focus" (click)="focus.emit()">Enfocar en el banco</button>
+</section>

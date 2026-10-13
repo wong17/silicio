@@ -1,0 +1,44 @@
+<details class="panel">
+  <summary>Sesión, gráficos y atajos</summary>
+  <div class="body">
+    <div class="field">
+      <label class="kicker" for="session-file">Recuperar sesión JSON</label>
+      <input id="session-file" type="file" accept="application/json,.json" (change)="importFile($event)" />
+      <button type="button" class="wide" (click)="session.exportSession()">Exportar sesión y ramas</button>
+    </div>
+
+    <div class="field">
+      <label class="check">
+        <input type="checkbox" [ngModel]="session.reduced()" (ngModelChange)="session.setReduced($event)" />
+        Reducir movimiento
+      </label>
+      <label class="kicker" for="quality">Gráficos</label>
+      <select id="quality" [ngModel]="session.quality()" (ngModelChange)="quality($event)">
+        <option value="high">Detalle</option>
+        <option value="balanced">Equilibrado</option>
+        <option value="low">Ligero</option>
+      </select>
+      <button type="button" [attr.aria-pressed]="session.sound()" (click)="session.toggleSound()">
+        Sonido {{ session.sound() ? 'activado' : 'desactivado' }}
+      </button>
+    </div>
+
+    <div class="shortcuts">
+      <p class="kicker">Atajos del visor</p>
+      <dl>
+        @for (s of shortcuts; track s[0]) {
+          <div>
+            <dt><kbd>{{ s[0] }}</kbd></dt>
+            <dd>{{ s[1] }}</dd>
+          </div>
+        }
+      </dl>
+    </div>
+
+    <p class="scope">
+      El 8086 ejecuta un subconjunto admitido: MOV, ADD, SUB, CMP, INC, DEC, saltos, LOOP, NOP y HLT.
+      Sin temporización eléctrica ni interrupciones. Dirección = segmento × 16 + offset, limitada a 20
+      bits; las palabras se almacenan con el byte menos significativo primero.
+    </p>
+  </div>
+</details>

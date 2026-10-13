@@ -1,0 +1,7 @@
+<header class="head">
+  <h2>{{ title() }}</h2>
+  <span class="status" [class.run]="session.running()" [class.halt]="session.state().halted">
+    <span class="led" aria-hidden="true"></span>
+    {{ status() }}
+  </span>
+</header>

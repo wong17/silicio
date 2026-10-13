@@ -86,7 +86,6 @@ const names: Record<string, [string, string]> = {
     'Fuente de alimentación',
     '5V es una referencia ilustrativa para la placa clásica; este laboratorio no calcula corrientes ni simula fallos eléctricos.',
   ],
-  lamp: ['Lámpara de inspección', 'Cambia la luz para inspeccionar contactos y superficies.'],
   cable: [
     'Cable coaxial',
     'El conductor central lleva la señal; la pantalla proporciona retorno y reduce interferencias.',
@@ -99,7 +98,49 @@ const names: Record<string, [string, string]> = {
     'Separadores y fijaciones',
     'Mantienen la placa elevada y sujetan el conjunto sin apoyar la electrónica directamente sobre el banco.',
   ],
+  'esd-mat': [
+    'Alfombrilla antiestática',
+    'Disipa la electricidad estática y protege la placa. Conserva marcas de uso; no es un plano de fabricación.',
+  ],
+  lamp: [
+    'Lámpara articulada',
+    'Brazo de dos segmentos con cabezal orientable. Arrastra el anillo de cobre o usa el panel de luz para iluminar otro punto; no modifica registros ni memoria.',
+  ],
+  multimeter: [
+    'Multímetro digital',
+    'Pulsa para cambiar el modo de medida en pantalla. Muestra la referencia de la fuente y no está conectado al circuito del 8086.',
+  ],
+  'solder-station': [
+    'Estación de soldadura',
+    'La punta calienta el estaño: el indicador y la camisa se encienden mientras dura el calentamiento. No mide temperatura ni modela el proceso térmico.',
+  ],
+  'solder-spool': [
+    'Carrete de estaño',
+    'Hilo con núcleo de flux. El flux limpia las superficies antes de fundir el estaño. Pulsa para hacerlo girar.',
+  ],
+  notebook: [
+    'Cuaderno de medidas',
+    'Registro escrito de las pruebas del banco. Pulsa para hojearlo y ver cómo se anota una sesión.',
+  ],
+  mug: [
+    'Taza de café',
+    'Objeto de uso cotidiano: su aro de café queda sobre la madera y muestra el desgaste del lugar de trabajo.',
+  ],
+  parts: [
+    'Caja de componentes',
+    'Resistencias y condensadores de reposición. Pulsa para abrir el cajón y revisar los valores etiquetados.',
+  ],
+  chips: [
+    'Bandeja de integrados',
+    'Circuitos DIP de reposición sobre espuma conductiva. Manipularlos sin protección puede dañarlos.',
+  ],
+  'pegboard-tools': [
+    'Herramientas colgadas',
+    'Destornilladores a la vista sobre el panel perforado. Pulsa para ver cómo oscilan al tocarlos.',
+  ],
 };
+/** Bench objects that answer a click; each one is listed in the piece inspector too. */
+const OPERABLE = new Set(['scope', 'power', 'lamp', 'probe', 'cable', 'esd-mat', 'multimeter', 'solder-station', 'solder-spool', 'notebook', 'mug', 'parts', 'chips', 'pegboard-tools']);
 export function pieceDefinition(id: string, experience: string): PieceDefinition {
   let name = names[id]?.[0] ?? id.replaceAll('-', ' '),
     description = names[id]?.[1];
@@ -121,7 +162,7 @@ export function pieceDefinition(id: string, experience: string): PieceDefinition
     name,
     description,
     role:
-      id.startsWith('tool') || ['scope', 'power', 'lamp', 'probe', 'cable'].includes(id)
+      id.startsWith('tool') || OPERABLE.has(id)
         ? 'operable'
         : 'academic',
     actions: ['inspect'],
@@ -148,6 +189,15 @@ export function accessibleCatalog(
     'lamp',
     'probe',
     'cable',
+    'esd-mat',
+    'multimeter',
+    'solder-station',
+    'solder-spool',
+    'notebook',
+    'mug',
+    'parts',
+    'chips',
+    'pegboard-tools',
     'tool',
     'tool-1',
     'tool-2',

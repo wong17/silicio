@@ -2,6 +2,32 @@
 
 Actualizado: 13 de octubre de 2026. Implementación reanudada por el usuario desde 1ce8dce. Esta revisión registra resultados concretos; no certifica todas las extensiones del plan maestro.
 
+## Continuación: laboratorio, banco anclado y herramienta en la mano (sin commit)
+
+| Requisito pedido | Qué se hizo | Evidencia | Límite |
+|---|---|---|---|
+| Sala cerrada y fondo no negro | Paredes en x = ±38 y z = 38, cámara acotada dentro, niebla y fondo del mismo color cálido | room-bounds.spec.ts; capturas lejanas sin vacío negro | Contenido de las paredes en curso |
+| Equipo de diseño de CPUs | Torres tumbadas, CRT con esquema, placas con chips, bandeja de CPUs, oblea y planos en el suelo | Capturas desde el frente; sin colisiones con el bin, el taburete ni el carro | Decorativo |
+| Fuente con lectura viva | Tensión y corriente que cambian, modo CV y serigrafía del panel | Captura y zoom del panel | — |
+| Icono de la pestaña | `favicon.svg` con el chip de la marca sustituye el icono de Angular | index.html; public/favicon.svg | Solo se comprueba en el HTML; el SVG suelto no se pinta en el panel |
+| Rendimiento | Luz de área a luz puntual; cajas con 1 segmento; escala de resolución adaptativa | Medido en GT 730: 14,6 ms frente a 20,5 ms por fotograma | DRS verificado con mediciones sincronizadas, no con rAF |
+| Textos sobre la escena | Velo de esquina en el escenario (degradado radial, sin manchas); titular más claro con halo de sombra | Capturas de la portada y de 8086 con zoom | Fondos muy claros pueden necesitar ajuste |
+| Luz ambiental | Exposición 1,12; entorno 0,8; cielo cálido; luz de techo 420; lavado en el fondo; relleno frontal | Capturas; el coste de las luces nuevas es despreciable frente a la variación de la GPU compartida | Medida de rendimiento ruidosa |
+| Mapa de iluminación centrado | Ventana del banco completa (x −18…18, z −13…13), contorno del banco y anillo de alcance del brazo | Medido: el banco cabe en el viewBox y la etiqueta «cámara» queda dentro | — |
+| Escena de laboratorio alrededor del banco | Una sola pared (fondo), suelo de baldosas, techo a 18 unidades con tubos, mueble base hasta el suelo, almacenaje, carro, taburete, extintor, reloj y tuberías. Cámara limitada bajo el techo y delante de la pared | room-bounds.spec.ts; zoom out con controles sin blanco; capturas laterales; sin errores de consola | Decorativo; sin geometría de fabricación |
+| Planos de procesadores en las paredes | Hojas de esquema dibujadas en canvas con sello «CONCEPTUAL · NO A ESCALA» | Capturas del muro trasero; el sello evita afirmar distribuciones reales | Esquemas conceptuales |
+| Estaciones apoyadas | Datum de cada estación (boardBase, memoria, cronoscopio, máquina) lleva la placa al mat | bench-clearance.spec.ts; captura de 8086 y máquina sobre el mat | Pinos de zócalo hundidos en el mat, como en un banco blando |
+| Herramientas que se mueven sin agarrarse | Soltar con la mano vacía no hace nada; botón deshabilitado; la herramienta en la mano queda hasta soltarla | physics spec: release con mano vacía no mueve nada; reset y cambio de herramienta | Arrastre comprobado con eventos simulados |
+| Iluminar pieza seleccionada | Enciende la lámpara, apunta al centro de la pieza y avisa si el brazo no llega; brazo más largo | lamp-limits.spec.ts (alcance circular, altura, cobertura de placa y libreta) | Lado derecho del banco fuera de alcance |
+| Instrumentos animados | Traza y strobe del osciloscopio, LCD del multímetro, piloto de la fuente, LED del soldador, máquina, cronoscopio y bloques de Apple | Registro WorkshopTools.animate; capturas de la máquina y del cronoscopio | Movimiento reducido: tiempo cero |
+| Z-fighting e intersecciones | Coplanaridades separadas, sondas y cables fuera de sólidos, knobs fuera de la pantalla, bandeja sobre el mat, perchero sobre el estante | bench-clearance.spec.ts (cables, herramientas sobre la bandeja, objetos apoyados) | Auditoría por geometría, no exhaustiva |
+| Bordes pintados a la izquierda | Degradados desde el borde en portales, alertas y paneles de instrumentos | Revisión de SCSS; detector sin hallazgos de borde lateral | — |
+| Superficies con aspecto de agua | Desgaste en parches con bordes granulados; sin contornos de una sola cuadrícula | surface-maps.spec.ts sigue en verde | Textura procedural de 128 px |
+| Detalle de máquina, Apple y cronoscopio | Placa con zócalos, buses, cristal y LEDs; bloques, PMIC y trazas en Apple; base, eje, dial y dieciséis cuadros | Capturas de las tres estaciones | El die de Apple se ve al abrir el chip |
+| Impeccable | Carga de contexto, lectura de craft-floor, detector sobre la interfaz tocada | 95 avisos de paleta, tamaño y radio; sin antipatrones bloqueantes | Avisos ya existentes en la consola |
+
+Validación: 122 pruebas en 28 archivos; build de producción correcto; carga inicial 528 kB frente a presupuesto de 900 kB. No se han medido FPS en hardware representativo; la estación 8086 con la sala ronda 170 000 triángulos.
+
 ## Cambios de este incremento
 
 - CPU: 40 terminales centrados en pads y perforaciones; zócalo con canales reales, apoyos de cerámica y holgura de tapa. Datums compartidos en cpu-assembly.ts. La entrada controlada del terminal al encapsulado es intencional, no una pared maciza atravesada accidentalmente.

@@ -2,10 +2,10 @@ import { StationBuilder } from './models/station-builder';
 import { firstInspectableHit } from './scene-picking';
 import { GpuResources } from './gpu-resources';
 import { releaseInstanceBuffers } from './instance-lifecycle';
+import { keepInsideRoom } from './room-bounds';
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { gsap } from 'gsap';
 import { bindCancellation, applyInputPolicy } from './scene-input';
@@ -16,14 +16,35 @@ import { EffectsPipeline, qualitySettings, QualityTier } from './effects/effects
 import { GpuProfile } from './gpu-profile';
 import { FrameProfile } from './frame-profile';
 import { historyPieces } from './history-pieces';
-import { MemoryModels } from './models/memory-models';
-import { InteractionRegistry, PieceDefinition } from './interaction-registry';
+import { InteractionRegistry } from './interaction-registry';
 import { WorkbenchPhysics } from './physics/workbench-physics';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { ElectronicsWorkshop } from './electronics-workshop';
+import { WorkbenchRoomModel } from './models/workbench-room.model';
+import { ArticulatedLampModel } from './models/articulated-lamp.model';
+import { LampController, type LampTarget } from './lamp-controller';
+import { LAMP_REACH, clampLampTarget, lampDistance } from './lamp-limits';
+import { failingTube } from './failing-light';
+import { SurfaceLibrary, type SurfaceLook } from './textures/surface-library';
+import { SceneLabels } from './textures/scene-labels';
+import { BENCH } from './models/bench-layout';
+import type { Reactions } from './models/workbench-props.model';
+import type { Animator, WorkshopTools } from './workshop-tools';
 
 import type { SceneInputs, SceneCallbacks, Section } from './scene-inputs';
-import { CPU_PARTS, APPLE_PARTS, type Part } from './models/station-layouts';
+import { CPU_PARTS, APPLE_PARTS } from './models/station-layouts';
+
+const HOVER_INTERVAL_MS = 70;
+const LAMP_EMIT_INTERVAL_MS = 100;
+/** Colour of the air beyond the room: the background and the fog share it, so distant walls blend in. */
+const HAZE = '#3a403e';
+/** Height of the lamp's grip above the lamp head's pivot; keep in step with ArticulatedLampModel. */
+const LAMP_GRIP_OFFSET = 0.56;
+
+/**
+ * Three.js coordinator: renderer, camera, bench, selection and lifecycle. Models build geometry,
+ * the lamp controller owns its pose, and the surface and label libraries own textures. This class
+ * does not import Angular.
+ */
 export class WorldEngine implements SceneInputs {
   section: Section = 'atrium';
   exploded = false;
@@ -41,10 +62,11 @@ export class WorldEngine implements SceneInputs {
   signalChannel = 'ALE';
   readAccess = false;
   writeAccess = false;
+  lamp: LampTarget = { x: -0.8, z: 0.6, height: 5 };
+  lampOn = true;
   private registry = new InteractionRegistry();
   private environmentParts = new Map<string, THREE.Object3D>();
   private physics?: WorkbenchPhysics;
-  private light?: THREE.PointLight;
   private selectionBox?: THREE.BoxHelper;
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
@@ -61,12 +83,24 @@ export class WorldEngine implements SceneInputs {
   private effects?: EffectsPipeline;
   private profileTier?: QualityTier;
   private keyLight?: THREE.DirectionalLight;
+  private lampController?: LampController;
+  private reactions: Reactions = new Map();
   private focusedObject?: THREE.Object3D;
   private root = new THREE.Group();
   private contactBatches: THREE.InstancedMesh[] = [];
   private parts = new Map<string, THREE.Object3D>();
   private resources = new Set<THREE.Material | THREE.BufferGeometry | THREE.Texture>();
-  private materials = new Map<string, THREE.MeshStandardMaterial>();
+  private surfaces = new SurfaceLibrary((r) => this.track(r));
+  private labels = new SceneLabels((r) => this.track(r));
+  private readonly tools: WorkshopTools = {
+    track: (r) => this.track(r),
+    material: (id, c, r, m, look?: SurfaceLook) => this.surfaces.material(id, c, r, m, look),
+    label: (p, t, x, y, z, w) => this.labels.create(p, t, x, y, z, w),
+    animate: (update, scope = 'room') => this.animators.push({ update, scope }),
+  };
+  private animators: { update: Animator; scope: 'room' | 'subject' }[] = [];
+  /** Scene time for animators; it advances with the frame delta and stays at zero under reduced motion. */
+  private clock = 0;
   private cameraMotion?: gsap.core.Timeline;
   private explodedMotion?: gsap.core.Timeline;
   private pulseMotion?: gsap.core.Timeline;
@@ -75,11 +109,22 @@ export class WorldEngine implements SceneInputs {
   private disposed = false;
   private dragPointer?: number;
   private dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.8);
+  /** Horizontal plane through the grip while the lamp is dragged; set when the drag starts. */
+  private gripPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  private lampDragging = false;
+  private lastLampEmit = 0;
+  private hoverId: string | null = null;
+  private reportedHolding: string | null = null;
+  private lastHover = 0;
   private physicsReady?: Promise<void>;
   private releaseCancellation?: () => void;
   private historySlots: THREE.Mesh[] = [];
   private lastTick = -1;
-  private clock = new THREE.Clock();
+  private lastFrame = performance.now();
+  private shadowsOn = true;
+  /** Adaptive resolution: 1 keeps the tier’s pixel ratio; the frame-time guard lowers it when the frame runs long. */
+  private resolutionScale = 1;
+  private resolutionHold = 0;
   constructor(
     private readonly canvas: HTMLCanvasElement,
     inputs: SceneInputs,
@@ -92,11 +137,16 @@ export class WorldEngine implements SceneInputs {
     if (!this.renderer) return;
     if (this.root.userData['section'] !== this.section || changed.has('memoryModel'))
       this.buildSubject();
-    if (changed.has('manipulate') && !this.manipulate) this.onCancel();
+    if (changed.has('manipulate') && !this.manipulate) {
+      this.onCancel();
+      this.releaseTool();
+    }
+    if (changed.has('lamp') && !this.lampDragging) this.lampController?.setTarget(this.lamp);
+    this.lampController?.setPower(this.lampOn);
+    this.lampController?.setBoost(this.inspection ? 1.6 : 1);
     this.updateValues();
     this.updateScope();
     this.updateInputPolicy();
-    if (this.light) this.light.intensity = this.inspection ? 46 : 22;
     this.scene.traverse((o) => {
       if (o.userData['detail']) o.visible = this.quality === 'high';
       if (o instanceof THREE.Mesh && o.material instanceof THREE.MeshStandardMaterial)
@@ -110,11 +160,44 @@ export class WorldEngine implements SceneInputs {
       if (this.tick) this.transfer();
     }
   }
+  /**
+   * A ceiling spot with a visible housing and a lens. It casts no shadows, so the lamp stays the only shadow caster.
+   * Returns the light and the lens, so an animator can make the spot flicker together with its lens.
+   */
+  private ceilingSpot(
+    from: THREE.Vector3,
+    to: THREE.Vector3,
+    angle: number,
+    power: number,
+  ): { light: THREE.SpotLight; lens: THREE.MeshStandardMaterial } {
+    const housing = new THREE.Mesh(
+      this.track(new THREE.CylinderGeometry(0.9, 0.9, 0.9, 24)),
+      this.tools.material('ceiling-spot-housing', '#3a4143', 0.5, 0.4, { finish: 'steel', size: 64 }),
+    );
+    housing.position.set(from.x, from.y + 0.45, from.z);
+    const lens = this.track(
+      new THREE.MeshStandardMaterial({ color: '#f4f8f5', emissive: '#f4f8f5', emissiveIntensity: 1.2, side: THREE.DoubleSide }),
+    );
+    const disc = new THREE.Mesh(this.track(new THREE.CircleGeometry(0.72, 28)), lens);
+    disc.rotation.x = Math.PI / 2;
+    disc.position.set(from.x, from.y - 0.03, from.z);
+    const target = new THREE.Object3D();
+    target.position.copy(to);
+    const light = new THREE.SpotLight('#eef6f1', power, 0, angle, 0.9, 2);
+    light.position.copy(from);
+    light.target = target;
+    this.scene.add(housing, disc, light, target);
+    return { light, lens };
+  }
+
   initialize(): void {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#101214');
-    this.scene.fog = new THREE.Fog('#202727', 27, 55);
-    this.camera = new THREE.PerspectiveCamera(38, 1, 0.25, 60);
+    // A lit room rather than a void: the walls fall off into a dim warm haze.
+    // The far walls of the closed room fade into a warm grey haze, never into a black void.
+    this.scene.background = new THREE.Color(HAZE);
+    this.scene.fog = new THREE.Fog(HAZE, 44, 150);
+    // Far enough for the far corners of the closed room, which the camera can see from the bench.
+    this.camera = new THREE.PerspectiveCamera(38, 1, 0.25, 180);
     this.camera.position.set(5.8, 9.2, 10.8);
     this.camera.lookAt(-0.45, 0.7, 0);
     this.renderer = new THREE.WebGLRenderer({
@@ -125,10 +208,8 @@ export class WorldEngine implements SceneInputs {
     this.renderer.info.autoReset = false;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.82;
-    this.renderer.shadowMap.enabled = this.quality === 'high';
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.quality === 'high' ? 1.5 : 1));
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMappingExposure = 1;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.pmrem = new THREE.PMREMGenerator(this.renderer);
     const room = new RoomEnvironment();
     this.environment = this.pmrem.fromScene(room, 0.04);
@@ -136,36 +217,35 @@ export class WorldEngine implements SceneInputs {
     this.scene.environmentIntensity = 0.45;
     room.dispose();
 
-    this.scene.add(new THREE.HemisphereLight('#c4d6c8', '#242120', 0.8));
-    const key = new THREE.DirectionalLight('#ffe0ac', 2.2);
+    // Fill light only: the lamp is the single shadow caster, so shadow passes stay bounded. The room is kept well
+    // below the lamp, so the lamp reads as the brightest light on the bench: a dim cool sky, two ceiling spots of
+    // equal power, a faint key and a rim.
+    this.scene.add(new THREE.HemisphereLight('#e4efea', '#434a47', 0.35));
+    // Spot one is a torch over the bench and a little around it. Spot two lights the other half of the room, behind
+    // the camera, and flickers like a tube that is failing. Both housings hang from the ceiling.
+    const spotPower = 260;
+    this.ceilingSpot(new THREE.Vector3(0, BENCH.ceiling - 1, 0.5), new THREE.Vector3(0, BENCH.top, 0.5), 0.8, spotPower);
+    const failing = this.ceilingSpot(new THREE.Vector3(0, BENCH.ceiling - 1, 28), new THREE.Vector3(0, BENCH.floor, 28), 0.78, spotPower);
+    this.tools.animate((seconds) => {
+      const k = failingTube(seconds);
+      failing.light.intensity = spotPower * k;
+      failing.lens.emissiveIntensity = 1.2 * (0.25 + 0.75 * k);
+    }, 'room');
+    const key = new THREE.DirectionalLight('#eef4f0', 0.35);
     key.position.set(-4, 8, 5);
-    key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
-    Object.assign(key.shadow.camera, {
-      left: -9,
-      right: 9,
-      top: 8,
-      bottom: -8,
-      near: 0.1,
-      far: 30,
-    });
-    key.shadow.bias = -0.00015;
-    key.shadow.normalBias = 0.012;
     this.scene.add(key);
     this.keyLight = key;
-    const rim = new THREE.DirectionalLight('#8fb9ce', 1.1);
+    const rim = new THREE.DirectionalLight('#8fb9ce', 0.3);
     rim.position.set(5, 4, -5);
     this.scene.add(rim);
 
-    new ElectronicsWorkshop({
-      track: (r) => this.track(r),
-      material: (id, c, r, m) => this.material(id, c, r, m),
-      label: (p, t, x, y, z, w) => this.label(p, t, x, y, z, w),
-    }).room(this.scene, this.environmentParts);
-    const taskLight = new THREE.PointLight('#ffe6bf', 22, 14, 2);
-    taskLight.position.set(0, 4.35, -2.3);
-    this.scene.add(taskLight);
-    this.light = taskLight;
+    const reactions = new WorkbenchRoomModel(this.tools).build(this.scene, this.environmentParts);
+    this.reactions = reactions;
+    const lampRig = new ArticulatedLampModel(this.tools).build(this.scene, this.environmentParts);
+    this.lampController = new LampController(lampRig, this.scene, (r) => this.track(r));
+    this.lampController.setTarget(this.lamp);
+    this.lampController.setPower(this.lampOn);
+
     this.selectionBox = new THREE.BoxHelper(this.root, '#d7ac6f');
     this.scene.add(this.selectionBox);
     this.track(this.selectionBox.geometry);
@@ -181,6 +261,8 @@ export class WorldEngine implements SceneInputs {
     this.controls.addEventListener('start', this.cancelCamera);
     this.canvas.addEventListener('pointerdown', this.onDown, true);
     this.canvas.addEventListener('pointermove', this.onMove);
+    this.canvas.addEventListener('pointermove', this.onHover);
+    this.canvas.addEventListener('pointerleave', this.onLeave);
     this.canvas.addEventListener('pointerup', this.onPick);
     this.releaseCancellation = bindCancellation(this.canvas, window, this.onCancel);
     this.updateInputPolicy();
@@ -203,114 +285,14 @@ export class WorldEngine implements SceneInputs {
     this.resources.add(resource);
     return resource;
   }
-  private material(
-    id: string,
-    color: string,
-    roughness: number,
-    metalness: number,
-  ): THREE.MeshStandardMaterial {
-    if (this.materials.has(id)) return this.materials.get(id)!;
-    const size = 256;
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = size;
-    const c = canvas.getContext('2d')!;
-    c.fillStyle = color;
-    c.fillRect(0, 0, size, size);
-    const roughCanvas = document.createElement('canvas');
-    roughCanvas.width = roughCanvas.height = size;
-    const r = roughCanvas.getContext('2d')!;
-    r.fillStyle = '#b5b5b5';
-    r.fillRect(0, 0, size, size);
-    let seed = [...id].reduce((a, b) => a * 31 + b.charCodeAt(0), 17) >>> 0;
-    const random = () => {
-      seed = (seed * 1664525 + 1013904223) >>> 0;
-      return seed / 4294967296;
-    };
-    for (let i = 0; i < 110; i++) {
-      const x = random() * size,
-        y = random() * size,
-        length = random() * 20;
-      // One scratch field affects albedo, roughness and shallow relief together.
-      for (const [ctx, stroke] of [
-        [c, 'rgba(222,207,171,.065)'],
-        [r, '#e2e2e2'],
-      ] as const) {
-        ctx.strokeStyle = stroke;
-        ctx.lineWidth = 0.5 + random();
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + length, y + length * 0.13);
-        ctx.stroke();
-      }
-    }
-    for (const ctx of [c, r]) {
-      ctx.strokeStyle = ctx === c ? 'rgba(200,190,149,.10)' : '#ededed';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(1, 1, size - 2, size - 2);
-    }
-    const texture = this.track(new THREE.CanvasTexture(canvas));
-    texture.colorSpace = THREE.SRGBColorSpace;
-    const wear = this.track(new THREE.CanvasTexture(roughCanvas));
-    const mat = this.track(
-      new THREE.MeshStandardMaterial({
-        map: texture,
-        roughnessMap: wear,
-        bumpMap: wear,
-        bumpScale: 0.006,
-        roughness,
-        metalness,
-      }),
-    );
-    mat.name = id;
-    this.materials.set(id, mat);
-    return mat;
-  }
-  private label(
-    parent: THREE.Object3D,
-    text: string,
-    x: number,
-    y: number,
-    z: number,
-    width = 1.3,
-  ): void {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 96;
-    const c = canvas.getContext('2d')!;
-    c.fillStyle = '#ede5ca';
-    c.font = '26px monospace';
-    c.textAlign = 'center';
-    c.fillText(text, 256, 58);
-    const texture = this.track(new THREE.CanvasTexture(canvas));
-    texture.colorSpace = THREE.SRGBColorSpace;
-    const material = this.track(
-      new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        depthWrite: false,
-        side: THREE.FrontSide,
-        polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1,
-      }),
-    );
-    const label = new THREE.Mesh(
-      this.track(new THREE.PlaneGeometry(width, width * 0.1875)),
-      material,
-    );
-    label.userData['labelCanvas'] = canvas;
-    label.userData['labelText'] = text;
-    label.rotation.x = -Math.PI / 2;
-    label.position.set(x, y, z);
-    parent.add(label);
-  }
   private clearSubject(): void {
     this.cameraMotion?.kill();
     this.explodedMotion?.kill();
     this.pulseMotion?.kill();
     this.physics?.clearMechanisms();
     releaseInstanceBuffers(this.root);
-    // Dynamic geometry is disposed here; pooled materials/textures remain owned by the renderer.
+    this.labels.release(this.root);
+    // Dynamic geometry is disposed here; pooled materials/textures remain owned by the surface library.
     this.root.traverse((o) => {
       gsap.killTweensOf(o.position);
       gsap.killTweensOf(o.scale);
@@ -318,10 +300,7 @@ export class WorldEngine implements SceneInputs {
         this.resources.delete(o.geometry);
         o.geometry.dispose();
         const material = o.material;
-        if (
-          !Array.isArray(material) &&
-          ![...this.materials.values()].includes(material as THREE.MeshStandardMaterial)
-        ) {
+        if (!Array.isArray(material) && !this.surfaces.owns(material)) {
           if ('map' in material && material.map instanceof THREE.Texture) {
             this.resources.delete(material.map);
             material.map.dispose();
@@ -336,6 +315,7 @@ export class WorldEngine implements SceneInputs {
     this.gpuProfiler?.reset();
     this.contactBatches = [];
     this.root.clear();
+    this.animators = this.animators.filter((a) => a.scope !== 'subject');
     this.historySlots = [];
     this.parts.clear();
     this.packet = undefined;
@@ -347,16 +327,18 @@ export class WorldEngine implements SceneInputs {
     this.canvas.dataset['station'] = this.section;
     this.root.userData['section'] = this.section;
     if (this.controls) this.controls.enabled = true;
-    const subject = new StationBuilder({
-      track: (r) => this.track(r),
-      material: (id, c, r, m) => this.material(id, c, r, m),
-      label: (p, t, x, y, z, w) => this.label(p, t, x, y, z, w),
-    }).build(this.section, this.memoryModel, this.root, this.parts);
+    const subject = new StationBuilder(this.tools).build(
+      this.section,
+      this.memoryModel,
+      this.root,
+      this.parts,
+    );
     this.packet = subject.packet;
     this.historySlots = subject.historySlots;
     this.scene.traverse((o) => {
       if (o.userData['detail']) o.visible = this.quality === 'high';
     });
+    this.ground(this.root, subject.datum);
     classifySubject(this.root, this.parts);
     this.registerParts();
     this.bindMechanisms();
@@ -371,6 +353,15 @@ export class WorldEngine implements SceneInputs {
     this.canvas.dataset['classifiedPieces'] = String(coverage.classified);
     this.callbacks.pieces(this.registry.listSelectable());
     if (changed) this.resetView();
+  }
+  /**
+   * Each station is authored around its own origin. Its bearing surface (the underside of its board)
+   * is lowered onto the anti-static mat, so boards and frames rest on the bench instead of hovering.
+   * Pins that protrude below the board sink into the mat, as they would on a soft mat.
+   */
+  private ground(root: THREE.Group, datum: number): void {
+    root.position.y = BENCH.matTop - datum;
+    root.updateMatrixWorld(true);
   }
   private updateParts(): void {
     this.explodedMotion?.kill();
@@ -438,14 +429,19 @@ export class WorldEngine implements SceneInputs {
         ease: 'power1.inOut',
       });
   }
+  /** Area of the viewport that the overlays leave free: below the title, above the toolbar. */
   private freeRegion(): ViewportRegion {
     const canvas = this.canvas,
       r = canvas.getBoundingClientRect(),
       host = canvas.closest('.stage');
-    const title = host?.querySelector('.title-block')?.getBoundingClientRect(),
-      tools = host?.querySelector('.camera-tools')?.getBoundingClientRect();
+    const title = host?.querySelector('.title-block')?.getBoundingClientRect();
+    // The toolbar is either the wide bar or the compact dock; whichever is displayed limits the frame.
+    const toolbar = ['.bar', '.dock']
+      .map((selector) => host?.querySelector<HTMLElement>(selector))
+      .find((element) => element && element.offsetParent !== null)
+      ?.getBoundingClientRect();
     const top = Math.min(r.height * 0.32, Math.max(12, (title?.bottom ?? r.top) - r.top + 12)),
-      bottom = Math.max(top + 64, (tools?.top ?? r.bottom) - r.top - 14);
+      bottom = Math.max(top + 64, (toolbar?.top ?? r.bottom) - r.top - 14);
     return { x: 16, y: top, width: Math.max(64, r.width - 32), height: Math.max(64, bottom - top) };
   }
   private fitObject(o: THREE.Object3D): void {
@@ -470,8 +466,39 @@ export class WorldEngine implements SceneInputs {
     this.focusedObject = o;
     this.fitObject(o);
   }
+  /**
+   * Aims the lamp at the centre of a bench piece, keeping the head height. `limit` means the arm
+   * cannot reach that point, so the light stops at the edge of its reach.
+   */
+  aimLampAt(id: string): 'aimed' | 'limit' | 'missing' {
+    const object = this.parts.get(id) || this.environmentParts.get(id);
+    if (!object) return 'missing';
+    const box = new THREE.Box3().setFromObject(object);
+    if (box.isEmpty()) return 'missing';
+    const center = box.getCenter(new THREE.Vector3());
+    const reachable = lampDistance(center.x, center.z) <= LAMP_REACH;
+    // The stored target must change too: emitting a stale copy would send the lamp back on the next input.
+    this.lamp = clampLampTarget({ ...this.lamp, x: center.x, z: center.z });
+    this.lampController?.setTarget(this.lamp);
+    this.emitLamp(true);
+    return reachable ? 'aimed' : 'limit';
+  }
+  /** Puts every tool back in its tray place and empties the hand. */
   resetTools(): void {
     this.physics?.reset();
+    this.reportHolding();
+  }
+  /** Lets go of the tool in hand; with an empty hand nothing moves. */
+  releaseTool(): void {
+    this.physics?.release();
+    this.reportHolding();
+  }
+  /** Tells the page which tool is in hand, once per change. */
+  private reportHolding(): void {
+    const id = this.physics?.heldId ?? null;
+    if (id === this.reportedHolding) return;
+    this.reportedHolding = id;
+    this.callbacks.holding(id);
   }
   private async ensurePhysics(): Promise<void> {
     if (!this.physics) {
@@ -521,9 +548,11 @@ export class WorldEngine implements SceneInputs {
     });
     void this.ensurePhysics();
   }
-  async dropTool(): Promise<void> {
-    await this.ensurePhysics();
-    if (!this.disposed) this.physics?.drop();
+  /** Safe framing: a canvas that is still hidden reports zero size, which must not yield NaN. */
+  private viewAspect(): number {
+    const w = this.canvas.clientWidth,
+      h = this.canvas.clientHeight;
+    return w > 0 && h > 0 ? w / h : this.camera?.aspect || 1;
   }
   resetView(): void {
     if (!this.camera || !this.controls) return;
@@ -533,8 +562,7 @@ export class WorldEngine implements SceneInputs {
     this.controls.minDistance = 1.6;
     this.controls.enabled = false;
     const mobile = matchMedia('(max-width:899px)').matches;
-    const aspect = this.canvas.clientWidth / Math.max(1, this.canvas.clientHeight);
-    const framing = Math.max(1, 0.95 / aspect);
+    const framing = Math.min(4, Math.max(1, 0.95 / this.viewAspect()));
     this.cameraMotion = gsap.timeline({
       defaults: { duration: this.reduced ? 0 : 1.25, ease: 'power3.inOut', overwrite: 'auto' },
       onComplete: () => {
@@ -562,6 +590,7 @@ export class WorldEngine implements SceneInputs {
     this.cameraMotion?.kill();
     this.controls.enabled = true;
     const relative = this.camera.position.clone().sub(this.controls.target);
+    if (relative.lengthSq() === 0) return;
     relative.setLength(THREE.MathUtils.clamp(relative.length() * direction, 5, 32));
     this.camera.position.copy(relative.add(this.controls.target));
   }
@@ -575,6 +604,7 @@ export class WorldEngine implements SceneInputs {
     if (this.dragPointer !== undefined && this.canvas.hasPointerCapture(this.dragPointer))
       this.canvas.releasePointerCapture(this.dragPointer);
     this.dragPointer = undefined;
+    this.lampDragging = false;
     this.physics?.suspend();
   };
   private updateSelection(): void {
@@ -585,19 +615,7 @@ export class WorldEngine implements SceneInputs {
     }
   }
   private rewriteLabel(object: THREE.Object3D, text: string): void {
-    object.traverse((o) => {
-      const canvas = o.userData['labelCanvas'] as HTMLCanvasElement | undefined;
-      if (!canvas || o.userData['labelText'] === text) return;
-      o.userData['labelText'] = text;
-      const c = canvas.getContext('2d')!;
-      c.clearRect(0, 0, 512, 96);
-      c.fillStyle = '#ede5ca';
-      c.font = '26px monospace';
-      c.textAlign = 'center';
-      c.fillText(text, 256, 58);
-      const m = (o as THREE.Mesh).material as THREE.MeshBasicMaterial;
-      if (m.map) m.map.needsUpdate = true;
-    });
+    this.labels.rewrite(object, text);
   }
   private registerParts(): void {
     this.registry.clear();
@@ -646,24 +664,15 @@ export class WorldEngine implements SceneInputs {
       this.registerParts();
     }
   }
+  /** The bus strobe is painted by the scope's own animator; the engine only states the active channel. */
   private updateScope(): void {
     const scope = this.environmentParts.get('scope');
-    const line = scope?.getObjectByName('scope-signal') as THREE.Line | undefined;
-    if (!line) return;
-    const attr = line.geometry.getAttribute('position');
-    for (let n = 0; n < attr.count; n++) {
-      const active =
-        this.signalChannel === 'ALE'
-          ? n > 10 && n < 35
-          : this.signalChannel === 'RD'
-            ? this.readAccess && n > 45 && n < 80
-            : this.writeAccess && n > 45 && n < 80;
-      attr.setY(n, this.signalChannel === 'ALE' ? (active ? 1.45 : 0.77) : active ? 0.77 : 1.45);
-    }
-    attr.needsUpdate = true;
-    line.geometry.computeBoundingSphere();
+    if (!scope) return;
+    const active =
+      this.signalChannel === 'RD' ? this.readAccess : this.signalChannel === 'WR' ? this.writeAccess : true;
+    scope.userData['strobe'] = { channel: this.signalChannel, active };
   }
-  /** Merge only siblings with the same material and semantic owner; moving assemblies remain separate. */
+  /** Merge only static siblings with the same material and semantic owner; moving parts stay separate. */
   private batchStatic(parent: THREE.Object3D): void {
     const walk = (group: THREE.Object3D) => {
       for (const child of [...group.children]) if (!(child instanceof THREE.Mesh)) walk(child);
@@ -675,6 +684,7 @@ export class WorldEngine implements SceneInputs {
           Array.isArray(o.material) ||
           !(o.material instanceof THREE.MeshStandardMaterial) ||
           o.userData['part'] ||
+          o.userData['dynamic'] ||
           !o.visible ||
           o.userData['instanceEligible'] ||
           o.userData['detail'] ||
@@ -724,33 +734,96 @@ export class WorldEngine implements SceneInputs {
   }
   private onDown = (event: PointerEvent) => {
     this.pointerStart.set(event.clientX, event.clientY);
+    const hit = this.rayAt(event).intersectObjects([...this.environmentParts.values()], true)[0];
+    if (hit?.object.userData['lampHandle']) {
+      // The grip moves in its own horizontal plane, so the head follows the pointer one-to-one.
+      this.gripPlane.constant = -(BENCH.top + this.lamp.height + LAMP_GRIP_OFFSET);
+      this.beginDrag(event);
+      this.lampDragging = true;
+      return;
+    }
     if (!this.manipulate) return;
-    const hit = this.rayAt(event).intersectObjects([...this.environmentParts.values()], true)[0],
-      id = hit && this.registry.resolveHit(hit);
+    const id = hit && this.registry.resolveHit(hit);
     if (!id?.startsWith('tool')) return;
+    this.beginDrag(event);
+    void this.ensurePhysics()
+      .then(() => {
+        if (this.disposed || this.dragPointer !== event.pointerId) return;
+        this.physics?.beginDrag(id);
+        this.reportHolding();
+        this.onMove(event);
+      })
+      .catch(() => this.onCancel());
+  };
+  private beginDrag(event: PointerEvent): void {
     event.stopImmediatePropagation();
     event.preventDefault();
     this.dragPointer = event.pointerId;
     this.canvas.setPointerCapture(event.pointerId);
     if (this.controls) this.controls.enabled = false;
-    void this.ensurePhysics()
-      .then(() => {
-        if (this.disposed || this.dragPointer !== event.pointerId) return;
-        this.physics?.beginDrag(id);
-        this.onMove(event);
-      })
-      .catch(() => this.onCancel());
-  };
+  }
   private onMove = (event: PointerEvent) => {
     if (this.dragPointer !== event.pointerId) return;
+    if (this.lampDragging) {
+      const target = new THREE.Vector3();
+      if (this.rayAt(event).ray.intersectPlane(this.gripPlane, target)) this.moveLamp(target);
+      return;
+    }
     const target = new THREE.Vector3();
     if (this.rayAt(event).ray.intersectPlane(this.dragPlane, target))
       this.physics?.moveDrag(target);
   };
+  private moveLamp(point: THREE.Vector3): void {
+    if (!this.lampController) return;
+    const next = clampLampTarget({ x: point.x, z: point.z, height: this.lamp.height });
+    this.lamp = { ...this.lamp, x: next.x, z: next.z };
+    this.lampController.setTarget(this.lamp);
+    this.emitLamp(false);
+  }
+  /** Lamp target goes back to Angular at a limited rate; the final value is always sent. */
+  private emitLamp(force: boolean): void {
+    const now = performance.now();
+    if (!force && now - this.lastLampEmit < LAMP_EMIT_INTERVAL_MS) return;
+    this.lastLampEmit = now;
+    this.callbacks.lampMoved({ ...this.lamp });
+  }
+  private onHover = (event: PointerEvent) => {
+    if (this.dragPointer !== undefined || event.pointerType === 'touch' || !this.camera) return;
+    const now = performance.now();
+    if (now - this.lastHover < HOVER_INTERVAL_MS) return;
+    this.lastHover = now;
+    const ray = this.rayAt(event);
+    const hit = firstInspectableHit(
+      ray,
+      [...this.parts.values(), ...this.environmentParts.values()],
+      this.contactBatches,
+      this.registry,
+    );
+    const id = hit?.id ?? null;
+    this.canvas.style.cursor = id ? (hit?.hit.object.userData['lampHandle'] ? 'grab' : 'pointer') : '';
+    if (id !== this.hoverId) {
+      this.hoverId = id;
+      this.callbacks.hovered(id);
+    }
+  };
+  private onLeave = () => {
+    this.canvas.style.cursor = '';
+    if (this.hoverId !== null) {
+      this.hoverId = null;
+      this.callbacks.hovered(null);
+    }
+  };
   private onPick = (event: PointerEvent) => {
     if (this.dragPointer === event.pointerId) {
+      const wasLamp = this.lampDragging;
       this.dragPointer = undefined;
-      this.physics?.endDrag();
+      this.lampDragging = false;
+      if (wasLamp) this.emitLamp(true);
+      else {
+        // The tool stays in hand until it is released; only the lamp drag ends with the pointer.
+        this.physics?.hold();
+        this.reportHolding();
+      }
       this.canvas.releasePointerCapture(event.pointerId);
       if (this.controls) this.controls.enabled = true;
       return;
@@ -760,20 +833,16 @@ export class WorldEngine implements SceneInputs {
       Math.hypot(event.clientX - this.pointerStart.x, event.clientY - this.pointerStart.y) > 6
     )
       return;
-    const rect = this.canvas.getBoundingClientRect();
-    const pointer = new THREE.Vector2(
-      ((event.clientX - rect.left) / rect.width) * 2 - 1,
-      (-(event.clientY - rect.top) / rect.height) * 2 + 1,
-    );
-    const ray = new THREE.Raycaster();
-    ray.setFromCamera(pointer, this.camera);
+    const ray = this.rayAt(event);
     const result = firstInspectableHit(
       ray,
       [...this.parts.values(), ...this.environmentParts.values()],
       this.contactBatches,
       this.registry,
     );
-    if (result) this.callbacks.picked(result.id);
+    if (!result) return;
+    if (!this.reduced) this.reactions.get(result.id)?.();
+    this.callbacks.picked(result.id);
   };
   private onContextLost = (e: Event) => {
     e.preventDefault();
@@ -786,7 +855,7 @@ export class WorldEngine implements SceneInputs {
       this.physics?.suspend();
       this.onCancel();
     } else {
-      this.clock.getDelta();
+      this.frameDelta();
       this.animate();
     }
   };
@@ -794,13 +863,10 @@ export class WorldEngine implements SceneInputs {
     if (!this.renderer || this.profileTier === this.quality) return;
     this.profileTier = this.quality;
     const p = qualitySettings(this.quality);
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, p.dpr));
-    this.renderer.shadowMap.enabled = p.shadowSize > 0;
-    if (this.keyLight) {
-      this.keyLight.shadow.mapSize.set(p.shadowSize || 512, p.shadowSize || 512);
-      this.keyLight.shadow.map?.dispose();
-      this.keyLight.shadow.map = null;
-    }
+    this.applyPixelRatio();
+    this.shadowsOn = p.shadowSize > 0;
+    this.renderer.shadowMap.enabled = this.shadowsOn;
+    this.lampController?.setShadowQuality(p.shadowSize || 512);
     this.effects?.dispose();
     this.effects = undefined;
     if (this.quality === 'high' && this.renderer.extensions.has('EXT_color_buffer_float')) {
@@ -822,12 +888,51 @@ export class WorldEngine implements SceneInputs {
     this.effects?.resize(w, h);
     if (this.focusedObject) this.fitObject(this.focusedObject);
   }
+  /** Seconds since the previous frame; a plain timer avoids the deprecated THREE.Clock. */
+  private frameDelta(): number {
+    const now = performance.now();
+    const seconds = (now - this.lastFrame) / 1000;
+    this.lastFrame = now;
+    return seconds;
+  }
+  /** The lens never leaves the room: zooming out stops under the ceiling and in front of the back wall. */
+  private keepCameraInRoom(): void {
+    if (this.camera && this.controls && keepInsideRoom(this.camera.position)) this.camera.lookAt(this.controls.target);
+  }
+  /** Pixel ratio of the quality tier, scaled by the adaptive resolution and never above the device’s own. */
+  private applyPixelRatio(): void {
+    if (!this.renderer) return;
+    const tier = qualitySettings(this.quality).dpr;
+    this.renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, tier) * this.resolutionScale));
+  }
+  /** Frame-time guard: when the median frame is over 18 ms the resolution steps down; with headroom it steps back up. */
+  private adaptResolution(): void {
+    const profile = this.profiler.result;
+    if (this.resolutionHold > 0) {
+      this.resolutionHold--;
+      return;
+    }
+    if (profile.samples < 60) return;
+    let next = this.resolutionScale;
+    if (profile.p50 > 18) next = Math.max(0.5, next - 0.1);
+    else if (profile.p50 < 13.5) next = Math.min(1, next + 0.05);
+    if (next === this.resolutionScale) return;
+    this.resolutionScale = next;
+    this.resolutionHold = 120;
+    this.profiler.reset();
+    this.applyPixelRatio();
+  }
   private animate = () => {
     if (this.disposed || !this.renderer || document.hidden) return;
-    const dt = this.clock.getDelta();
+    const dt = Math.min(this.frameDelta(), 0.1);
     this.profiler.sample(dt);
     this.physics?.step(dt);
     this.controls?.update(dt);
+    this.keepCameraInRoom();
+    this.lampController?.update(dt, this.reduced, this.shadowsOn);
+    this.clock += dt;
+    const seconds = this.reduced ? 0 : this.clock;
+    for (const a of this.animators) a.update(seconds);
     if (this.selectionBox?.visible) this.updateSelection();
     this.renderer.info.reset();
     if (this.statsFrame % 30 === 0) this.gpuProfiler?.begin();
@@ -835,6 +940,7 @@ export class WorldEngine implements SceneInputs {
     else this.renderer.render(this.scene, this.camera);
     this.gpuProfiler?.end();
     if (++this.statsFrame % 60 === 0) {
+      this.adaptResolution();
       this.gpuProfiler?.poll();
       const gpu = this.gpuProfiler?.profile.result,
         profile = this.profiler.result;
@@ -874,12 +980,15 @@ export class WorldEngine implements SceneInputs {
     const canvas = this.canvas;
     canvas.removeEventListener('pointerdown', this.onDown, true);
     canvas.removeEventListener('pointermove', this.onMove);
+    canvas.removeEventListener('pointermove', this.onHover);
+    canvas.removeEventListener('pointerleave', this.onLeave);
     canvas.removeEventListener('pointerup', this.onPick);
     canvas.removeEventListener('webglcontextlost', this.onContextLost);
     this.root.traverse((o) => {
       gsap.killTweensOf(o.position);
       gsap.killTweensOf(o.scale);
     });
+    this.labels.dispose();
     for (const r of this.resources) r.dispose();
     this.environment?.dispose();
     this.pmrem?.dispose();

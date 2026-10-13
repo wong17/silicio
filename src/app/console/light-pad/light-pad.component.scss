@@ -1,0 +1,145 @@
+@use '../../shared/console-kit' as kit;
+
+.light {
+  @include kit.module;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.kicker {
+  @include kit.kicker;
+  margin: 0;
+}
+
+.power {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+  font: 500 12px kit.$mono;
+  &[aria-pressed='true'] {
+    border-color: kit.$amber;
+    background: #3a3224;
+    color: kit.$amber-soft;
+  }
+  @include kit.tooltip;
+}
+
+.led {
+  @include kit.led(kit.$amber, 8px);
+}
+
+.pad {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #2d3533;
+  border-radius: 8px;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+  &:focus-visible {
+    outline: 2px solid #e8c184;
+    outline-offset: 3px;
+  }
+}
+
+.floor {
+  fill: #0f1415;
+}
+
+.bench {
+  fill: #131a19;
+  stroke: #33413d;
+  stroke-width: 1;
+}
+
+.reach {
+  fill: none;
+  stroke: rgba(215, 172, 111, 0.35);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.mat {
+  fill: #1f3b34;
+  stroke: #2e4a42;
+}
+
+.board {
+  fill: #244436;
+  stroke: #3d6b56;
+}
+
+.base {
+  fill: #2a3331;
+  stroke: #4a5552;
+}
+
+.pool {
+  fill: rgba(255, 214, 160, 0.14);
+  stroke: rgba(255, 214, 160, 0.55);
+  stroke-width: 1.2;
+  transition:
+    r 0.2s ease,
+    cx 0.1s linear,
+    cy 0.1s linear;
+}
+
+.target {
+  fill: kit.$amber;
+  stroke: #101314;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px rgba(215, 172, 111, 0.8));
+}
+
+.axis {
+  stroke: kit.$amber-soft;
+  stroke-width: 1;
+  opacity: 0.7;
+}
+
+.camera {
+  fill: kit.$dim;
+  font: 500 10px kit.$mono;
+  letter-spacing: 0.1em;
+  text-anchor: middle;
+}
+
+.height {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  align-items: center;
+  label {
+    grid-column: 1 / -1;
+  }
+  input {
+    width: 100%;
+    accent-color: kit.$amber;
+    min-height: 44px;
+  }
+  output {
+    @include kit.readout;
+    min-width: 40px;
+    text-align: right;
+  }
+}
+
+.actions button {
+  width: 100%;
+  min-height: 44px;
+}
+
+.coords {
+  margin: 0;
+  @include kit.readout;
+  font-size: 12px;
+  color: kit.$dim;
+}

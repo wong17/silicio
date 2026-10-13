@@ -1,0 +1,51 @@
+<section class="program" aria-label="Programa ensamblador">
+  <div class="field">
+    <label class="kicker" for="mission">Experimento</label>
+    <select
+      id="mission"
+      [ngModel]="session.missionIndex()"
+      (ngModelChange)="session.chooseMission(+$event)"
+    >
+      @for (m of session.missions; track m.title; let i = $index) {
+        <option [ngValue]="i">{{ m.title }}</option>
+      }
+    </select>
+    <p class="goal">{{ session.missions[session.missionIndex()].goal }}</p>
+  </div>
+
+  <div class="field">
+    <label class="kicker" for="program">Código fuente</label>
+    <textarea
+      id="program"
+      [(ngModel)]="session.source"
+      (focus)="editorFocus.emit()"
+      spellcheck="false"
+      rows="7"
+      data-lenis-prevent
+    ></textarea>
+    <button type="button" class="compile" (click)="session.intent('load')">
+      Compilar y reiniciar
+    </button>
+  </div>
+
+  <div class="field">
+    <p class="kicker">Desensamblado</p>
+    <ol class="listing">
+      @for (i of session.cpu.instructions; track i.address) {
+        <li [class.current]="i.address === session.state().registers.IP">
+          <code>{{ h(i.address) }}</code>
+          <span>{{ i.text }}</span>
+          <small>
+            @for (b of i.bytes; track $index) {
+              {{ h(b, 2) }}
+            }
+          </small>
+        </li>
+      }
+    </ol>
+  </div>
+
+  @if (session.missionComplete()) {
+    <p class="success" role="status">Resultado alcanzado. Observa los flags y la traza.</p>
+  }
+</section>

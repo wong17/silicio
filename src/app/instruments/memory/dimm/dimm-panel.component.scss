@@ -1,0 +1,87 @@
+@use '../../../shared/console-kit' as kit;
+
+.dimm {
+  @include kit.module;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.kicker {
+  @include kit.kicker;
+}
+
+.model {
+  @include kit.readout;
+  color: kit.$dim;
+  font-size: 12px;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.board {
+  fill: #13261d;
+  stroke: #2c4a39;
+}
+
+.chip rect {
+  fill: #1d2223;
+  stroke: #4a5552;
+}
+
+.chip text,
+.caption {
+  fill: kit.$dim;
+  font: 500 10px kit.$mono;
+  text-anchor: middle;
+}
+
+.bus {
+  stroke: kit.$copper;
+  stroke-width: 3;
+  stroke-dasharray: 8 4;
+  animation: kit-flow 1.4s linear infinite;
+}
+
+.chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  button {
+    @include kit.tooltip;
+    display: grid;
+    gap: 2px;
+    min-height: 44px;
+    font: 500 11px kit.$mono;
+    small {
+      font-size: 13px;
+      color: kit.$amber-soft;
+    }
+  }
+}
+
+.note {
+  margin: 0;
+  color: kit.$dim;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.source {
+  color: kit.$amber-soft;
+  font-size: 13px;
+}
+
+@keyframes kit-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}

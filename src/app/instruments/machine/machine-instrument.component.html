@@ -1,0 +1,72 @@
+<section class="machine" aria-label="Transferencia en una máquina conceptual de dieciséis bits">
+  <header class="head">
+    <p class="kicker">Del dato a la salida</p>
+    <span class="stage-count">{{ stage() }} / 8</span>
+  </header>
+
+  <svg viewBox="0 0 340 196" role="img" [attr.aria-label]="steps[stage()]">
+    <rect class="unit" x="14" y="16" width="118" height="86" rx="8" />
+    <rect class="unit" x="208" y="16" width="118" height="86" rx="8" />
+    <rect class="unit" x="208" y="132" width="118" height="48" rx="8" />
+    <text class="unit-title" x="73" y="36">CPU · ALU</text>
+    <text class="value" x="73" y="70">{{ h(experiment.accumulator) }}h</text>
+    <text class="unit-title" x="267" y="36">RAM</text>
+    <text class="small" x="267" y="60">0000 · {{ h(experiment.memory[0]) }}</text>
+    <text class="small" x="267" y="82">0001 · {{ h(experiment.memory[1]) }}</text>
+    <text class="unit-title" x="267" y="150">SALIDA</text>
+    <text class="value" x="267" y="170">{{ h(experiment.output) }}h</text>
+
+    <g class="lane" [class.active]="activeChannel() === 'address'">
+      <path d="M132 40h76" />
+      <path class="arrow" d="M202 40l-6-4m6 4l-6 4" />
+      <text x="170" y="32">DIR</text>
+    </g>
+    <g class="lane" [class.active]="activeChannel() === 'data'">
+      <path d="M132 66h76" />
+      <path class="arrow" d="M202 66l-6-4m6 4l-6 4" />
+      <path d="M202 66h-76" class="back" />
+      <text x="170" y="58">DATO</text>
+    </g>
+    <g class="lane" [class.active]="activeChannel() === 'control'">
+      <path d="M132 118h76" />
+      <path d="M266 102v30" />
+      <text x="170" y="110">CTRL</text>
+    </g>
+  </svg>
+
+  <div class="registers">
+    <span>Dirección<code>{{ h(experiment.address) }}h</code></span>
+    <span>Dato<code>{{ h(experiment.data) }}h</code></span>
+  </div>
+
+  <ol class="stepper" aria-label="Etapas de la transferencia">
+    @for (step of steps; track step; let i = $index) {
+      <li
+        [class.current]="stage() === i"
+        [class.done]="stage() > i"
+        [attr.data-tip]="step"
+      >
+        <span>{{ i }}</span>
+      </li>
+    }
+  </ol>
+  <p class="result" aria-live="polite">{{ steps[stage()] }}</p>
+
+  <div class="actions">
+    <button type="button" class="primary" (click)="advance()">
+      {{ stage() === 8 ? 'Repetir recorrido' : 'Avanzar transferencia' }}
+    </button>
+    <button type="button" (click)="reset()">Reiniciar</button>
+  </div>
+
+  <div class="parts" role="group" aria-label="Ver en el banco">
+    <button type="button" (click)="session.part('cpu')">CPU</button>
+    <button type="button" (click)="session.part('ram')">RAM</button>
+    <button type="button" (click)="session.part('io')">E/S</button>
+  </div>
+
+  <p class="note">
+    La dirección elige una posición. Control indica lectura o escritura. El bus de datos transporta
+    el valor. Esta máquina conceptual no modifica la sesión del 8086 ni reproduce tiempos eléctricos.
+  </p>
+</section>

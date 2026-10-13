@@ -1,0 +1,51 @@
+<section class="register" aria-label="Registro de dieciséis bits">
+  <header class="head">
+    <label class="kicker" for="register">Registro</label>
+    <select id="register" [ngModel]="selected()" (ngModelChange)="selected.set($event)">
+      @for (r of names; track r) {
+        <option [value]="r">{{ r }}</option>
+      }
+    </select>
+  </header>
+
+  <div class="readout">
+    <strong>{{ view().hex }}<small>h</small></strong>
+    <div class="side">
+      <span>{{ view().decimal }} dec</span>
+      @if (delta() !== undefined) {
+        <span class="delta" [class.up]="delta()! > 0" [class.down]="delta()! < 0">
+          Δ {{ signed(delta()!) }}
+        </span>
+      }
+    </div>
+  </div>
+
+  <div class="bits" role="group" aria-label="Bits del registro">
+    @for (p of positions; track p) {
+      <button
+        type="button"
+        class="bit"
+        [class.on]="bitOn(p)"
+        [class.changed]="changed(p)"
+        [attr.aria-pressed]="bitOn(p)"
+        [attr.aria-label]="'Bit ' + p + ', peso ' + 2 ** p + ', valor ' + (bitOn(p) ? 1 : 0)"
+        [attr.data-tip]="'Bit ' + p + ' · peso ' + 2 ** p"
+        (click)="toggleBit(p)"
+        (focus)="selectBit(p)"
+      >
+        <span class="weight">{{ p }}</span>
+        <span class="value">{{ bitOn(p) ? 1 : 0 }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="detail" aria-live="polite">
+    <span class="kicker">Bit {{ selectedBit() }}</span>
+    <div class="meter" aria-hidden="true">
+      <span [style.width.%]="bitOn(selectedBit()) ? 100 : 0"></span>
+    </div>
+    <span class="readout-small">
+      peso {{ 2 ** selectedBit() }} · {{ bitOn(selectedBit()) ? 'suma ' + 2 ** selectedBit() : 'sin aportación' }}
+    </span>
+  </div>
+</section>

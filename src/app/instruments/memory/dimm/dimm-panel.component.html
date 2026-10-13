@@ -1,0 +1,43 @@
+<section class="dimm" aria-label="Organización del módulo DDR4">
+  <header class="head">
+    <p class="kicker">Galería DDR4</p>
+    <span class="model">KVR26N19S8/8 · 8 GB</span>
+  </header>
+
+  <svg viewBox="0 0 340 118" role="img" aria-label="Ocho componentes de ocho bits forman un bus de 64 bits">
+    <rect class="board" x="4" y="6" width="332" height="108" rx="6" />
+    @for (n of chips; track n) {
+      <g class="chip">
+        <rect [attr.x]="16 + n * 40" y="18" width="32" height="34" rx="3" />
+        <text [attr.x]="32 + n * 40" y="39">{{ n }}</text>
+      </g>
+    }
+    <path class="bus" d="M32 62h272" />
+    <text class="caption" x="170" y="92">8 × 8 bits = 64 bits · sin conexión con el 8086</text>
+  </svg>
+
+  <div class="chips" role="group" aria-label="Componentes FBGA">
+    @for (n of chips; track n) {
+      <button type="button" [attr.data-tip]="'Componente ' + n" (click)="session.part('dimm-chip-' + n)">
+        <small>{{ n }}</small>
+        1G×8
+      </button>
+    }
+  </div>
+
+  <p class="note">
+    Ocho componentes de 1G×8 bits suman 64 Gbits: 8 GB. SPD describe las características del
+    módulo; la llave y las pestañas controlan su montaje.
+  </p>
+  <p class="note">
+    Galería física independiente: este DDR4 no se conecta al 8086. Sus bancos y direcciones se
+    estudian en la placa 2164A.
+  </p>
+  <a
+    class="source"
+    href="https://www.kingston.com/dataSheets/KVR26N19S8_8.pdf"
+    target="_blank"
+    rel="noopener"
+    >Ficha Kingston KVR26N19S8/8</a
+  >
+</section>

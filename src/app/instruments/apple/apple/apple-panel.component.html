@@ -1,0 +1,63 @@
+<section class="apple" aria-label="Apple M5 base y dependencia de buffer">
+  <header class="head">
+    <p class="kicker">Apple M5 · variante base</p>
+    <a
+      class="source"
+      href="https://www.apple.com/newsroom/2025/10/apple-unleashes-m5-the-next-big-leap-in-ai-performance-for-apple-silicon/"
+      target="_blank"
+      rel="noopener"
+      >Ficha de Apple</a
+    >
+  </header>
+
+  <div class="floor" role="group" aria-label="Unidades publicadas del M5">
+    @for (u of units; track u.id) {
+      <button
+        type="button"
+        class="unit"
+        [style.grid-area]="u.area"
+        [style.--unit]="u.color"
+        [class.selected]="session.activePart() === u.id"
+        [attr.aria-pressed]="session.activePart() === u.id"
+        [attr.data-tip]="u.label"
+        (click)="session.part(u.id)"
+      >
+        <small>{{ u.label }}</small>
+        <b>{{ u.count }}</b>
+      </button>
+    }
+  </div>
+
+  <div class="dependency">
+    <p class="kicker">Una dependencia real</p>
+    <ol class="stages" aria-label="Etapas del buffer">
+      @for (s of session.bufferStages; track s; let i = $index) {
+        <li [class.current]="session.bufferStage() === i" [class.done]="session.bufferStage() > i">
+          {{ s }}
+        </li>
+      }
+    </ol>
+    <div class="buffers">
+      <div>
+        <span>B0 · entrada</span>
+        <code>{{ session.bufferView().input.values.join(' · ') }}</code>
+      </div>
+      <div [class.ready]="session.bufferView().completed">
+        <span>B1 · versión {{ session.bufferView().version }}</span>
+        <code>
+          {{
+            session.bufferView().completed
+              ? session.bufferView().output.values.join(' · ')
+              : 'esperando finalización'
+          }}
+        </code>
+      </div>
+    </div>
+    <button type="button" class="advance" (click)="session.nextBuffer()">
+      {{ session.bufferStage() === 2 ? 'Reiniciar recorrido' : 'Avanzar dependencia' }}
+    </button>
+    <p class="note">
+      La GPU duplica cada elemento. B0 y B1 conservan identidad; la CPU recibe B1 solo al terminar.
+    </p>
+  </div>
+</section>

@@ -5,6 +5,7 @@ const tools = {
   track: <G extends T.Material | T.BufferGeometry | T.Texture>(g: G) => g,
   material: () => new T.MeshStandardMaterial(),
   label: () => {},
+  animate: () => {},
 };
 it('all_40_lead_feet_are_centered_in_their_plated_contacts', () => {
   const root = new T.Group(),

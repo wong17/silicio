@@ -1,0 +1,19 @@
+<a class="brand" routerLink="/" aria-label="SILICIO · Atrio">
+  <svg viewBox="0 0 32 32" aria-hidden="true">
+    <path d="M8 8h16v16H8zM12 12h8v8h-8zM12 3v5m8-5v5M12 24v5m8-5v5M3 12h5m-5 8h5m16-8h5m-5 8h5" />
+  </svg>
+  <span class="name">SILICIO</span>
+  <small>ARCHIVO DE MÁQUINAS</small>
+</a>
+<nav class="links" aria-label="Experiencias">
+  @for (e of experiences; track e.id) {
+    <a
+      [routerLink]="'/' + e.id"
+      [class.active]="active() === e.id"
+      [attr.aria-current]="active() === e.id ? 'page' : null"
+      [style.--accent]="e.accent"
+      >{{ e.title }}</a
+    >
+  }
+</nav>
+<span class="version">ARQUITECTURA I / II</span>

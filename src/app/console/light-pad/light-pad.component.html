@@ -1,0 +1,65 @@
+<section class="light" aria-label="Panel de luz del banco">
+  <header class="head">
+    <p class="kicker">Iluminación del banco</p>
+    <button
+      type="button"
+      class="power"
+      [attr.aria-pressed]="session.lampOn()"
+      [attr.data-tip]="session.lampOn() ? 'Apagar la lámpara' : 'Encender la lámpara'"
+      (click)="togglePower()"
+    >
+      <span class="led" [class.on]="session.lampOn()" aria-hidden="true"></span>
+      {{ session.lampOn() ? 'Encendida' : 'Apagada' }}
+    </button>
+  </header>
+
+  <svg
+    #pad
+    class="pad"
+    [attr.viewBox]="'0 0 ' + width + ' ' + height"
+    role="application"
+    tabindex="0"
+    aria-label="Mueve el punto de luz sobre el banco. Usa las flechas para ajustar."
+    (pointerdown)="pointerDown($event)"
+    (pointermove)="pointerMove($event)"
+    (pointerup)="pointerUp($event)"
+    (pointercancel)="pointerUp($event)"
+    (keydown)="keyNudge($event)"
+  >
+    <rect class="floor" x="0" y="0" [attr.width]="width" [attr.height]="height" rx="8" />
+    <rect class="bench" [attr.x]="toPx(-15)" [attr.y]="toPy(-11)" [attr.width]="30 * scale" [attr.height]="22 * scale" />
+    <rect
+      class="mat"
+      [attr.x]="toPx(-7.75)"
+      [attr.y]="toPy(-4.6)"
+      [attr.width]="15.5 * scale"
+      [attr.height]="9.6 * scale"
+    />
+    <rect class="board" [attr.x]="toPx(-4.05)" [attr.y]="toPy(-2.675)" [attr.width]="8.1 * scale" [attr.height]="5.35 * scale" />
+    <circle class="reach" [attr.cx]="toPx(lamp.x)" [attr.cy]="toPy(lamp.z)" [attr.r]="reachRadius" />
+    <circle class="base" [attr.cx]="toPx(lamp.x)" [attr.cy]="toPy(lamp.z)" r="7" />
+    <circle class="pool" [attr.cx]="spot().cx" [attr.cy]="spot().cy" [attr.r]="spot().radius" />
+    <circle class="target" [attr.cx]="spot().cx" [attr.cy]="spot().cy" r="5" />
+    <path class="axis" [attr.d]="'M' + spot().cx + ' ' + (spot().cy - 9) + 'v18M' + (spot().cx - 9) + ' ' + spot().cy + 'h18'" />
+    <text class="camera" [attr.x]="width / 2" [attr.y]="height - 8">cámara</text>
+  </svg>
+
+  <div class="height">
+    <label class="kicker" for="lamp-height">Altura de la cabeza</label>
+    <input
+      id="lamp-height"
+      type="range"
+      min="1.6"
+      max="4.4"
+      step="0.1"
+      [value]="target().height"
+      (input)="setHeight($any($event.target).value)"
+    />
+    <output for="lamp-height">{{ target().height | number: '1.1-1' }}</output>
+  </div>
+
+  <div class="actions">
+    <button type="button" (click)="aimSelected.emit()">Iluminar pieza seleccionada</button>
+  </div>
+  <p class="coords">x {{ target().x | number: '1.1-1' }} · z {{ target().z | number: '1.1-1' }}</p>
+</section>

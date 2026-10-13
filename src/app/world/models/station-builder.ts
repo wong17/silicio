@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { WorkshopGeometry } from './workshop-geometry';
+import { BENCH } from './bench-layout';
+import { CLASSIC_BOARD_BASE } from './intel-2164a-memory.model';
+import { KINGSTON_BOARD_BASE } from './kingston-dimm.model';
+import { MachineBoardModel, MACHINE_BOARD_BASE } from './machine-board.model';
+import { ChronoscopeModel, CHRONOSCOPE_BASE } from './chronoscope.model';
 import { ElectronicsWorkshop } from '../electronics-workshop';
 import { MemoryModels } from './memory-models';
 import { APPLE_PARTS, type Part } from './station-layouts';
@@ -17,7 +22,7 @@ export class StationBuilder extends WorkshopGeometry {
     material: THREE.Material,
   ): THREE.Mesh {
     const mesh = new THREE.Mesh(
-      this.tools.track(new RoundedBoxGeometry(w, h, d, 2, Math.min(w, h, d) * 0.16)),
+      this.tools.track(new RoundedBoxGeometry(w, h, d, 1, Math.min(w, h, d) * 0.16)),
       material,
     );
     mesh.position.set(x, y, z);
@@ -73,17 +78,15 @@ export class StationBuilder extends WorkshopGeometry {
     variant: 'classic' | 'dimm',
     root: THREE.Group,
     parts: Map<string, THREE.Object3D>,
-  ): { historySlots: THREE.Mesh[]; packet: THREE.Mesh } {
+  ): { historySlots: THREE.Mesh[]; packet: THREE.Mesh; datum: number } {
+    // Height of the station's bearing surface, the underside of its board: the engine lowers it onto the mat.
+    let datum: number = BENCH.boardBase;
     const historySlots: THREE.Mesh[] = [];
     const green = this.tools.material('pcb', '#314d40', 0.7, 0.19);
     const ceramic = this.tools.material('ceramic', '#b9ad83', 0.58, 0.03);
     const dark = this.tools.material('package', '#202426', 0.6, 0.25);
     if (section === '8086' || section === 'atrium') {
-      new ElectronicsWorkshop({
-        track: (r) => this.tools.track(r),
-        material: (id, c, r, m) => this.tools.material(id, c, r, m),
-        label: (p, t, x, y, z, w) => this.tools.label(p, t, x, y, z, w),
-      }).cpu(root, parts);
+      new ElectronicsWorkshop(this.tools).cpu(root, parts);
       if (section === '8086')
         this.tiles(root, parts, [
           { id: 'alu', label: 'ALU / 16 BIT', color: '#a97d45', x: -1.95, z: 0.1, w: 1.15, d: 0.8 },
@@ -109,11 +112,7 @@ export class StationBuilder extends WorkshopGeometry {
           },
         ]);
     } else if (section === 'apple') {
-      new ElectronicsWorkshop({
-        track: (r) => this.tools.track(r),
-        material: (id, c, r, m) => this.tools.material(id, c, r, m),
-        label: (p, t, x, y, z, w) => this.tools.label(p, t, x, y, z, w),
-      }).soc(root);
+      new ElectronicsWorkshop(this.tools).soc(root);
       this.tiles(root, parts, APPLE_PARTS);
       const lid = this.box(root, 4.65, 0.15, 4.9, 0, 1.23, 0.2, dark);
       lid.userData['part'] = 'lid';
@@ -121,13 +120,10 @@ export class StationBuilder extends WorkshopGeometry {
       parts.set('lid', lid);
       this.tools.label(lid, 'APPLE SILICON / SoC', 0, 0.08, 0, 3.5);
     } else if (section === 'memory') {
-      const models = new MemoryModels({
-        track: (r) => this.tools.track(r),
-        material: (id, c, r, m) => this.tools.material(id, c, r, m),
-        label: (p, t, x, y, z, w) => this.tools.label(p, t, x, y, z, w),
-      });
+      const models = new MemoryModels(this.tools);
       if (variant === 'classic') models.classic(root, parts);
       else models.dimm(root, parts);
+      datum = variant === 'classic' ? CLASSIC_BOARD_BASE : KINGSTON_BOARD_BASE;
       if (variant === 'classic') {
         const logical = new THREE.Group();
         logical.userData['part'] = 'memory-board';
@@ -150,40 +146,14 @@ export class StationBuilder extends WorkshopGeometry {
         }
       }
     } else if (section === 'time') {
-      for (let i = 0; i < 16; i++) {
-        const angle = i * 0.48;
-        const tile = this.box(
-          root,
-          0.7,
-          0.18,
-          0.85,
-          Math.cos(angle) * 2.35,
-          0.4 + i * 0.15,
-          Math.sin(angle) * 1.65,
-          this.tools.material('time', '#6a6885', 0.43, 0.5),
-        );
-        tile.userData['part'] = 'frame-' + i;
-        historySlots.push(tile);
-        this.tools.label(tile, 'INICIO', 0, 0.1, 0, 0.65);
-      }
+      // Chronoscope: a rig of its own. Its frames are the history slots the page writes into.
+      const rig = new ChronoscopeModel(this.tools).build(root, (fn) => this.tools.animate(fn, 'subject'));
+      historySlots.push(...rig.historySlots);
+      datum = CHRONOSCOPE_BASE;
     } else {
-      this.tiles(root, parts, [
-        { id: 'cpu', label: 'PROCESADOR', color: '#b27e47', x: -1.7, z: 0, w: 1.8, d: 1.5 },
-        { id: 'ram', label: 'MEMORIA RAM', color: '#477c70', x: 1.3, z: -1.1, w: 2, d: 1 },
-        { id: 'io', label: 'ENTRADA / SALIDA', color: '#68869d', x: 1.3, z: 1.25, w: 2, d: 1 },
-      ]);
-      for (const z of [-0.35, 0, 0.35])
-        this.box(
-          root,
-          3,
-          0.06,
-          0.08,
-          0,
-          0.35,
-          z,
-          this.tools.material('copper', '#9d764d', 0.35, 0.83),
-        );
-      this.tools.label(root, 'DIRECCIONES   /   DATOS   /   CONTROL', 0, 0.22, 2.5, 4.5);
+      // La máquina: a board with three chips, copper buses, and the status lamps that run with the bus.
+      new MachineBoardModel(this.tools).build(root, parts, (fn) => this.tools.animate(fn, 'subject'));
+      datum = MACHINE_BOARD_BASE;
     }
     const packet = new THREE.Mesh(
       this.tools.track(new THREE.SphereGeometry(0.095, 16, 8)),
@@ -191,6 +161,6 @@ export class StationBuilder extends WorkshopGeometry {
     );
     packet.visible = false;
     root.add(packet);
-    return { historySlots, packet };
+    return { historySlots, packet, datum };
   }
 }
