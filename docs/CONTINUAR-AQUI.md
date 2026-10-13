@@ -1,52 +1,25 @@
-# SILICIO — punto de reanudación
+# SILICIO — estado para continuar
 
-**Pausa solicitada por el usuario:** 13 de octubre de2026, zona America/Guatemala. No continuar implementación ni tareas de fondo hasta que el usuario retome.
+Actualizado 13 de octubre de 2026. El usuario reanudó el trabajo; la pausa anterior queda revocada. Proyecto E:/Repositories/silicio, rama codex/scene-instruments-mobile. Fuente autoritativa: src/ en ese repositorio; nunca restaurar una carpeta stage completa.
 
-## Proyecto y estado guardado
-- Repositorio: E:/Repositories/silicio. Rama codex/scene-instruments-mobile.
-- Plan autorizado: docs/plan/SILICIO-IMPLEMENTACION-ESCENA-INSTRUMENTOS-MOVIL.md; especificación SILICIO-AMPLIACION-ESCENA-PANEL-Y-MOVIL.md. **La revisión3 NO está completa.**
-- Última petición visual: controles personalizados tipo Blender, iconos y tooltips, todos del mismo tamaño. Implementados en scene-controls.component con44×44px, menú móvil3columnas y tooltip también al enfocar con teclado.
-- Angular, Three.js r186, GSAP, Lenis solo en consola escritorio, Rapier compat diferido. Oscuro, Barlow/BarlowCondensed/IBMPlexMono locales; Arduino excluido.
+## Incremento guardado
 
-## Avance real
-- Eventos del motor incorporan operandos/resultados/accesos reales; proyección laboratory.facade sin duplicar aritmética.
-- Consola gráfica Estado/Programa/Traza, bits por nibbles, ALU/flags; memoria segmentada y bytes little endian.
-- Modos móviles Escena/Compartido/Instrumento. Editor móvil cambia a Instrumento al recibir foco. Scroll nativo móvil, política touchAction pan-y sin manipulación.
-- RAM:16Intel2164A por bancos didácticos; galeríaKingstonKVR26N19S8/8 con8FBGA y144contactos/cara. Dimensiones no verificadas figuran como aproximadas en docs/assets/SILICIO-ASSET-CATALOG.md.
-- Banco operable: scope/canal, fuente5Vreferencia, lámpara, sonda, cable, herramientas, soportes y desacoplo seleccionables.
-- Rapier:1/60s máximo4subpasos, unidadesm con conversión.02;3herramientas, colliders compuestos, caída/bandeja/arrastre/cancel/reset. Sin alterar CPU.
-- Memoria y cronoscopio actualizan etiquetas sin reconstruir el sujeto por cada valor. IDs absolutos del historial compartidos por selector/raycast/foco.
-- Historial conserva hasta8ramas; restaurar una archiva la actual. Exportaciónv2 con ramas, importaciónv1compatible. Comparación de registros/flags/memoria; recapturaA invalida caché. AppleB0/B1 ×2 ilustra dependencias reales del ejemplo, no rendimiento comercial.
+Encaje CPU por ambos lados y perforaciones reales; RAM clásica/DIMM detalladas con contratos de montaje; raycast de terminales instanciados; modelos por referencia y adaptador Angular con HTML/SCSS externos. Motor world-engine sin Angular, estaciones/modelos/recursos/cámara/física/selección separados. Fachada protege sesiones y respuestas worker. Máquina muestra transferencia 7+5=12; Apple distingue unidades y buffer.
 
-## Verificación realizada
-- Última suite: **45/45 pruebas**,10archivos, npm test -- --watch=false, salida0.
-- Último build: salida0. Aviso pendiente app.scss13.96kB frente presupuesto12kB; límite de error18kB no excedido.
-- Auditoría CPU:40pines,291mallas,68480triángulos; zfight[]/defects[]. No extrapolar a RAM o toda la escena.
-- Auditoría dependencias producción:0vulnerabilidades. Auditoría total al instalar reportó6del entorno desarrollo; no se aplicó actualización automática.
-- Matriz de viewport emulado:320×568,360×640,390×844,430×932,768×1024,844×390,1024×768,1366×768,1920×1080. Sin desbordamiento horizontal; botones de barra44×44; bits≥63.5pxen320. No sustituye Android/iOS reales.
-- Instrumento390×844 pasó de354pxa692px de altura libre después de corregir selector.
-- Tooltip por teclado observado en paquete compilado; consola sin errores nuevos en observación realizada.
+83/83 pruebas, 22 archivos, build sin advertencias CSS. Auditorías CPU/RAM pasan. Diez recorridos finales estabilizan 226 buffers/72 geometrías/104 texturas; nueve viewports y comprobación móvil final; sesión exportada restaura AX=0007h tras avanzar a 000Ch. Detalles y capturas: [revisión 3](qa/PROGRESO-REVISION-3.md).
 
-## Revisión independiente y correcciones
-Agente revision_incremento:6Important. Todos corregidos con regresiones RED→GREEN y suite45/45: recuperar ramas conservaactual, recapturaA actualizacomparación, alturaInstrumento, IDs cronoscopio tras16eventos, cancelación lostpointercapture/blur, política táctil initialize/resize.
-Minor diferido: separación escritorio6px frente8delplan; móvil8px.
+## Lo que sigue abierto
 
-## Pendientes que no se deben dar por cerrados
-1. Cámara por bounds y región libre de UI, y fachada/coordinador completos.
-2. Auditoría integral real de cobertura de piezas y acciones; algunas mallas/IDs aún son agrupaciones, no inventario verificado.
-3. Planos/fotos/cotas de variante2164A y loteDIMM; geometría en reverso/rasante/wireframe/despiece y chequeos de holguras/interpenetración.
-4. Más fidelidad del8086/Apple y mecanismos de socket/tapa, física cinemática y captura/drag reales en browser.
-5. Perfiles/efectos medidos, drawcalls, p50/p95,10recorridos y recursos. No hay composer avanzado ni mediciónGPU.
-6. Validar todas las misiones, archivos, ramas, gráficos yfallbackWebGL en paquete local; teclado virtual, zoom200%, reducedmotion y dispositivos reales si disponibles.
-7. Reconciliar el resto del planmaestro; interrupciones/prefetchreal/otrasexperiencias no implementadas no se eliminan de la cola.
-8. Actualizar guion y docs/IMPLEMENTACION.md tras puertas reales. PRODUCT.md y sidecarImpeccable heredados desactualizados; no reparados incidentalmente.
+1. Cotas mecánicas exactas de variante/lote, pinouts no verificados y auditoría integral de entorno/volumen barrido.
+2. Android/iOS y teclado virtual reales, zoom 200% integral, ayudas técnicas y comparación física 30/60 FPS.
+3. Prueba de paquete realmente desconectado, más equipos GPU y aceptación docente.
+4. Extracción adicional de instrumentos App a componentes independientes, si se amplía el rack; HTML/SCSS ya externos.
+5. Extensiones P1/P2: interrupciones, prefetch real, caché, constructor libre, cooperación y experiencias adicionales según plan histórico.
 
-## Reanudar sin repetir trabajo
-Leer este archivo y docs/qa/PROGRESO-REVISION-3.md; inspeccionar gitstatus. Preservar todo. Continuar desde pendientes verificables, no reiniciar UI ni repetir pruebas sin nueva razón.
-Servidores usados: desarrollo127.0.0.1:4200; paquete127.0.0.1:4307. Pueden no seguir vivos mañana. No matar4300: estaba ocupado por otro proceso.
-Stage de trabajo C:/Users/josue/Documents/Codex/2026-10-12/d-documentos-de-clases-arquitectura-de/work/v4 contiene archivos **anteriores al formateo y algunas últimas correcciones**: no copiar toda su carpeta src sobre el proyecto. La fuente actual autoritativa es E:/Repositories/silicio/src. Copias de baseline en work/v4/baseline.
-Comandos fiables: shell C:/Windows/system32/cmd.exe, login:false. Writes aEdesdeNode puedenEPERM; preparar enworkspace y copiar únicamente archivo cambiado con permisos.
-Ledger en .superpowers/sdd/SILICIO-IMPLEMENTACION-ESCENA-INSTRUMENTOS-MOVIL/progress.md; no borrarlo mientras plan esté pendiente. Estados internos de CodeTesting en temporalsilicio-execution, no son entregables.
+No marcar revisión 3 o plan maestro completo por el número de tests. Consultar la tabla R00–R12 y cerrar cada puerta con evidencia.
 
-## Evidencia
-Capturas de este avance: outputs/silicio-v4-toolbar-final.jpg y silicio-v4-mobile-tools.jpg (workspaceCodex); responsiveJSON silicio-v4-responsive.json. Los archivos temporalessilicio-v4-* del sistema son copias auxiliares.
+## Operación
+
+Desarrollo 127.0.0.1:4200; paquete usado 127.0.0.1:4307. Pueden requerir reinicio. No detener 4300, ocupado por otro proceso. Producción: set SILICIO_PORT=4307 seguido de npm run preview en CMD.
+
+Shell fiable: C:/Windows/system32/cmd.exe, login:false. Stage work/v5 contiene versiones anteriores a formateo y correcciones: copiar solo archivos concretos recién preparados. Preservar cambios locales. Ledger .superpowers/sdd/SILICIO-IMPLEMENTACION-ESCENA-INSTRUMENTOS-MOVIL/progress.md conserva decisiones; no borrarlo mientras haya puertas pendientes.

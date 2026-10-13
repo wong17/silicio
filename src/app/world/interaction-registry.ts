@@ -4,8 +4,19 @@ export interface PieceDefinition {
   name: string;
   role: 'academic' | 'operable' | 'environment';
   actions: string[];
+  description?: string;
+  sourceRefs?: string[];
+  modelFidelity?: string;
 }
 export class InteractionRegistry {
+  constructor(private action?: (id: string, action: string) => void) {}
+  activate(id: string, action = 'inspect'): void {
+    const definition = this.definitions.get(id);
+    if (!definition || !definition.actions.includes(action))
+      throw Error('Acción no disponible para la pieza');
+    this.action?.(id, action);
+  }
+
   private definitions = new Map<string, PieceDefinition>();
   private owners = new WeakMap<T.Object3D, string>();
   private instances = new WeakMap<T.Object3D, string[]>();
@@ -40,7 +51,13 @@ export class InteractionRegistry {
     let classified = 0;
     const missing: string[] = [];
     root.traverse((o) => {
-      if (!(o instanceof T.Mesh)) return;
+      if (!(o instanceof T.Mesh) || !o.visible) return;
+      for (let p = o.parent; p && p !== root; p = p.parent) if (!p.visible) return;
+      const ids = this.instances.get(o);
+      if (ids && ids.every((id) => this.definitions.has(id))) {
+        classified += ids.length;
+        return;
+      }
       if (this.resolveHit({ object: o, distance: 0, point: new T.Vector3() } as T.Intersection))
         classified++;
       else if (o.userData['role'] !== 'environment') missing.push(o.name || o.uuid);

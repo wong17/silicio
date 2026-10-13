@@ -19,6 +19,14 @@ export type SceneCommand =
   host: { 'aria-label': 'Herramientas del visor' },
 })
 export class SceneControlsComponent {
+  focus(event: Event): void {
+    const menu = (event.currentTarget as HTMLElement).closest('details');
+    if (menu) {
+      menu.open = false;
+      menu.querySelector('summary')?.focus({ preventScroll: true });
+    }
+    this.command.emit('focus');
+  }
   @Input() section = 'atrium';
   @Input() exploded = false;
   @Input() viewMode = 'material';

@@ -1,3 +1,8 @@
+import { EXPERIENCES } from './content/experiences';
+import { CHECKPOINTS } from './content/checkpoints';
+import { DESCRIPTIONS } from './content/component-descriptions';
+import { accessibleCatalog } from './world/piece-definitions';
+import { MISSIONS } from './content/missions';
 import {
   AfterViewInit,
   Component,
@@ -8,6 +13,7 @@ import {
   computed,
   signal,
 } from '@angular/core';
+import { MachineInstrumentComponent } from './instruments/machine-instrument.component';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
@@ -15,7 +21,11 @@ import { gsap } from 'gsap';
 import Lenis from 'lenis';
 import { AtriumSceneComponent } from './world/atrium-scene.component';
 import type { Section } from './world/atrium-scene.component';
-import { projectLaboratory, BufferExperiment } from './laboratory/laboratory.facade';
+import {
+  projectLaboratory,
+  BufferExperiment,
+  LaboratoryFacade,
+} from './laboratory/laboratory.facade';
 import { SceneControlsComponent, SceneCommand } from './world/scene-controls.component';
 import { readSession } from './simulation/session-codec';
 import { PIN_NAMES } from './world/cpu-pins';
@@ -29,171 +39,15 @@ import {
   Trace,
 } from './simulation/cpu8086';
 
-const EXPERIENCES = [
-  {
-    id: '8086' as Section,
-    number: '01',
-    title: 'Banco 8086',
-    subtitle: 'La máquina desnuda',
-    summary: 'Haz que una instrucción atraviese registros, memoria y unidad aritmética.',
-    accent: '#cf9c65',
-  },
-  {
-    id: 'memory' as Section,
-    number: '02',
-    title: 'Memoria',
-    subtitle: 'Geografía de los datos',
-    summary: 'Dos números forman una dirección. Explora dónde terminan realmente tus bytes.',
-    accent: '#99ae9d',
-  },
-  {
-    id: 'time' as Section,
-    number: '03',
-    title: 'Cronoscopio',
-    subtitle: 'El pasado es editable',
-    summary: 'Detén una ejecución, vuelve a su origen y cambia una decisión.',
-    accent: '#aca3ba',
-  },
-  {
-    id: 'apple' as Section,
-    number: '04',
-    title: 'Apple Silicon',
-    subtitle: 'Un territorio compartido',
-    summary: 'Abre un sistema en un chip y sigue un buffer entre CPU y GPU.',
-    accent: '#a0b4bf',
-  },
-  {
-    id: 'machine' as Section,
-    number: '05',
-    title: 'La máquina',
-    subtitle: 'Tres conversaciones',
-    summary: 'Direcciones, datos y control: encuentra el propósito de cada conexión.',
-    accent: '#c7ac6b',
-  },
-];
-const MISSIONS = [
-  {
-    title: '01 / Sigue una suma',
-    source: 'ADD AX, [10]\nHLT',
-    goal: 'AX empieza en 7. La palabra en DS:000A vale 5. El resultado debe ser 12 sin escribir en memoria.',
-    answer: 12,
-  },
-  {
-    title: '02 / El límite invisible',
-    source: 'MOV AX, 0FFFFh\nADD AX, 1\nHLT',
-    goal: 'Suma uno a FFFFh. Compara CF y OF: el acarreo sin signo no implica desbordamiento con signo.',
-    answer: 0,
-  },
-  {
-    title: '03 / Un signo cambia',
-    source: 'MOV AX, 07FFFh\nADD AX, 1\nHLT',
-    goal: '7FFFh + 1 produce 8000h. Observa OF=1 y CF=0.',
-    answer: 0x8000,
-  },
-  {
-    title: '04 / Cuatro palabras',
-    source: 'MOV AX, 0\nMOV CX, 4\nMOV SI, 0\notra:\nADD AX, [SI]\nADD SI, 2\nLOOP otra\nHLT',
-    goal: 'Acumula las palabras 1, 2, 3 y 4. LOOP modifica CX y conserva los flags.',
-    answer: 10,
-  },
-  {
-    title: '05 / Dos caminos',
-    source: 'MOV AX, 7\nCMP AX, 7\nJZ iguales\nMOV BX, 99\nJMP fin\niguales:\nMOV BX, 1\nfin:\nHLT',
-    goal: 'CMP no cambia AX. Modifica la comparación y observa cuál de los dos caminos se ejecuta.',
-    answer: 7,
-  },
-  {
-    title: '06 / La huella de una palabra',
-    source: 'MOV AX, 01234h\nMOV [32], AX\nMOV BX, [32]\nHLT',
-    goal: '1234h se guarda como 34h y 12h en direcciones consecutivas. BX debe recuperar 1234h.',
-    answer: 0x1234,
-  },
-  {
-    title: '07 / BP encuentra la pila',
-    source: 'MOV BP, 10\nMOV AX, 9\nMOV [BP], AX\nMOV BX, [BP]\nHLT',
-    goal: 'BP utiliza SS por defecto. Guarda 9 en SS:000A y comprueba que BX recupera ese valor; DS conserva otra región.',
-    answer: 9,
-  },
-  {
-    title: '08 / Conservar un acarreo',
-    source: 'MOV AX, 0FFFFh\nADD AX, 1\nINC AX\nDEC AX\nHLT',
-    goal: 'La suma activa CF. INC y DEC modifican otros flags pero conservan ese acarreo. AX termina en 0000h.',
-    answer: 0,
-  },
-];
-const CHECKPOINTS: Record<
-  string,
-  { question: string; options: string[]; correct: number; explanation: string }
-> = {
-  '8086': {
-    question: '¿Qué modifica CMP AX, 7?',
-    options: ['AX y la memoria', 'Los flags, conservando AX', 'Solo el segmento DS'],
-    correct: 1,
-    explanation:
-      'CMP calcula una resta para actualizar flags y descarta el resultado. Un salto condicional puede usar esos flags.',
-  },
-  memory: {
-    question: '¿Cómo queda 1234h en memoria little endian?',
-    options: ['12h y después 34h', '34h y después 12h', 'Un único byte 1234h'],
-    correct: 1,
-    explanation: 'Una palabra tiene dos bytes. El menos significativo ocupa la dirección menor.',
-  },
-  time: {
-    question: '¿Qué recupera una instantánea del laboratorio?',
-    options: ['Solo la imagen del chip', 'Registros, flags y memoria', 'El tiempo eléctrico real'],
-    correct: 1,
-    explanation:
-      'La instantánea restaura el estado lógico. Esta simulación no reproduce la temporización eléctrica del procesador.',
-  },
-  apple: {
-    question: '¿Qué sigue siendo necesario al compartir memoria?',
-    options: [
-      'Sincronizar los accesos',
-      'Copiar siempre todos los datos',
-      'Eliminar el planificador',
-    ],
-    correct: 0,
-    explanation:
-      'CPU y GPU pueden compartir almacenamiento; una dependencia debe completarse antes de que otra unidad use su resultado.',
-  },
-  machine: {
-    question: '¿Qué bus transporta el valor leído de RAM?',
-    options: ['Direcciones', 'Datos', 'Control'],
-    correct: 1,
-    explanation:
-      'Direcciones selecciona la ubicación; control indica la operación; datos lleva el valor transferido.',
-  },
-};
-const DESCRIPTIONS: Record<string, string> = {
-  lid: 'El encapsulado protege el circuito integrado y conduce sus señales hacia 40 terminales. La muesca y la marca del pin 1 permiten orientar el componente correctamente.',
-  socket:
-    'El zócalo permite montar y sustituir el procesador sin soldar directamente sus terminales. Sus contactos conectan cada pin con las pistas de la placa didáctica.',
-  clock:
-    'La señal CLK marca el avance de los ciclos del procesador. El ritmo del reloj no equivale al número de instrucciones por segundo: cada instrucción puede necesitar varios ciclos.',
-  alu: 'La unidad aritmético-lógica opera sobre los operandos de 16 bits. ADD y SUB producen un resultado y actualizan los flags aritméticos.',
-  registers:
-    'AX, BX, CX y DX guardan valores de 16 bits. El simulador también incluye SP, BP, SI y DI.',
-  control:
-    'La unidad de ejecución interpreta instrucciones, coordina operandos y decide el siguiente paso.',
-  biu: 'La unidad de interfaz de bus forma direcciones físicas y comunica el procesador con memoria y entrada/salida.',
-  queue:
-    'El 8086 tiene una cola de prelectura de seis bytes. Este modelo muestra su ubicación conceptual; no simula los tiempos eléctricos de prefetch.',
-  performance:
-    'Los núcleos de rendimiento ejecutan trabajo exigente. Esta distribución es una representación conceptual, no una fotografía del die de un modelo concreto.',
-  efficiency:
-    'Los núcleos de eficiencia atienden trabajo con un perfil de consumo diferente. El planificador decide cómo repartirlo.',
-  gpu: 'La GPU procesa trabajo paralelo. En el ejemplo recibe el buffer compartido después de que la CPU termine de prepararlo.',
-  neural:
-    'El Neural Engine acelera operaciones compatibles de aprendizaje automático. No toda operación de IA se ejecuta aquí.',
-  unified:
-    'CPU y GPU pueden acceder a un mismo conjunto de memoria. Compartir almacenamiento no elimina la necesidad de sincronizar el acceso.',
-  cpu: 'El procesador busca instrucciones, interpreta operaciones y transforma datos.',
-  ram: 'La memoria principal conserva instrucciones y datos mientras la máquina está encendida.',
-  io: 'La entrada/salida comunica la máquina con su entorno. Una operación necesita dirección, datos y señales de control.',
-};
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, RouterLink, AtriumSceneComponent, SceneControlsComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    AtriumSceneComponent,
+    SceneControlsComponent,
+    MachineInstrumentComponent,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -204,6 +58,7 @@ export class App implements AfterViewInit, OnDestroy {
     resetView(): void;
     focusSelected(): void;
     resetTools(): void;
+    toggleLatch?(id: string): void;
     dropTool(): void;
   };
   @ViewChild('scrollPanel', { static: true }) scrollPanel!: ElementRef<HTMLElement>;
@@ -253,11 +108,15 @@ export class App implements AfterViewInit, OnDestroy {
   });
   readonly lastReads = computed(() => this.laboratory().accesses.some((a) => a.kind === 'read'));
   readonly lastWrites = computed(() => this.laboratory().accesses.some((a) => a.kind === 'write'));
-  readonly laboratory = computed(() =>
-    projectLaboratory(this.state(), this.cursor() >= 0 ? this.trace()[this.cursor()] : undefined),
-  );
-  readonly registerView = computed(
-    () => this.laboratory().registers.find((r) => r.name === this.registerSelected())!,
+  readonly laboratoryFacade = new LaboratoryFacade({
+    snapshot: () => this.state(),
+    event: () => (this.cursor() >= 0 ? this.trace()[this.cursor()] : undefined),
+    selection: () => this.activePart(),
+    experience: () => this.sections(),
+  });
+  readonly laboratory = this.laboratoryFacade.view;
+  readonly registerView = computed(() =>
+    this.laboratory().registers.find((r) => r.name === this.registerSelected())!,
   );
   readonly comparison = computed(() => {
     this.revision();
@@ -286,7 +145,12 @@ export class App implements AfterViewInit, OnDestroy {
           : [],
     );
   });
-  readonly selectablePieces = signal<{ id: string; name: string }[]>([]);
+  readonly selectablePieces = signal<{ id: string; name: string; description?: string }[]>([]);
+  readonly catalogPieces = computed(() =>
+    this.selectablePieces().length
+      ? this.selectablePieces()
+      : accessibleCatalog(this.sections(), this.memoryModel(), this.trace().length),
+  );
   readonly benchPieces = [
     { id: 'scope', name: 'Osciloscopio' },
     { id: 'power', name: 'Fuente' },
@@ -319,7 +183,7 @@ export class App implements AfterViewInit, OnDestroy {
   readonly activePart = signal('lid');
   readonly exploded = signal(true);
   readonly reduced = signal(false);
-  readonly quality = signal<'high' | 'low'>('high');
+  readonly quality = signal<'high' | 'balanced' | 'low'>('balanced');
   readonly revision = signal(0);
   readonly tick = signal(0);
   readonly running = signal(false);
@@ -424,6 +288,7 @@ export class App implements AfterViewInit, OnDestroy {
         : id.startsWith('dimm-chip-')
           ? 'Componente FBGA 1G × 8 bits. Ocho componentes forman el rango de 64 bits del módulo.'
           : undefined) ??
+      this.catalogPieces().find((p) => p.id === id)?.description ??
       DESCRIPTIONS[id] ??
       'Selecciona una pieza en la escena o utiliza los controles del inspector.'
     );
@@ -484,8 +349,7 @@ export class App implements AfterViewInit, OnDestroy {
   baseline: Snapshot | undefined;
   baselineText = signal('');
   private engineWorker?: Worker;
-  private generation = 0;
-  private busy = false;
+
   private timer?: ReturnType<typeof setInterval>;
   private navigation?: Subscription;
   private lenis?: Lenis;
@@ -504,6 +368,10 @@ export class App implements AfterViewInit, OnDestroy {
     private host: ElementRef<HTMLElement>,
     private zone: NgZone,
   ) {
+    this.laboratoryFacade.bind({
+      scene: (command) => this.handleSceneCommand(command),
+      instrument: (command) => this[command](),
+    });
     this.cpu.load(this.source);
     this.loadedSource.set(this.source);
     this.navigation = this.router.events
@@ -535,24 +403,23 @@ export class App implements AfterViewInit, OnDestroy {
       try {
         this.engineWorker = new Worker(new URL('./simulation/cpu8086.worker', import.meta.url));
         this.engineWorker.onmessage = ({ data }) => {
-          if (data.generation !== this.generation) return;
-          this.busy = false;
-          this.zone.run(() => {
-            if (data.error) {
-              this.error.set(data.error);
-              this.pause();
-              return;
-            }
-            if (data.event) {
-              this.archiveFuture();
-              this.cpu.restore(data.event.after);
-              this.cpu.trace.push(data.event);
-              this.commitStep(data.event);
-            }
-          });
+          this.laboratoryFacade.complete(data.generation, () =>
+            this.zone.run(() => {
+              if (data.error) {
+                this.error.set(data.error);
+                this.pause();
+                return;
+              }
+              if (data.event) {
+                this.archiveFuture();
+                this.cpu.restore(data.event.after);
+                this.cpu.trace.push(data.event);
+                this.commitStep(data.event);
+              }
+            }),
+          );
         };
         this.engineWorker.onerror = () => {
-          this.busy = false;
           this.pause();
           this.error.set('El motor de ejecución se detuvo. Recarga la página para recuperarlo.');
         };
@@ -563,7 +430,9 @@ export class App implements AfterViewInit, OnDestroy {
     this.media = matchMedia('(prefers-reduced-motion: reduce)');
     try {
       const saved = JSON.parse(localStorage.getItem('silicio.preferences') ?? '{}');
-      if (saved.quality === 'low' || saved.quality === 'high') this.quality.set(saved.quality);
+      if (saved.quality === 'low' || saved.quality === 'high' || saved.quality === 'balanced')
+        this.quality.set(saved.quality);
+      if (!saved.quality && matchMedia('(max-width:899px)').matches) this.quality.set('balanced');
       this.reduced.set(saved.reduced ?? this.media.matches);
     } catch {
       this.reduced.set(this.media.matches);
@@ -592,7 +461,13 @@ export class App implements AfterViewInit, OnDestroy {
   editorFocus(): void {
     if (matchMedia('(max-width:899px)').matches) this.setLayout('instrument');
   }
+  intent(command: 'step' | 'run' | 'pause' | 'load' | 'back'): void {
+    this.laboratoryFacade.dispatch({ kind: 'instrument', command });
+  }
   sceneCommand(command: SceneCommand): void {
+    this.laboratoryFacade.dispatch({ kind: 'scene', command });
+  }
+  private handleSceneCommand(command: SceneCommand): void {
     switch (command) {
       case 'rotate-left':
         this.world?.rotate(-1);
@@ -634,9 +509,25 @@ export class App implements AfterViewInit, OnDestroy {
   }
   part(id: string): void {
     this.activePart.set(id);
+    if (
+      [
+        'alu',
+        'registers',
+        'control',
+        'biu',
+        'queue',
+        'performance',
+        'efficiency',
+        'gpu',
+        'neural',
+        'unified',
+      ].includes(id)
+    )
+      this.exploded.set(true);
     if (id === 'lamp') this.inspection.set(!this.inspection());
     if (id === 'scope') this.signalChannel.set(this.signalChannel() === 'ALE' ? 'RD' : 'ALE');
     if (id === 'tool') this.world?.dropTool();
+    if (id.startsWith('latch-')) this.world?.toggleLatch?.(id);
     if (id.startsWith('cell-')) {
       this.offsetText = hex(
         ((this.physical() & ~31) + Number(id.slice(5)) - this.segment() * 16) & 0xffff,
@@ -657,6 +548,7 @@ export class App implements AfterViewInit, OnDestroy {
     this.error.set('');
     try {
       this.cpu.load(this.source);
+      this.laboratoryFacade.beginSession();
       this.loadedSource.set(this.source);
       this.cursor.set(-1);
       this.branches.set([]);
@@ -675,10 +567,10 @@ export class App implements AfterViewInit, OnDestroy {
     }
     this.error.set('');
     if (this.engineWorker) {
-      if (this.busy) return;
-      this.busy = true;
+      const generation = this.laboratoryFacade.request();
+      if (generation === undefined) return;
       this.engineWorker.postMessage({
-        generation: this.generation,
+        generation,
         state: this.cpu.snapshot(),
         instructions: this.cpu.instructions,
       });
@@ -720,8 +612,7 @@ export class App implements AfterViewInit, OnDestroy {
   }
   pause(): void {
     clearInterval(this.timer);
-    this.generation++;
-    this.busy = false;
+    this.laboratoryFacade.cancel();
     this.running.set(false);
   }
   restore(index: number): void {
@@ -798,7 +689,7 @@ export class App implements AfterViewInit, OnDestroy {
     } else this.lenis?.start();
     this.savePreferences();
   }
-  setQuality(value: 'high' | 'low'): void {
+  setQuality(value: 'high' | 'balanced' | 'low'): void {
     this.quality.set(value);
     this.savePreferences();
   }
@@ -844,6 +735,7 @@ export class App implements AfterViewInit, OnDestroy {
       if (file.size > 12_000_000) throw Error('La sesión supera 12 MB.');
       const session = readSession(await file.text());
       this.cpu.load(session.source);
+      this.laboratoryFacade.beginSession();
       this.cpu.restore(session.state);
       this.cpu.trace = session.trace;
       this.source = session.source;

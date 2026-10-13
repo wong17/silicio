@@ -1,3 +1,5 @@
+import { signal, computed } from '@angular/core';
+import type { LaboratorySources, LaboratoryHandlers, LaboratoryIntent } from './laboratory.types';
 import { Snapshot, Trace, hex, Registers } from '../simulation/cpu8086';
 export function projectLaboratory(s: Snapshot, e?: Trace) {
   return {
@@ -38,5 +40,46 @@ export class BufferExperiment {
         version: this.view.version + 1,
         output: { id: 'B1', values: this.view.input.values.map((v) => v * 2) },
       };
+  }
+}
+
+export class LaboratoryFacade {
+  readonly session = signal(1);
+  private pending?: number;
+  private serial = 0;
+  private handlers?: LaboratoryHandlers;
+  readonly view;
+  constructor(private sources: LaboratorySources) {
+    this.view = computed(() => ({
+      ...projectLaboratory(sources.snapshot(), sources.event()),
+      sessionId: '8086-' + this.session(),
+      experience: sources.experience(),
+      selectedPiece: sources.selection(),
+    }));
+  }
+  bind(h: LaboratoryHandlers): void {
+    this.handlers = h;
+  }
+  dispatch(i: LaboratoryIntent): void {
+    if (i.kind === 'scene') this.handlers?.scene(i.command);
+    else this.handlers?.instrument(i.command);
+  }
+  request(): number | undefined {
+    if (this.pending !== undefined) return;
+    this.pending = ++this.serial;
+    return this.pending;
+  }
+  cancel(): void {
+    this.pending = undefined;
+  }
+  beginSession(): void {
+    this.cancel();
+    this.session.update((n) => n + 1);
+  }
+  complete(id: number, apply: () => void): boolean {
+    if (id !== this.pending) return false;
+    this.pending = undefined;
+    apply();
+    return true;
   }
 }

@@ -25,6 +25,53 @@ export class WorkbenchPhysics {
   private bodies = new Map<string, { body: R.RigidBody; object: T.Object3D; home: T.Vector3 }>();
   private disposed = false;
   private dragging?: R.RigidBody;
+  private mechanisms = new Map<string, { body: R.RigidBody; object: T.Object3D }>();
+  registerMechanism(
+    id: string,
+    object: T.Object3D,
+    halfSize: T.Vector3,
+    offset = new T.Vector3(),
+  ): void {
+    if (!this.world || !this.api || this.mechanisms.has(id)) return;
+    object.updateWorldMatrix(true, false);
+    const position = object.getWorldPosition(new T.Vector3()).multiplyScalar(SCALE),
+      rotation = object.getWorldQuaternion(new T.Quaternion());
+    const body = this.world.createRigidBody(
+      this.api.RigidBodyDesc.kinematicPositionBased()
+        .setTranslation(position.x, position.y, position.z)
+        .setRotation(rotation),
+    );
+    this.world.createCollider(
+      this.api.ColliderDesc.cuboid(
+        halfSize.x * SCALE,
+        halfSize.y * SCALE,
+        halfSize.z * SCALE,
+      ).setTranslation(offset.x * SCALE, offset.y * SCALE, offset.z * SCALE),
+      body,
+    );
+    this.mechanisms.set(id, { body, object });
+  }
+  clearMechanisms(): void {
+    if (this.world)
+      for (const { body } of this.mechanisms.values()) this.world.removeRigidBody(body);
+    this.mechanisms.clear();
+  }
+  get mechanismCount(): number {
+    return this.mechanisms.size;
+  }
+  mechanismPose(id: string): { position: R.Vector; rotation: R.Rotation } | undefined {
+    const body = this.mechanisms.get(id)?.body;
+    return body ? { position: body.translation(), rotation: body.rotation() } : undefined;
+  }
+  private syncMechanisms(): void {
+    for (const { body, object } of this.mechanisms.values()) {
+      object.updateWorldMatrix(true, false);
+      const position = object.getWorldPosition(new T.Vector3()).multiplyScalar(SCALE),
+        rotation = object.getWorldQuaternion(new T.Quaternion());
+      body.setNextKinematicTranslation(position);
+      body.setNextKinematicRotation(rotation);
+    }
+  }
   async initialize(tools: Map<string, T.Object3D>): Promise<void> {
     const api = await import('@dimforge/rapier3d-compat');
     await api.init();
@@ -96,7 +143,10 @@ export class WorkbenchPhysics {
   }
   step(dt: number): void {
     if (!this.world || this.disposed) return;
-    this.fixed.advance(dt, () => this.world!.step());
+    this.fixed.advance(dt, () => {
+      this.syncMechanisms();
+      this.world!.step();
+    });
     for (const { body, object } of this.bodies.values()) {
       const p = body.translation(),
         q = body.rotation();
@@ -135,6 +185,7 @@ export class WorkbenchPhysics {
   }
   dispose(): void {
     this.disposed = true;
+    this.clearMechanisms();
     this.world?.free();
     this.world = undefined;
     this.bodies.clear();

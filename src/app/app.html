@@ -1,4 +1,5 @@
 <main
+  [class.reduce-motion]="reduced()"
   class="experience"
   [attr.data-layout]="layout()"
   [style.--accent]="current()?.accent || '#d7ac6f'"
@@ -123,16 +124,16 @@
         <div class="execution-bar" aria-label="Ejecución del procesador">
           <button
             type="button"
-            (click)="back()"
+            (click)="intent('back')"
             [disabled]="cursor() < 0"
             aria-label="Retroceder un paso"
           >
             ←</button
-          ><button type="button" (click)="step()" [disabled]="state().halted">Paso</button
+          ><button type="button" (click)="intent('step')" [disabled]="state().halted">Paso</button
           ><button
             type="button"
             class="primary"
-            (click)="run()"
+            (click)="intent('run')"
             [disabled]="state().halted && !running()"
           >
             {{ running() ? 'Pausar' : 'Ejecutar' }}
@@ -269,7 +270,9 @@
               rows="8"
               data-lenis-prevent
             ></textarea
-            ><button type="button" class="wide" (click)="load()">Compilar y reiniciar</button>
+            ><button type="button" class="wide" (click)="intent('load')">
+              Compilar y reiniciar
+            </button>
             <ol class="disassembly">
               @for (i of cpu.instructions; track i.address) {
                 <li [class.current]="i.address === state().registers.IP">
@@ -363,88 +366,142 @@
               : 'Kingston KVR26N19S8/8 · 8 GB · DDR4-2666 · 1Rx8'
           }}
         </p>
-        <div class="address-inputs">
-          <label
-            >Segmento<input
-              aria-label="Segmento hexadecimal"
-              [(ngModel)]="segmentText"
-              (change)="setAddress()"
-              maxlength="4" /></label
-          ><span>:</span
-          ><label
-            >Offset<input
-              aria-label="Offset hexadecimal"
-              [(ngModel)]="offsetText"
-              (change)="setAddress()"
-              maxlength="4"
-          /></label>
-        </div>
-        <div class="address-bus">
-          <span>{{ h(segment()) }}h × 10h</span><b>+</b><span>{{ h(offset()) }}h</span
-          ><strong>{{ h(physical(), 5) }}h</strong>
-        </div>
-        <p class="alias">
-          Alias: {{ h(aliasAddress().segment) }}:{{ h(aliasAddress().offset) }} →
-          {{ h(physical(), 5) }}h
-        </p>
-        <div class="byte-lanes">
-          <div>
-            <small>Dirección {{ h(physical(), 5) }}</small
-            ><strong>{{ h(state().memory[physical()] || 0, 2) }}h</strong><span>BYTE BAJO</span>
+        @if (memoryModel() === 'classic') {
+          <div class="address-inputs">
+            <label
+              >Segmento<input
+                aria-label="Segmento hexadecimal"
+                [(ngModel)]="segmentText"
+                (change)="setAddress()"
+                maxlength="4" /></label
+            ><span>:</span
+            ><label
+              >Offset<input
+                aria-label="Offset hexadecimal"
+                [(ngModel)]="offsetText"
+                (change)="setAddress()"
+                maxlength="4"
+            /></label>
           </div>
-          <div>
-            <small>Dirección {{ h((physical() + 1) % 1048576, 5) }}</small
-            ><strong>{{ h(state().memory[(physical() + 1) % 1048576] || 0, 2) }}h</strong
-            ><span>BYTE ALTO</span>
+          <div class="address-bus">
+            <span>{{ h(segment()) }}h × 10h</span><b>+</b><span>{{ h(offset()) }}h</span
+            ><strong>{{ h(physical(), 5) }}h</strong>
           </div>
-        </div>
-        <p class="endian-caption">
-          Little endian · palabra
-          {{
-            h(
-              (state().memory[physical()] || 0) +
-                256 * (state().memory[(physical() + 1) % 1048576] || 0)
-            )
-          }}h
-        </p>
-        <div class="memory-grid">
-          @for (c of cells(); track c.address) {
-            <button
+          <p class="alias">
+            Alias: {{ h(aliasAddress().segment) }}:{{ h(aliasAddress().offset) }} →
+            {{ h(physical(), 5) }}h
+          </p>
+          <div class="byte-lanes">
+            <div>
+              <small>Dirección {{ h(physical(), 5) }}</small
+              ><strong>{{ h(state().memory[physical()] || 0, 2) }}h</strong><span>BYTE BAJO</span>
+            </div>
+            <div>
+              <small>Dirección {{ h((physical() + 1) % 1048576, 5) }}</small
+              ><strong>{{ h(state().memory[(physical() + 1) % 1048576] || 0, 2) }}h</strong
+              ><span>BYTE ALTO</span>
+            </div>
+          </div>
+          <p class="endian-caption">
+            Little endian · palabra
+            {{
+              h(
+                (state().memory[physical()] || 0) +
+                  256 * (state().memory[(physical() + 1) % 1048576] || 0)
+              )
+            }}h
+          </p>
+          <div class="memory-grid">
+            @for (c of cells(); track c.address) {
+              <button
+                type="button"
+                [class.selected]="c.address === physical()"
+                (click)="selectCell(c.address)"
+                [attr.aria-label]="'Dirección ' + h(c.address, 5) + ', byte ' + h(c.value, 2)"
+              >
+                <small>{{ h(c.address % 256, 2) }}</small
+                ><b>{{ h(c.value, 2) }}</b>
+              </button>
+            }
+          </div>
+          <label class="field-label" for="word">Escribir palabra (hex)</label>
+          <div class="inline-field">
+            <input id="word" [(ngModel)]="wordText" maxlength="4" /><button
               type="button"
-              [class.selected]="c.address === physical()"
-              (click)="selectCell(c.address)"
-              [attr.aria-label]="'Dirección ' + h(c.address, 5) + ', byte ' + h(c.value, 2)"
+              (click)="writeMemory()"
             >
-              <small>{{ h(c.address % 256, 2) }}</small
-              ><b>{{ h(c.value, 2) }}</b>
+              Escribir
             </button>
-          }
-        </div>
-        <label class="field-label" for="word">Escribir palabra (hex)</label>
-        <div class="inline-field">
-          <input id="word" [(ngModel)]="wordText" maxlength="4" /><button
-            type="button"
-            (click)="writeMemory()"
-          >
-            Escribir
-          </button>
-        </div>
-        <div class="part-buttons">
-          <button type="button" (click)="part('bank-even')">Banco par · D0–D7</button
-          ><button type="button" (click)="part('bank-odd')">Banco impar · D8–D15</button>
-        </div>
+          </div>
+          <div class="part-buttons">
+            <button type="button" (click)="part('bank-even')">Banco par · D0–D7</button
+            ><button type="button" (click)="part('bank-odd')">Banco impar · D8–D15</button>
+          </div>
+        } @else {
+          <section aria-label="Organización del módulo DDR4">
+            <h3>Un rango de 64 bits</h3>
+            <svg
+              viewBox="0 0 340 112"
+              role="img"
+              aria-label="Ocho componentes de ocho bits forman un bus de 64 bits"
+            >
+              @for (n of [0, 1, 2, 3, 4, 5, 6, 7]; track n) {
+                <rect [attr.x]="4 + n * 42" y="10" width="36" height="42" />
+                <text [attr.x]="22 + n * 42" y="35">C{{ n }}</text>
+                <path [attr.d]="'M' + (22 + n * 42) + ' 52v24'" />
+              }
+              <path d="M22 76h294" />
+              <text x="170" y="102">8 × 8bits = 64bits</text>
+            </svg>
+            <div class="bits">
+              @for (n of [0, 1, 2, 3, 4, 5, 6, 7]; track n) {
+                <button
+                  type="button"
+                  (click)="part('dimm-chip-' + n)"
+                  [attr.aria-label]="'Inspeccionar componente FBGA ' + n"
+                >
+                  <small>CHIP {{ n }}</small
+                  >1G×8
+                </button>
+              }
+            </div>
+            <p>
+              Ocho componentes de 1G×8 bits suman 64 Gbits: 8 GB. SPD describe las características
+              del módulo; la llave y las pestañas controlan su montaje.
+            </p>
+            <p>
+              Galería física independiente. Este DDR4 no se conecta al 8086; sus bancos y
+              direcciones se estudian en 2164A/8086.
+            </p>
+            <a
+              class="text-link"
+              href="https://www.kingston.com/dataSheets/KVR26N19S8_8.pdf"
+              target="_blank"
+              rel="noopener"
+              >Ficha Kingston KVR26N19S8/8</a
+            >
+          </section>
+        }
       }
       @if (sections() === 'apple') {
-        <p>Modelo funcional de Apple Silicon. Los bloques no reproducen un die comercial.</p>
-        <div class="apple-map">
-          <button type="button" (click)="part('performance')">CPU-P</button
-          ><button type="button" (click)="part('efficiency')">CPU-E</button
-          ><button type="button" (click)="part('gpu')">GPU</button
-          ><button type="button" (click)="part('neural')">Neural Engine</button
+        <h3>Apple M5 · variante base</h3>
+        <div class="apple-map" aria-label="Unidades publicadas del M5">
+          <button type="button" (click)="part('performance')">4 CPU-P</button
+          ><button type="button" (click)="part('efficiency')">6 CPU-E</button
+          ><button type="button" (click)="part('gpu')">GPU · hasta 10 núcleos</button
+          ><button type="button" (click)="part('neural')">Neural · 16 núcleos</button
           ><button type="button" class="shared-memory" (click)="part('unified')">
-            MEMORIA COMPARTIDA
+            153 GB/s · MEMORIA UNIFICADA
           </button>
         </div>
+        <p>Configuración máxima de CPU y GPU del M5 base. La disposición 3D es conceptual.</p>
+        <a
+          class="text-link"
+          href="https://www.apple.com/newsroom/2025/10/apple-unleashes-m5-the-next-big-leap-in-ai-performance-for-apple-silicon/"
+          target="_blank"
+          rel="noopener"
+          >Ficha publicada por Apple · 15/10/2025</a
+        >
         <h3>Una dependencia real</h3>
         <div class="buffer-readout">
           <div>
@@ -479,20 +536,11 @@
         </p>
       }
       @if (sections() === 'machine') {
-        <div class="machine-diagram">
+        <app-machine-instrument (transfer)="transferBus($event)" />
+        <div class="part-buttons">
           <button type="button" (click)="part('cpu')">CPU</button
-          ><svg viewBox="0 0 300 100" role="img" aria-label="Buses del sistema">
-            <path
-              d="M55 20h190m-10-7 10 7-10 7M55 50h190m-10-7 10 7-10 7M55 80h190m-10-7 10 7-10 7"
-            />
-            <text x="150" y="15">DIRECCIONES</text>
-            <text x="150" y="45">DATOS</text>
-            <text x="150" y="75">CONTROL</text>
-          </svg>
-          <div>
-            <button type="button" (click)="part('ram')">RAM</button
-            ><button type="button" (click)="part('io')">E/S</button>
-          </div>
+          ><button type="button" (click)="part('ram')">RAM</button
+          ><button type="button" (click)="part('io')">E/S</button>
         </div>
         @for (b of busNames; track b.id) {
           <button
@@ -507,7 +555,7 @@
         }
         <a class="text-link" routerLink="/8086">Observar una ejecución del 8086 →</a>
       }
-      @if (sections() === '8086' || sections() === 'machine' || activePart() === 'scope') {
+      @if (sections() === '8086' || activePart() === 'scope') {
         <section class="signal-instrument" aria-label="Captura didáctica de señales">
           <div class="instrument-title">
             <h3>Captura de bus</h3>
@@ -553,17 +601,8 @@
         <p>{{ selectedDescription() }}</p>
         <label class="field-label" for="piece">Inspeccionar en el banco</label
         ><select id="piece" [ngModel]="activePart()" (ngModelChange)="part($event)">
-          <option [value]="activePart()">{{ activePart() }}</option>
-          @for (p of selectablePieces(); track p.id) {
+          @for (p of catalogPieces(); track p.id) {
             <option [value]="p.id">{{ p.name }}</option>
-          }
-          @if (sections() === '8086' || sections() === 'atrium') {
-            <option value="lid">Encapsulado</option>
-            <option value="socket">Zócalo</option>
-            <option value="clock">Reloj</option>
-            @for (p of pins; track p.id) {
-              <option [value]="p.id">{{ p.label }}</option>
-            }
           }
         </select>
       </section>
@@ -584,8 +623,13 @@
           ><input type="checkbox" [ngModel]="reduced()" (ngModelChange)="setReduced($event)" />
           Reducir movimiento</label
         ><label
-          >Gráficos<select [ngModel]="quality()" (ngModelChange)="setQuality($event)">
+          >Gráficos<select
+            aria-label="Gráficos"
+            [ngModel]="quality()"
+            (ngModelChange)="setQuality($event)"
+          >
             <option value="high">Detalle</option>
+            <option value="balanced">Equilibrado</option>
             <option value="low">Ligero</option>
           </select></label
         ><button type="button" [attr.aria-pressed]="sound()" (click)="toggleSound()">

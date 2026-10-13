@@ -1,14 +1,18 @@
 # Guion de exposición — 8 minutos
 
-1. Atrio: identificar el 8086, su encapsulado de40 pines y la diferencia entre objeto físico y arquitectura visible al programador. Seleccionar ALE y explicar la multiplexación.
-2. Banco8086: compilar la primera misión, ejecutar un paso y observar AX=000C. Comparar CF y OF con los experimentos segundo y tercero.
-3. Memoria: escribir1234h y mostrar34h/12h; probar2000:0010 y2001:0000 para enseñar alias de dirección.
-4. Cronoscopio: restaurar el estado inicial y cambiar DS antes de repetir ADD. Explicar registros, flags y memoria restaurados. Exportar una sesión para conservar evidencia.
-5. Apple Silicon: seleccionar CPU/GPU/memoria y recorrer el buffer. Señalar que memoria compartida requiere coordinación; no se reproducen un die comercial ni tiempos medidos.
-6. Máquina: seleccionar dirección, datos y control. Responder la pregunta y diferenciar arquitectura de organización.
-7. Cierre: mostrar una sesión JSON recuperada y exponer las limitaciones del subconjunto simulado.
+1. **0:00–0:45 / Banco físico.** Identificar encapsulado, 40 terminales, cerámica, tapa, zócalo y placa. Usar selector/foco y giro; distinguir maqueta física de arquitectura visible al programador. Seleccionar ALE y explicar multiplexación.
+2. **0:45–2:15 / 8086.** Abrir Programa, cargar la misión de suma y compilar; avanzar hasta ADD y observar AX=000Ch. Estado muestra operandos reales, 16 bits y flags. Contrastar CF/OF con las misiones de acarreo y desbordamiento.
+3. **2:15–3:30 / Memoria.** Escribir 1234h y ver 34h/12h. Comparar 2000:0010 con 2001:0000. Inspeccionar bancos clásicos; cambiar a galería DDR4 para mostrar otra generación, sin atribuirle direcciones/bancos 8086. Seleccionar chips y pestillos.
+4. **3:30–4:30 / Cronoscopio.** Capturar A, restaurar un estado, modificar una entrada y repetir; recuperar ramas y mostrar diferencias en registros/flags/memoria. Exportar sesión y recuperar el JSON.
+5. **4:30–5:45 / Apple.** Arquitectura conceptual M5 base publicada: CPU, GPU, Neural y memoria. Recorrer B0/B1 y explicar que una unidad espera finalización antes de consumir la versión nueva. No son tiempos comerciales ni plano de die.
+6. **5:45–6:45 / Máquina.** Recorrer los pasos: dirección 0, RD, lectura de 7, suma de 5, dirección 1, WR, escritura de 12 y salida. Explicar datos/dirección/control y diferencia entre arquitectura y organización.
+7. **6:45–7:30 / Uso.** Mostrar iconos/tooltip, malla y luz de inspección. En teléfono: Escena/Compartido/Instrumento; la selección tiene alternativa HTML. Soltar herramienta y ordenar bandeja sin cambiar registros.
+8. **7:30–8:00 / Alcance.** Subconjunto 8086 y diagramas didácticos; geometría no destinada a fabricación. Mostrar evidencia de pruebas y señalar que dispositivos reales/extensiones futuras no están certificados.
 
-## Ejecución local
-Desarrollo: npm install y npm start. Producción: npm run build y npm run preview; abrir http://127.0.0.1:4300. El servidor debe ejecutarse desde la raíz del proyecto. Los gráficos, fuentes, worker y contenido son locales; los enlaces de referencia sí requieren conexión.
+## Preparación
 
-Pruebas: npm test -- --watch=false. Geometría: npm run check:geometry. La revisión visual y las mediciones de GPU se hacen en navegador real.
+npm install, npm start para desarrollo. npm run build y npm run preview para producción (por defecto http://127.0.0.1:4300). Si está ocupado, CMD: set SILICIO_PORT=4307 y después npm run preview; abrir http://127.0.0.1:4307. No detener un servicio ajeno. Iniciar desde raíz del proyecto.
+
+Fuentes, worker, WASM y contenido se empaquetan localmente; referencias externas requieren red. La prueba completamente desconectada aún está pendiente. Antes de exponer, abrir cada estación, compilar suma y comprobar recuperar una sesión.
+
+Pruebas: npm test -- --watch=false. Geometría: npm run check:geometry y node tools/check-memory.mjs. Resultados/limitaciones: [evidencia](qa/PROGRESO-REVISION-3.md).

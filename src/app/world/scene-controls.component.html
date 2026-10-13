@@ -55,7 +55,7 @@
       class="editor-tool tool-focus"
       aria-label="Enfocar pieza"
       data-tip="Enfocar pieza"
-      (click)="command.emit('focus')"
+      (click)="focus($event)"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3 8V3h5m8 0h5v5M3 16v5h5m13-5v5h-5M8 8h8v8H8z" /></svg
@@ -134,7 +134,7 @@
           class="editor-tool tool-focus"
           aria-label="Enfocar pieza"
           data-tip="Enfocar pieza"
-          (click)="command.emit('focus')"
+          (click)="focus($event)"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 8V3h5m8 0h5v5M3 16v5h5m13-5v5h-5M8 8h8v8H8z" /></svg

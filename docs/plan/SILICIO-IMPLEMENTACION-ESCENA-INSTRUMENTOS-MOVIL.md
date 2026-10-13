@@ -1,6 +1,6 @@
 # SILICIO: escena, instrumentos y móvil — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use subagent-driven-development or executing-plans to implement this plan task-by-task, únicamente cuando el usuario autorice implementación. En esta revisión solo se escriben documentos.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use subagent-driven-development or executing-plans to implement this plan task-by-task, La implementación fue autorizada y reanudada por el usuario.
 
 **Goal:** Convertir SILICIO en un banco de electrónica detallado y operable, con modelos identificados, física acotada, consola gráfica y experiencia móvil completa.
 
@@ -11,7 +11,7 @@
 **Spec:** [SILICIO-AMPLIACION-ESCENA-PANEL-Y-MOVIL.md](./SILICIO-AMPLIACION-ESCENA-PANEL-Y-MOVIL.md)
 
 ## Global Constraints
-- Solo planificación en este turno: ninguna tarea siguiente se ejecuta aquí.
+- Implementación autorizada. Estado y evidencia por paquete en [PROGRESO-REVISION-3.md](../qa/PROGRESO-REVISION-3.md); varias puertas de aceptación siguen abiertas.
 - Oscuro exclusivamente; Arduino excluido.
 - No cambiar un resultado académico mediante física, animación, perfil gráfico o navegación.
 - Material/malla y herramientas de cámara/despiece pertenecen al área de escena.
@@ -31,7 +31,7 @@
 
 ## 1. Archivos y responsabilidades previstos
 
-Estos son archivos futuros; no se crean como código en esta revisión.
+Arquitectura prevista originalmente. Los propietarios reales y diferencias están registrados en [ARQUITECTURA-DEL-CODIGO.md](../ARQUITECTURA-DEL-CODIGO.md).
 
 | Archivo | Función |
 |---|---|
@@ -109,7 +109,7 @@ Los tipos concretos usan los registros, eventos y snapshots existentes donde sea
 
 ## 3. Tareas y puertas de revisión
 
-Todas las casillas de esta ampliación empiezan pendientes. Los comandos mencionados son instrucciones para una implementación futura y **no se ejecutan durante esta revisión**.
+Las casillas originales conservan el criterio de aceptación detallado. La tabla de estado R00–R12 en el informe de revisión distingue implementación comprobada y puertas abiertas; no se convierten automáticamente en cierre completo. Último incremento: 83/83 tests, build correcto y encaje/refactor verificados.
 
 ### R00 — Reconciliar baseline y cerrar referencias
 **Archivos:** crear catálogo docs/assets; revisar docs/IMPLEMENTACION.md y contratos existentes; sin cambios gráficos todavía.
@@ -143,9 +143,9 @@ Todas las casillas de esta ampliación empiezan pendientes. Los comandos mencion
 **Produce:** register, resolveHit, listSelectable, activate, auditCoverage.
 
 - [ ] Pruebas every_academic_piece_has_action y child_mesh_resolves_owner.
-- [ ] Registrar instrumentos, cables, sonda, ram, pasivos, soportes y herramientas; identificar entorno.
+- [x] Registrar instrumentos, cables, sonda, ram, pasivos, soportes y herramientas; identificar entorno.
 - [ ] Definir acciones repetibles y estados ocupado/deshabilitado; prevenir dobles activaciones.
-- [ ] Crear selector HTML equivalente a raycast y navegación por piezas.
+- [x] Crear selector HTML equivalente a raycast y navegación por piezas.
 - [ ] Verificar por teclado y tap; ninguna pieza de estudio sin respuesta.
 
 **Cierre:** el inventario tiene cero IDs académicos/operables sin acción o alternativa.
@@ -157,8 +157,8 @@ Todas las casillas de esta ampliación empiezan pendientes. Los comandos mencion
 
 - [ ] Prueba representation_control_dispatches_intent; material/malla deja de aparecer en el rack.
 - [ ] Prueba expanded_panel_keeps_selected_bounds_in_free_region.
-- [ ] Agrupar Vista/Objeto/Representación/Entorno y añadir Más controles móvil.
-- [ ] Ajustar encuadre desde bounds, aspect y región libre; no deformar modelos para que quepan.
+- [x] Agrupar Vista/Objeto/Representación/Entorno y añadir Más controles móvil.
+- [x] Ajustar encuadre desde bounds, aspect y región libre; no deformar modelos para que quepan.
 - [ ] Verificar foco, aria-pressed, disabled, teclado y etiqueta en320–430 px.
 
 **Cierre:** todos los controles solicitados viven en el visor y no tapan detalle relevante.
@@ -197,7 +197,7 @@ Todas las casillas de esta ampliación empiezan pendientes. Los comandos mencion
 - [ ] Prueba classic_bank_capacity_matches_organization y cobertura chip/banco/pin.
 - [ ] Prueba dimm_outline_matches_source y dimm_contacts_exist_on_both_faces:144 contactos físicos por cara, total288; etiquetas de señales solo según pinout verificado.
 - [ ] Modelar perfil, uniones y apoyos; frente/reverso y mecanismo del socket.
-- [ ] Construir organización/celda educativa como escala separada, identificada.
+- [x] Construir organización/celda educativa como escala separada, identificada.
 - [ ] Ejecutar quality-kit y contratos de holgura/soporte; revisar vistas neutra, rasante, wireframe y movimiento máximo.
 - [ ] Integrar selección chip→organización→dato sin mezclar sesiones de arquitecturas diferentes.
 
@@ -222,8 +222,8 @@ Todas las casillas de esta ampliación empiezan pendientes. Los comandos mencion
 **Produce:** API física compartida y reset.
 
 - [ ] Pruebas fixed_step_caps_substeps y hidden_tab_resume_does_not_fast_forward.
-- [ ] Inicializar Rapier/WASM diferido y fijar unidades/ownership.
-- [ ] Colliders compuestos, objetos fijos, dinámicos y tapa/socket cinemáticos.
+- [x] Inicializar Rapier/WASM diferido y fijar unidades/ownership.
+- [x] Colliders compuestos, objetos fijos, dinámicos y tapa/socket cinemáticos.
 - [ ] Pruebas tool_rests_in_tray, reset_removes_transient_constraints y pointer_cancel_ends_drag.
 - [ ] Comparar física a30/60 FPS, liberación rápida y calidad ligera.
 - [ ] Confirmar que bytes/registros no cambian al manipular una herramienta.
@@ -236,8 +236,8 @@ Todas las casillas de esta ampliación empiezan pendientes. Los comandos mencion
 **Produce:** dirección, alias, bytes, bancos y canales explicativos.
 
 - [ ] Pruebas little_endian_visual_uses_real_bytes y aliases_share_physical_address.
-- [ ] Mostrar la palabra como dos bytes y localizar el banco correspondiente en el escenario clásico.
-- [ ] Derivar trazas didácticas con unidades explícitas; no simular tiempos eléctricos por una duración GSAP.
+- [x] Mostrar la palabra como dos bytes y localizar el banco correspondiente en el escenario clásico.
+- [x] Derivar trazas didácticas con unidades explícitas; no simular tiempos eléctricos por una duración GSAP.
 - [ ] Reutilizar geometría/texturas de contenido para actualización; test value_change_does_not_rebuild_memory_model.
 - [ ] Revisar instrumentos con escritura/restauración/cambio de segmento y móvil.
 
@@ -249,10 +249,10 @@ Todas las casillas de esta ampliación empiezan pendientes. Los comandos mencion
 **Produce:** cinta visual, comparación/ramas y B0/B1 con dependencias.
 
 - [ ] Pruebas restore_updates_all_instruments y branching_preserves_previous_future.
-- [ ] Archivar futuro antes de sustituir rama; permitir recuperar/exportar esa rama, con límites explícitos.
-- [ ] A/B muestra diferencias de registros, flags y memoria; no solo AX.
+- [x] Archivar futuro antes de sustituir rama; permitir recuperar/exportar esa rama, con límites explícitos.
+- [x] A/B muestra diferencias de registros, flags y memoria; no solo AX.
 - [ ] Pruebas buffer_identity_survives_stage_change y cpu_waits_for_completion_signal.
-- [ ] Presentar versión/identidad y etapa de buffer; no cambiar una etiqueta y fingir procesamiento.
+- [x] Presentar versión/identidad y etapa de buffer; no cambiar una etiqueta y fingir procesamiento.
 - [ ] Reconciliar el contrato de prefetch: implementar eventos reales en modelo versionado o conservar esquema estático identificado.
 
 **Cierre:** historia y comparación visual son recuperables; Apple muestra dependencia y contenido ilustrativo coherente.
@@ -264,7 +264,7 @@ Todas las casillas de esta ampliación empiezan pendientes. Los comandos mencion
 
 - [ ] Revisar material neutro/rasante, campos de desgaste y repetición de textura.
 - [ ] Implementar luz/sombra/contacto antes de AO/bloom.
-- [ ] Un pipeline de salida; cancelación/liberación de targets y resize.
+- [x] Un pipeline de salida; cancelación/liberación de targets y resize.
 - [ ] Pruebas quality_change_preserves_academic_actions y reduced_motion_keeps_signal_state.
 - [ ] Medir cada pase de forma aislada y registrar coste; excluir los que incumplan presupuesto o lectura.
 - [ ] Añadir CRT, señales y polvo/DOF solo bajo las restricciones de la especificación.
@@ -276,14 +276,14 @@ Todas las casillas de esta ampliación empiezan pendientes. Los comandos mencion
 **Consume:** R01–R11.
 **Produce:** mediciones, capturas y versión aceptada.
 
-- [ ] Instancing/merging sin perder IDs; bajar draw calls hacia presupuesto.
+- [x] Instancing/merging sin perder IDs; bajar draw calls hacia presupuesto.
 - [ ] Cargar/liberar estación y reutilizar memoria/historial; test ten_station_roundtrips_stabilize_resources.
 - [ ] Prueba webgl_unavailable_preserves_lab_controls.
 - [ ] Verificar editor, selección, misiones, sesión y todos los instrumentos en matriz responsive.
 - [ ] Medir p50/p95 de frames, costes de sombras/pases/picking y cuerpos despiertos; registrar hardware y navegador.
 - [ ] Probar paquete local preparado, sin red, con fuentes, WASM, worker, assets ydecodificadores locales.
 - [ ] Revisión independiente de funcionalidad/visual/uso solo después de implementación autorizada; corregir hallazgos concretos.
-- [ ] Actualizar estado real del plan y guion de exposición. No declarar dispositivos o ayudas técnicas no probados.
+- [x] Actualizar estado real del plan y guion de exposición. No declarar dispositivos o ayudas técnicas no probados.
 
 **Cierre:** evidencia permite evaluar el avance; ningún requisito se cierra solo por tener un checklist.
 
@@ -307,4 +307,4 @@ Interrupciones, caché ejecutable, constructor libre y cooperación siguen su pr
 ## 5. Puertas para avanzar
 G0: fichas y contratos; G1: shell+toolbar móvil; G2: un instrumento real; G3: RAM y banco identificados/operables; G4: física+resto de instrumentos; G5: efectos dentro de presupuesto; G6: aceptación desktop/móvil/local.
 
-No estimar una fecha nueva de entrega sin disponibilidad real. La implementación se mantiene detenida hasta autorización del usuario.
+No estimar una fecha nueva de entrega sin disponibilidad real. La implementación está autorizada. La aceptación integral permanece abierta por los límites registrados; no se presupone una validación móvil real o de fabricación.

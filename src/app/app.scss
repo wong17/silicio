@@ -6,141 +6,6 @@
   --surface: #181c1e;
   --line: #39403e;
 }
-* {
-  box-sizing: border-box;
-}
-button,
-a,
-input,
-textarea,
-select,
-summary {
-  -webkit-tap-highlight-color: transparent;
-}
-button,
-input,
-textarea,
-select {
-  font: inherit;
-  color: var(--ink);
-}
-button {
-  min-height: 44px;
-  min-width: 44px;
-  border: 1px solid #444b47;
-  background: #242a28;
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: background 0.18s;
-}
-button:hover {
-  background: #343d37;
-}
-button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-button[aria-pressed='true'],
-.selected {
-  border-color: var(--accent);
-  background: #3c3b2e;
-}
-a {
-  color: inherit;
-  text-underline-offset: 4px;
-}
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-summary:focus-visible {
-  outline: 2px solid #e8c184;
-  outline-offset: 3px;
-}
-input,
-textarea,
-select {
-  background: #101513;
-  border: 1px solid #4b544e;
-  padding: 11px;
-  max-width: 100%;
-  min-height: 44px;
-  border-radius: 0;
-}
-textarea {
-  font:
-    14px/1.65 'IBM Plex Mono',
-    monospace;
-  width: 100%;
-  resize: vertical;
-  caret-color: #e8c184;
-}
-input:not([type='checkbox']) {
-  width: 100%;
-}
-select {
-  width: 100%;
-}
-input[type='checkbox'] {
-  accent-color: #d7ac6f;
-  min-height: 20px;
-  width: 20px;
-  vertical-align: middle;
-  margin-right: 8px;
-}
-p {
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--dim);
-  margin: 10px 0 16px;
-}
-h1,
-h2,
-h3 {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 600;
-  margin: 0;
-  line-height: 1.05;
-}
-h1 {
-  font-size: clamp(44px, 5vw, 76px);
-  text-wrap: balance;
-}
-h2 {
-  font-size: 34px;
-}
-h3 {
-  font-size: 24px;
-  margin: 18px 0 10px;
-}
-svg {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-}
-svg text {
-  fill: currentColor;
-  stroke: none;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  text-anchor: middle;
-}
-small,
-code,
-.badge,
-.register-readout,
-.flag-row,
-.bits,
-.bit-detail,
-.address-bus,
-.byte-lanes,
-.endian-caption,
-.model-reference,
-.diff-table {
-  font-family: 'IBM Plex Mono', monospace;
-  font-variant-numeric: tabular-nums;
-}
 .experience {
   height: 100%;
   display: grid;
@@ -725,24 +590,6 @@ code,
   border-color: #cfb589;
   color: #e1d1ae;
 }
-.machine-diagram {
-  display: grid;
-  grid-template-columns: 65px 1fr 70px;
-  align-items: center;
-  gap: 8px;
-  margin: 24px 0;
-}
-.machine-diagram svg {
-  width: 100%;
-  color: #d1b27a;
-}
-.machine-diagram svg text {
-  font-size: 9px;
-}
-.machine-diagram > div {
-  display: grid;
-  gap: 8px;
-}
 .bus-option {
   display: block;
   width: 100%;
@@ -825,9 +672,6 @@ summary {
   background: #372622;
   color: #efd1c7;
 }
-.empty {
-  padding: 10px 0;
-}
 .model-reference {
   font-size: 12px;
   color: #c7d3bb;
@@ -874,10 +718,6 @@ summary {
   .title-block p {
     font-size: 14px;
     max-width: 260px;
-  }
-  .bits,
-  .memory-grid {
-    gap: 8px;
   }
   .bits button {
     min-height: 55px;
@@ -1048,8 +888,6 @@ summary {
     transition: none !important;
   }
 }
-@media (max-width: 899px) {
-}
 
 .camera-tools {
   position: absolute;
@@ -1064,4 +902,8 @@ summary {
   }
 }
 
-@media (max-width: 899px) { .memory-grid { grid-template-columns: repeat(4,minmax(0,1fr)); } }
+@media (max-width: 899px) {
+  .memory-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

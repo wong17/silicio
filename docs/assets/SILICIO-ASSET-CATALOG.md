@@ -18,3 +18,10 @@ Estado inicial AX7, DS2000, CS1000, SS3000, IP0100. Ventana lógica de32bytes in
 
 ## Puertas pendientes
 No se cierra R00/R06 como réplica mecánica: faltan fotos/plano de lote y verificación completa de cotas, holguras y todas las caras. La representación tiene identidad y organización correctas; los valores aproximados permanecen expresos.
+
+
+## Encaje verificado del 8086 — 13 octubre 2026
+
+Datums de maqueta en models/cpu-assembly.ts, no cotas de fabricante: PCB superior .36, apoyo/socket desde .36 hasta .652; cerámica .652–.928; sello .008 y fondo de tapa .936. Los 40 ejes de terminal/pad/perforación son compartidos. Socket con canales radio .078, bevel .004 y patas que apoyan sobre PCB; placa con huecos reales. Contacto del hombro con banda del encapsulado permitido solo en el margen probado. Tests verifican centrado, holguras, soporte y tapa.
+
+Constructores actuales: intel-8086.model.ts, intel-2164a-memory.model.ts, kingston-dimm.model.ts, apple-soc.model.ts y workbench-room.model.ts. Estaciones: station-builder.ts; selección/metadatos independientes de los constructores. Ver ../ARQUITECTURA-DEL-CODIGO.md y ../qa/PROGRESO-REVISION-3.md.

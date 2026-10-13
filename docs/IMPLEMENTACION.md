@@ -1,29 +1,24 @@
-# SILICIO — estado comprobado
+# SILICIO — implementación comprobada
 
-## Correcciones de esta entrega
-- Se retiró la nota sobre desgaste y toda explicación de decisiones de estilo de la interfaz. El contenido añadido explica multiplexación AD0–AD15, ALE, reloj, zócalo, registros y segmentación.
-- Se reconstruyó el 8086: encapsulado alargado, cavidad real en cerámica, tapa con muesca, marca del pin 1, 40 terminales de perfil extruido doblado, contactos del zócalo, pistas, pasivos, reloj, lógica de apoyo y soportes. Placa didáctica, no reproducción de un circuito comercial.
-- Entorno físico con mesa, pared, instrumentos, luz articulada, cables y herramientas. El trazado del osciloscopio es ilustrativo; no se declara medición real.
-- Apple conceptual con placa, portador, contactos BGA instanciados, paquetes auxiliares y detalle de celdas en los bloques. La distribución sigue siendo conceptual.
-- Etiquetas de memoria usan valores actuales. El cronoscopio muestra como máximo los 16 eventos más recientes y un estado inicial cuando no existe traza.
-- Motor 8086 en worker, respuestas identificadas y descarte de respuestas canceladas. El decodificador lee memoria y ya no depende del IR ensamblado para ejecutar.
-- Ocho experimentos, cinco preguntas con retroalimentación y glosario.
-- Exportación y recuperación JSON: validación de registros, flags, memoria y reejecución de cada evento importado para verificar la traza.
-- Preferencias de calidad y reducción de movimiento persistentes; sonido optativo activado por gesto.
-- Malla para inspección, nivel ligero que oculta microdetalle, recuperación mediante recarga y suspensión al ocultar la página.
+Estado actualizado el 13 de octubre de 2026. Angular, Three.js r186, GSAP y Lenis en consola de escritorio; Rapier se carga al manipular herramientas. Interfaz oscura y fuentes locales. Arduino excluido.
 
-## Evidencia
-- 19 pruebas de simulación, decodificador, controles y sesiones pasan.
-- Kit de geometría de la skill: 171/171 autocomprobaciones.
-- Comprobación del ensamblaje: 40 pines, 291 meshes, 68480 triángulos, sin caras coplanares conflictivas ni datos geométricos defectuosos; ver geometry-report.json. El chequeo excluye textos y no certifica todas las penetraciones sólidas de montaje.
-- Navegador: worker ejecuta ADD AX,[10] y devuelve AX=000C; ALE seleccionable; escritura little endian; retroalimentación conceptual y navegación.
-- Compilación de producción correcta, worker y escena separados. Permanece advertencia CSS alrededor de13 kB frente al presupuesto de12 kB.
-- Apple visible: 393 llamadas y115198 triángulos en la vista capturada. No constituye medición universal de FPS ni garantía por equipo.
+## Experiencias disponibles
 
-## Fuentes y skills
-Intel, datasheet 8086 (copia documental): https://userpages.cs.umbc.edu/squire/8086-datasheet.pdf
-Apple WWDC20: https://developer.apple.com/videos/play/wwdc2020/10686/
-Skills: Three.js router, debugging, procedural geometry y su quality-kit, procedural materials, lighting e interaction; guías de GSAP ya integradas.
+- Banco 8086: motor en worker, registros de 16 bits, operandos reales, flags, ocho misiones, señales didácticas, selección de 40 pines y despiece. Encapsulado, socket y placa usan perforaciones y apoyos coherentes.
+- Memoria: placa didáctica de 16 Intel 2164A con bancos, segmentación, alias y little endian. Galería Kingston KVR26N19S8/8 independiente con 288 contactos, ocho paquetes y retenciones; no hereda direcciones del 8086.
+- Cronoscopio: restauración, hasta ocho ramas, A/B de registros/flags/memoria, exportación v2 e importación compatible v1.
+- Apple: arquitectura conceptual M5 base publicada, CPU/GPU/Neural/memoria y recorrido B0/B1 con dependencia de finalización. No reproduce un die comercial ni rendimiento medido.
+- Máquina: lectura de 7, operación +5, escritura y salida de 12 con buses y señales visibles.
+- Banco: osciloscopio, fuente, lámpara, sonda, cable y herramientas seleccionables; manipulación con reset. Toolbar por iconos y tooltips, foco por región libre y modos móviles.
 
-## Límites y pendientes del plan de largo alcance
-La entrega funcional no representa todos los paquetes de los ocho documentos originales: quedan trazabilidad completa de misiones a esos paquetes, fases de bus temporizadas, prefetch eléctrico, interrupciones, más variantes comerciales Apple con fuente y representación específica, historial de ramas múltiples, postprocesado con medición por dispositivo, una evaluación integral de accesibilidad y perfiles de rendimiento de varios equipos. No se afirma que todo el plan de largo alcance esté cerrado.
+## Organización y calidad
+
+[Mapa del código](ARQUITECTURA-DEL-CODIGO.md). Modelos, composición, selección, cámara, física y render tienen archivos propios. El adaptador Angular no fabrica hardware; el motor gráfico no importa Angular. HTML y SCSS de producción externos.
+
+83/83 pruebas en 22 archivos; build de producción correcto sin advertencias de presupuesto. Contratos de encaje para CPU y ambas RAM, auditorías geométricas sin defectos detectados en esos ensamblajes, diez recorridos con recursos constantes y confirmación responsive. [Evidencia y límites completos](qa/PROGRESO-REVISION-3.md).
+
+## Límites explícitos
+
+Los modelos no son planos de fabricación: varias cotas mecánicas son aproximadas. Las fases de bus/diagramas son didácticos; no una simulación eléctrica. No se han validado teléfonos reales, teclado virtual real, ayudas técnicas, todos los volúmenes del entorno ni la distribución completamente desconectada. Las extensiones históricas P1/P2 siguen pendientes y esta entrega no cierra todo el plan maestro.
+
+[Guion para exposición](GUIA-DE-EXPOSICION.md) · [Catálogo y fuentes](assets/SILICIO-ASSET-CATALOG.md) · [Plan y estado actual](plan/SILICIO-IMPLEMENTACION-ESCENA-INSTRUMENTOS-MOVIL.md).

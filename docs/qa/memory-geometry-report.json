@@ -1,0 +1,34 @@
+[
+  {
+    "variant": "classic",
+    "pass": true,
+    "scope": "Hard surfaces only; text omitted; intended solid contacts excluded. Fit contracts are tested separately.",
+    "ms": 1684,
+    "meshes": 91,
+    "triangles": 26916,
+    "compared": 23990,
+    "truncated": false,
+    "zfight": [],
+    "zfightTotalCm2": 0,
+    "backToBack": 180,
+    "defects": [],
+    "noMaterial": [],
+    "clash": []
+  },
+  {
+    "variant": "dimm",
+    "pass": true,
+    "scope": "Hard surfaces only; text omitted; intended solid contacts excluded. Fit contracts are tested separately.",
+    "ms": 18,
+    "meshes": 20,
+    "triangles": 1808,
+    "compared": 1232,
+    "truncated": false,
+    "zfight": [],
+    "zfightTotalCm2": 0,
+    "backToBack": 44,
+    "defects": [],
+    "noMaterial": [],
+    "clash": []
+  }
+]
