@@ -1,0 +1,3 @@
+import {it,expect} from 'vitest';import{Cpu8086}from'./cpu8086';
+it('alu_operands_match_trace',()=>{const c=new Cpu8086();c.load('MOV AX, 7\nADD AX, [10]\nCMP AX, 12\nHLT');c.step();const sum=c.step()!;expect(sum.operation?.operands).toEqual([7,5]);expect(sum.operation?.accesses).toEqual([{kind:'read',address:0x2000a,value:5}]);const cmp=c.step()!;expect(cmp.operation?.result).toBe(0);expect(cmp.after.registers.AX).toBe(12);});
+it('flags_distinguish_carry_from_overflow',()=>{const c=new Cpu8086();c.load('MOV AX, 0FFFFh\nADD AX, 1');c.step();const t=c.step()!;expect(t.operation?.result).toBe(0);expect(t.after.flags.CF).toBe(true);expect(t.after.flags.OF).toBe(false);});

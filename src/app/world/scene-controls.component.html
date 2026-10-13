@@ -1,0 +1,218 @@
+<div class="editor-rail">
+  <button
+    type="button"
+    class="editor-tool tool-left"
+    aria-label="Girar a la izquierda"
+    data-tip="Girar a la izquierda"
+    (click)="command.emit('rotate-left')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9a7 7 0 1 1 0 7M5 3v6h6" /></svg
+    ><span class="tool-tip" role="tooltip">Girar a la izquierda</span></button
+  ><button
+    type="button"
+    class="editor-tool tool-right"
+    aria-label="Girar a la derecha"
+    data-tip="Girar a la derecha"
+    (click)="command.emit('rotate-right')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9a7 7 0 1 0 0 7m0-13v6h-6" /></svg
+    ><span class="tool-tip" role="tooltip">Girar a la derecha</span></button
+  ><span class="rail-separator" aria-hidden="true"></span
+  ><button
+    type="button"
+    class="editor-tool tool-plus"
+    aria-label="Acercar"
+    data-tip="Acercar"
+    (click)="command.emit('zoom-in')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M10 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12m4 10 6 6M7 10h6m-3-3v6" /></svg
+    ><span class="tool-tip" role="tooltip">Acercar</span></button
+  ><button
+    type="button"
+    class="editor-tool tool-minus"
+    aria-label="Alejar"
+    data-tip="Alejar"
+    (click)="command.emit('zoom-out')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M10 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12m4 10 6 6M7 10h6" /></svg
+    ><span class="tool-tip" role="tooltip">Alejar</span></button
+  ><button
+    type="button"
+    class="editor-tool tool-center"
+    aria-label="Centrar banco"
+    data-tip="Centrar banco"
+    (click)="command.emit('reset')"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M8 12h8m-4-4v8" /></svg
+    ><span class="tool-tip" role="tooltip">Centrar banco</span></button
+  ><span class="rail-separator object-tools" aria-hidden="true"></span>
+  <div class="object-tools">
+    <button
+      type="button"
+      class="editor-tool tool-focus"
+      aria-label="Enfocar pieza"
+      data-tip="Enfocar pieza"
+      (click)="command.emit('focus')"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 8V3h5m8 0h5v5M3 16v5h5m13-5v5h-5M8 8h8v8H8z" /></svg
+      ><span class="tool-tip" role="tooltip">Enfocar pieza</span>
+    </button>
+    @if (section === '8086' || section === 'apple') {
+      <button
+        type="button"
+        class="editor-tool tool-chip"
+        aria-label="Abrir o cerrar chip"
+        data-tip="Abrir o cerrar chip"
+        [attr.aria-pressed]="exploded"
+        (click)="command.emit('explode')"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m4 14 8 4 8-4M4 9l8 4 8-4-8-4zM4 19l8 4 8-4M12 2v3" /></svg
+        ><span class="tool-tip" role="tooltip">Abrir o cerrar chip</span>
+      </button>
+    }
+    <button
+      type="button"
+      class="editor-tool tool-mesh"
+      aria-label="Alternar materiales y malla"
+      data-tip="Alternar materiales y malla"
+      data-action="representation"
+      [attr.aria-pressed]="viewMode === 'wireframe'"
+      (click)="command.emit('representation')"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 5h14v14H5zM5 5l14 14M19 5 5 19M12 5v14M5 12h14" /></svg
+      ><span class="tool-tip" role="tooltip">Alternar materiales y malla</span></button
+    ><button
+      type="button"
+      class="editor-tool tool-light"
+      aria-label="Luz de inspección"
+      data-tip="Luz de inspección"
+      [attr.aria-pressed]="inspection"
+      (click)="command.emit('light')"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M9 17h6m-5 3h4M8 13a5 5 0 1 1 8 0l-1 2H9zM12 1v2m9 5h2M1 8h2M4 2l2 2m12 0 2-2"
+        /></svg
+      ><span class="tool-tip" role="tooltip">Luz de inspección</span>
+    </button>
+  </div>
+  <span class="rail-separator" aria-hidden="true"></span>
+  <details class="more-tools">
+    <summary class="editor-tool" aria-label="Más herramientas">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01" /></svg
+      ><span class="tool-tip" role="tooltip">Más herramientas</span>
+    </summary>
+    <div class="tool-popover">
+      <div class="mobile-extra">
+        <button
+          type="button"
+          class="editor-tool tool-left"
+          aria-label="Girar a la izquierda"
+          data-tip="Girar a la izquierda"
+          (click)="command.emit('rotate-left')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9a7 7 0 1 1 0 7M5 3v6h6" /></svg
+          ><span class="tool-tip" role="tooltip">Girar a la izquierda</span></button
+        ><button
+          type="button"
+          class="editor-tool tool-right"
+          aria-label="Girar a la derecha"
+          data-tip="Girar a la derecha"
+          (click)="command.emit('rotate-right')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 9a7 7 0 1 0 0 7m0-13v6h-6" /></svg
+          ><span class="tool-tip" role="tooltip">Girar a la derecha</span></button
+        ><button
+          type="button"
+          class="editor-tool tool-focus"
+          aria-label="Enfocar pieza"
+          data-tip="Enfocar pieza"
+          (click)="command.emit('focus')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 8V3h5m8 0h5v5M3 16v5h5m13-5v5h-5M8 8h8v8H8z" /></svg
+          ><span class="tool-tip" role="tooltip">Enfocar pieza</span>
+        </button>
+        @if (section === '8086' || section === 'apple') {
+          <button
+            type="button"
+            class="editor-tool tool-chip"
+            aria-label="Abrir o cerrar chip"
+            data-tip="Abrir o cerrar chip"
+            [attr.aria-pressed]="exploded"
+            (click)="command.emit('explode')"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m4 14 8 4 8-4M4 9l8 4 8-4-8-4zM4 19l8 4 8-4M12 2v3" /></svg
+            ><span class="tool-tip" role="tooltip">Abrir o cerrar chip</span>
+          </button>
+        }
+        <button
+          type="button"
+          class="editor-tool tool-mesh"
+          aria-label="Alternar materiales y malla"
+          data-tip="Alternar materiales y malla"
+          [attr.aria-pressed]="viewMode === 'wireframe'"
+          (click)="command.emit('representation')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 5h14v14H5zM5 5l14 14M19 5 5 19M12 5v14M5 12h14" /></svg
+          ><span class="tool-tip" role="tooltip">Alternar materiales y malla</span></button
+        ><button
+          type="button"
+          class="editor-tool tool-light"
+          aria-label="Luz de inspección"
+          data-tip="Luz de inspección"
+          [attr.aria-pressed]="inspection"
+          (click)="command.emit('light')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M9 17h6m-5 3h4M8 13a5 5 0 1 1 8 0l-1 2H9zM12 1v2m9 5h2M1 8h2M4 2l2 2m12 0 2-2"
+            /></svg
+          ><span class="tool-tip" role="tooltip">Luz de inspección</span>
+        </button>
+      </div>
+      <button
+        type="button"
+        class="editor-tool tool-hand"
+        aria-label="Manipular vista"
+        data-tip="Manipular vista"
+        [attr.aria-pressed]="manipulate"
+        (click)="command.emit('manipulate')"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M7 12V6a2 2 0 0 1 4 0v6-8a2 2 0 0 1 4 0v8-5a2 2 0 0 1 4 0v9c0 4-2 6-6 6H9l-6-7a2 2 0 0 1 3-2l1 1"
+          /></svg
+        ><span class="tool-tip" role="tooltip">Manipular vista</span></button
+      ><button
+        type="button"
+        class="editor-tool tool-drop"
+        aria-label="Soltar herramienta"
+        data-tip="Soltar herramienta"
+        (click)="command.emit('drop')"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 3h8v5H8zM12 8v8m-3-3 3 3 3-3M4 18v3h16v-3" /></svg
+        ><span class="tool-tip" role="tooltip">Soltar herramienta</span></button
+      ><button
+        type="button"
+        class="editor-tool tool-reset"
+        aria-label="Ordenar bandeja"
+        data-tip="Ordenar bandeja"
+        (click)="command.emit('reset-tools')"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 0 6M4 3v7h7" /></svg
+        ><span class="tool-tip" role="tooltip">Ordenar bandeja</span>
+      </button>
+    </div>
+  </details>
+</div>

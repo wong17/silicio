@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T03:29:10.065Z",
+  "title": "Design System: SILICIO",
+  "extensions": {
+    "colorMeta": {
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Grafito",
+        "canonical": "#101214"
+      },
+      "amber": {
+        "role": "primary",
+        "displayName": "Fósforo ámbar",
+        "canonical": "#d7ac6f"
+      },
+      "copper": {
+        "role": "secondary",
+        "displayName": "Cobre usado",
+        "canonical": "#b77b52"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Título de instrumento",
+        "purpose": "Títulos HTML"
+      },
+      "body": {
+        "displayName": "Lectura",
+        "purpose": "Explicaciones y controles"
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "camera",
+        "value": "1.25s power3.inOut",
+        "purpose": "Reencuadre; duración cero con movimiento reducido"
+      },
+      {
+        "name": "exploded",
+        "value": ".8s power3.inOut",
+        "purpose": "Despiece del chip"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "820px"
+      },
+      {
+        "name": "compact",
+        "value": "1150px"
+      },
+      {
+        "name": "wide",
+        "value": "1700px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Acción primaria",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ejecutar una operación",
+      "html": "<button class=\"ds-button\">EJECUTAR</button>",
+      "css": ".ds-button{font:600 13px/1.2 Barlow,sans-serif;background:#d7ac6f;color:#172019;border:1px solid #d7ac6f;padding:12px 11px;min-height:40px;border-radius:0}.ds-button:hover{background:#e2c99a;color:#111417}.ds-button:focus-visible{outline:2px solid #d7ac6f;outline-offset:3px}.ds-button:disabled{opacity:.4}"
+    },
+    {
+      "name": "Acción secundaria",
+      "kind": "button",
+      "description": "Paso manual",
+      "html": "<button class=\"ds-secondary\">PASO</button>",
+      "css": ".ds-secondary{font:600 13px/1.2 Barlow,sans-serif;background:#25292c;color:#e3ded2;border:1px solid #3b3e3f;padding:12px 11px;min-height:40px;border-radius:0}.ds-secondary:hover{color:#d7ac6f}.ds-secondary:focus-visible{outline:2px solid #d7ac6f;outline-offset:3px}.ds-secondary:disabled{opacity:.4}"
+    },
+    {
+      "name": "Campo",
+      "kind": "input",
+      "description": "Dirección o dato hexadecimal",
+      "html": "<input class=\"ds-input\" aria-label=\"Segmento\" value=\"2000\">",
+      "css": ".ds-input{font:12px/1.7 \"IBM Plex Mono\",monospace;background:#101315;color:#e0dacb;border:1px solid #474b4d;padding:11px;border-radius:0}.ds-input:focus-visible{outline:2px solid #d7ac6f;outline-offset:3px}"
+    },
+    {
+      "name": "Registro",
+      "kind": "custom",
+      "description": "Estado numérico del procesador",
+      "html": "<div class=\"ds-register\"><span>AX</span><strong>000C</strong></div>",
+      "css": ".ds-register{display:flex;gap:8px;background:#101315;color:#e3ded2;border:1px solid #373c3e;padding:10px 8px}.ds-register span{font:10px \"IBM Plex Mono\",monospace;color:#a4a9a8}.ds-register strong{font:14px \"IBM Plex Mono\",monospace;margin-left:auto}"
+    },
+    {
+      "name": "Navegación",
+      "kind": "nav",
+      "description": "Estación actual",
+      "html": "<nav><a class=\"ds-nav\" href=\"#8086\" aria-current=\"page\">Banco 8086</a></nav>",
+      "css": ".ds-nav{font:15px Barlow,sans-serif;color:#d7ac6f;border-bottom:1px solid #d7ac6f;padding:12px 0;text-decoration:none}.ds-nav:hover{color:#d7ac6f}.ds-nav:focus-visible{outline:2px solid #d7ac6f;outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Banco de inspección usado",
+    "overview": "Banco de inspección usado: una experiencia oscura con componentes físicos y una consola de operación. La interfaz usa grafito, cobre y ámbar; los modelos llevan desgaste procedural y límites educativos explícitos.",
+    "keyCharacteristics": [],
+    "rules": [],
+    "dos": [
+      "Do mantener el tema oscuro, usar monoespaciado para datos y ofrecer controles HTML equivalentes."
+    ],
+    "donts": [
+      "Don't convertir los bloques conceptuales en afirmaciones de distribución exacta del silicio ni declarar terminado el plan completo."
+    ]
+  }
+}

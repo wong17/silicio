@@ -1,0 +1,629 @@
+<main
+  class="experience"
+  [attr.data-layout]="layout()"
+  [style.--accent]="current()?.accent || '#d7ac6f'"
+>
+  <header class="topbar">
+    <a class="brand" routerLink="/" aria-label="SILICIO · Atrio"
+      ><svg viewBox="0 0 32 32" aria-hidden="true">
+        <path
+          d="M8 8h16v16H8zM12 12h8v8h-8zM12 3v5m8-5v5M12 24v5m8-5v5M3 12h5m-5 8h5m16-8h5m-5 8h5"
+        /></svg
+      >SILICIO<small>ARCHIVO DE MÁQUINAS</small></a
+    >
+    <nav class="experience-nav" aria-label="Experiencias">
+      @for (e of experiences; track e.id) {
+        <a
+          [routerLink]="'/' + e.id"
+          [class.active]="sections() === e.id"
+          [attr.aria-current]="sections() === e.id ? 'page' : null"
+          >{{ e.title }}</a
+        >
+      }
+    </nav>
+    <span class="version">ARQUITECTURA I / II</span>
+  </header>
+  <div class="mobile-modes" aria-label="Distribución del laboratorio">
+    @for (m of ['scene', 'shared', 'instrument']; track m) {
+      <button type="button" [attr.aria-pressed]="layout() === m" (click)="setLayout($any(m))">
+        {{ m === 'scene' ? 'Escena' : m === 'shared' ? 'Compartido' : 'Instrumento' }}
+      </button>
+    }
+  </div>
+  <section class="stage" aria-label="Banco tridimensional">
+    @defer (on immediate) {
+      <app-atrium-scene
+        #world
+        [section]="sections()"
+        [memoryCells]="cells()"
+        [memoryBase]="physical() - (physical() % 32)"
+        [history]="historyView()"
+        [viewMode]="viewMode()"
+        [exploded]="exploded()"
+        [activePart]="activePart()"
+        [tick]="tick()"
+        [reduced]="reduced()"
+        [quality]="quality()"
+        [manipulate]="manipulate()"
+        [inspection]="inspection()"
+        [memoryModel]="memoryModel()"
+        [signalChannel]="signalChannel()"
+        [readAccess]="lastReads()"
+        [writeAccess]="lastWrites()"
+        (pieces)="selectablePieces.set($event)"
+        (picked)="part($event)"
+      />
+    } @placeholder {
+      <p class="scene-loading" role="status">Preparando el banco…</p>
+    } @error {
+      <p class="scene-loading" role="alert">
+        Escena no disponible. La consola conserva sus acciones.
+      </p>
+    }
+    <div class="title-block">
+      @if (sections() === 'atrium') {
+        <h1>DESMONTA<br />LA <em>LÓGICA.</em></h1>
+        <p>Entra en el 8086. Sigue una instrucción desde el byte hasta el resultado.</p>
+        <a class="enter" routerLink="/8086">ABRIR EL BANCO</a>
+      } @else {
+        <h1>{{ current()?.title }}</h1>
+        <p>{{ current()?.summary }}</p>
+      }
+    </div>
+    <app-scene-controls
+      class="camera-tools"
+      [section]="sections()"
+      [exploded]="exploded()"
+      [viewMode]="viewMode()"
+      [inspection]="inspection()"
+      [manipulate]="manipulate()"
+      (command)="sceneCommand($event)"
+    />
+    <div class="scene-caption">
+      <span></span
+      >{{
+        manipulate()
+          ? 'MANIPULACIÓN ACTIVA · ARRASTRA LA VISTA'
+          : 'SELECCIONA UNA PIEZA · USA LOS CONTROLES DE VISTA'
+      }}
+    </div>
+  </section>
+  <aside #scrollPanel class="inspector" aria-label="Consola de instrumentos">
+    <div #panelContent class="inspector-content">
+      <div class="rack-heading">
+        <h2>
+          {{
+            sections() === 'atrium'
+              ? 'Estaciones'
+              : sections() === '8086'
+                ? 'Monitor 8086'
+                : sections() === 'memory'
+                  ? 'Memoria'
+                  : sections() === 'time'
+                    ? 'Cronoscopio'
+                    : sections() === 'apple'
+                      ? 'Memoria compartida'
+                      : 'Sistema'
+          }}
+        </h2>
+        <span class="badge">{{
+          running() ? 'EJECUTANDO' : state().halted ? 'HLT' : 'EN PAUSA'
+        }}</span>
+      </div>
+      @if (sections() === 'atrium') {
+        @for (e of experiences; track e.id) {
+          <a class="portal" [routerLink]="'/' + e.id"
+            ><h3>{{ e.title }}</h3>
+            <p>{{ e.subtitle }}</p>
+            <svg viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6" /></svg
+          ></a>
+        }
+      }
+      @if (sections() === '8086' || sections() === 'time') {
+        <div class="execution-bar" aria-label="Ejecución del procesador">
+          <button
+            type="button"
+            (click)="back()"
+            [disabled]="cursor() < 0"
+            aria-label="Retroceder un paso"
+          >
+            ←</button
+          ><button type="button" (click)="step()" [disabled]="state().halted">Paso</button
+          ><button
+            type="button"
+            class="primary"
+            (click)="run()"
+            [disabled]="state().halted && !running()"
+          >
+            {{ running() ? 'Pausar' : 'Ejecutar' }}
+          </button>
+        </div>
+        <div class="rack-tabs" role="tablist" aria-label="Instrumentos del CPU">
+          @for (t of ['state', 'program', 'trace']; track t) {
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === t"
+              [attr.aria-controls]="'tab-' + t"
+              (click)="tab.set($any(t))"
+            >
+              {{ t === 'state' ? 'Estado' : t === 'program' ? 'Programa' : 'Traza' }}
+            </button>
+          }
+        </div>
+        @if (tab() === 'state') {
+          <section
+            class="register-instrument"
+            id="tab-state"
+            aria-label="Registro de dieciséis bits"
+          >
+            <div class="instrument-title">
+              <label for="register">Registro</label
+              ><select
+                id="register"
+                [ngModel]="registerSelected()"
+                (ngModelChange)="registerSelected.set($event)"
+              >
+                @for (r of registerNames; track r) {
+                  <option [value]="r">{{ r }}</option>
+                }
+              </select>
+            </div>
+            <div class="register-readout">
+              <strong>{{ registerView().hex }}<small>h</small></strong
+              ><span>{{ registerView().decimal }} decimal</span>
+            </div>
+            <div class="bits">
+              @for (b of registerView().bits; track $index; let i = $index) {
+                <button
+                  type="button"
+                  [class.on]="b === 1"
+                  [class.changed]="(registerView().changedMask / 2 ** (15 - i)) % 2 >= 1"
+                  [attr.aria-pressed]="selectedBit() === 15 - i"
+                  [attr.aria-label]="'Bit ' + (15 - i) + ', valor ' + b"
+                  (click)="selectedBit.set(15 - i)"
+                >
+                  <small>{{ 15 - i }}</small
+                  >{{ b }}
+                </button>
+              }
+            </div>
+            <p class="bit-detail">
+              Bit {{ selectedBit() }} · peso {{ 2 ** selectedBit() }} · estado
+              {{ registerView().bits[15 - selectedBit()] }}
+            </p>
+          </section>
+          <section class="alu-instrument" aria-label="Operandos y resultado reales">
+            <h3>Ruta aritmética</h3>
+            @if (laboratory().operation && laboratory().operation?.result !== undefined) {
+              <svg
+                viewBox="0 0 340 126"
+                role="img"
+                [attr.aria-label]="'Operación ' + laboratory().instruction?.text"
+              >
+                <path d="M68 37h74v28m130-28h-74v28M170 89v21" />
+                <rect x="14" y="13" width="100" height="38" />
+                <rect x="226" y="13" width="100" height="38" />
+                <path class="alu-body" d="M125 63h90l-18 29h-54z" />
+                <text x="64" y="38">{{ h(laboratory().operation!.operands[0]) }}</text>
+                <text x="276" y="38">
+                  {{
+                    laboratory().operation!.operands.length > 1
+                      ? h(laboratory().operation!.operands[1])
+                      : '—'
+                  }}
+                </text>
+                <text x="170" y="82">{{ laboratory().instruction?.op }}</text>
+                <text x="170" y="123">{{ h(laboratory().operation!.result!) }}h</text>
+              </svg>
+              <p class="operation-line">{{ laboratory().instruction?.text }}</p>
+            } @else {
+              <p class="empty">Ejecuta un paso para ver los operandos que utiliza la máquina.</p>
+            }
+            <div class="flag-row">
+              @for (f of flagNames; track f) {
+                <span [class.on]="state().flags[f]"
+                  ><small>{{ f }}</small
+                  ><b>{{ state().flags[f] ? 1 : 0 }}</b></span
+                >
+              }
+            </div>
+            <div class="flag-meaning">
+              <span
+                >CF <b>{{ state().flags.CF ? 'acarreo / préstamo' : 'sin acarreo' }}</b></span
+              ><span
+                >OF
+                <b>{{
+                  state().flags.OF ? 'desbordamiento con signo' : 'sin desbordamiento'
+                }}</b></span
+              >
+            </div>
+          </section>
+          <div class="part-buttons">
+            @for (p of ['alu', 'registers', 'control', 'biu', 'queue']; track p) {
+              <button type="button" [attr.aria-pressed]="activePart() === p" (click)="part(p)">
+                {{ p === 'registers' ? 'Registros' : p === 'queue' ? 'Cola' : p.toUpperCase() }}
+              </button>
+            }
+          </div>
+        }
+        @if (tab() === 'program') {
+          <section id="tab-program">
+            <label class="field-label" for="mission">Experimento</label
+            ><select
+              id="mission"
+              [ngModel]="missionIndex()"
+              (ngModelChange)="chooseMission(+$event)"
+            >
+              @for (m of missions; track m.title; let i = $index) {
+                <option [ngValue]="i">{{ m.title }}</option>
+              }
+            </select>
+            <p>{{ missions[missionIndex()].goal }}</p>
+            <label class="field-label" for="program">Programa ensamblador</label
+            ><textarea
+              id="program"
+              [(ngModel)]="source"
+              (focus)="editorFocus()"
+              spellcheck="false"
+              rows="8"
+              data-lenis-prevent
+            ></textarea
+            ><button type="button" class="wide" (click)="load()">Compilar y reiniciar</button>
+            <ol class="disassembly">
+              @for (i of cpu.instructions; track i.address) {
+                <li [class.current]="i.address === state().registers.IP">
+                  <code>{{ h(i.address) }}</code
+                  ><span>{{ i.text }}</span
+                  ><small>
+                    @for (b of i.bytes; track $index) {
+                      {{ h(b, 2) }}
+                    }
+                  </small>
+                </li>
+              }
+            </ol>
+          </section>
+        }
+        @if (tab() === 'trace') {
+          <section id="tab-trace">
+            <ol class="timeline">
+              <li>
+                <button type="button" [attr.aria-pressed]="cursor() === -1" (click)="restore(-1)">
+                  Estado inicial
+                </button>
+              </li>
+              @for (e of trace(); track $index; let i = $index) {
+                <li>
+                  <button type="button" [class.selected]="cursor() === i" (click)="restore(i)">
+                    <span>{{ h(e.instruction.address) }} · {{ e.instruction.text }}</span
+                    ><small
+                      >AX {{ h(e.after.registers.AX) }} → IP {{ h(e.after.registers.IP) }}</small
+                    >
+                  </button>
+                </li>
+              }
+            </ol>
+            <button type="button" class="wide" (click)="capture()">Guardar estado A</button>
+            @if (baseline) {
+              <h3>Diferencias A / actual</h3>
+              <div class="diff-table">
+                @for (d of comparison(); track d.name) {
+                  <div>
+                    <span>{{ d.name }}</span
+                    ><del>{{ d.a }}</del
+                    ><b>{{ d.b }}</b>
+                  </div>
+                } @empty {
+                  <p>Registros, flags y memoria coinciden.</p>
+                }
+              </div>
+            }
+            @if (branches().length) {
+              <h3>Futuros conservados</h3>
+              @for (b of branches(); track b.id) {
+                <button type="button" class="wide" (click)="restoreBranch(b.id)">
+                  {{ b.id }} · {{ b.trace.length }} pasos
+                </button>
+              }
+            }
+            <label class="field-label" for="ds">Segmento DS (hex)</label
+            ><input
+              id="ds"
+              [ngModel]="h(state().registers.DS)"
+              (change)="editRegister('DS', $any($event.target).value)"
+              maxlength="4"
+            />
+          </section>
+        }
+        @if (missionComplete()) {
+          <p class="success" role="status">Resultado alcanzado. Observa los flags y la traza.</p>
+        }
+      }
+      @if (sections() === 'memory') {
+        <div class="model-switch" aria-label="Modelo de memoria">
+          <button
+            type="button"
+            [attr.aria-pressed]="memoryModel() === 'classic'"
+            (click)="memoryModel.set('classic'); part('bank-even')"
+          >
+            2164A / 8086</button
+          ><button
+            type="button"
+            [attr.aria-pressed]="memoryModel() === 'dimm'"
+            (click)="memoryModel.set('dimm'); part('dimm')"
+          >
+            DDR4 / galería
+          </button>
+        </div>
+        <p class="model-reference">
+          {{
+            memoryModel() === 'classic'
+              ? '16 × Intel 2164A · 128 KiB · placa didáctica'
+              : 'Kingston KVR26N19S8/8 · 8 GB · DDR4-2666 · 1Rx8'
+          }}
+        </p>
+        <div class="address-inputs">
+          <label
+            >Segmento<input
+              aria-label="Segmento hexadecimal"
+              [(ngModel)]="segmentText"
+              (change)="setAddress()"
+              maxlength="4" /></label
+          ><span>:</span
+          ><label
+            >Offset<input
+              aria-label="Offset hexadecimal"
+              [(ngModel)]="offsetText"
+              (change)="setAddress()"
+              maxlength="4"
+          /></label>
+        </div>
+        <div class="address-bus">
+          <span>{{ h(segment()) }}h × 10h</span><b>+</b><span>{{ h(offset()) }}h</span
+          ><strong>{{ h(physical(), 5) }}h</strong>
+        </div>
+        <p class="alias">
+          Alias: {{ h(aliasAddress().segment) }}:{{ h(aliasAddress().offset) }} →
+          {{ h(physical(), 5) }}h
+        </p>
+        <div class="byte-lanes">
+          <div>
+            <small>Dirección {{ h(physical(), 5) }}</small
+            ><strong>{{ h(state().memory[physical()] || 0, 2) }}h</strong><span>BYTE BAJO</span>
+          </div>
+          <div>
+            <small>Dirección {{ h((physical() + 1) % 1048576, 5) }}</small
+            ><strong>{{ h(state().memory[(physical() + 1) % 1048576] || 0, 2) }}h</strong
+            ><span>BYTE ALTO</span>
+          </div>
+        </div>
+        <p class="endian-caption">
+          Little endian · palabra
+          {{
+            h(
+              (state().memory[physical()] || 0) +
+                256 * (state().memory[(physical() + 1) % 1048576] || 0)
+            )
+          }}h
+        </p>
+        <div class="memory-grid">
+          @for (c of cells(); track c.address) {
+            <button
+              type="button"
+              [class.selected]="c.address === physical()"
+              (click)="selectCell(c.address)"
+              [attr.aria-label]="'Dirección ' + h(c.address, 5) + ', byte ' + h(c.value, 2)"
+            >
+              <small>{{ h(c.address % 256, 2) }}</small
+              ><b>{{ h(c.value, 2) }}</b>
+            </button>
+          }
+        </div>
+        <label class="field-label" for="word">Escribir palabra (hex)</label>
+        <div class="inline-field">
+          <input id="word" [(ngModel)]="wordText" maxlength="4" /><button
+            type="button"
+            (click)="writeMemory()"
+          >
+            Escribir
+          </button>
+        </div>
+        <div class="part-buttons">
+          <button type="button" (click)="part('bank-even')">Banco par · D0–D7</button
+          ><button type="button" (click)="part('bank-odd')">Banco impar · D8–D15</button>
+        </div>
+      }
+      @if (sections() === 'apple') {
+        <p>Modelo funcional de Apple Silicon. Los bloques no reproducen un die comercial.</p>
+        <div class="apple-map">
+          <button type="button" (click)="part('performance')">CPU-P</button
+          ><button type="button" (click)="part('efficiency')">CPU-E</button
+          ><button type="button" (click)="part('gpu')">GPU</button
+          ><button type="button" (click)="part('neural')">Neural Engine</button
+          ><button type="button" class="shared-memory" (click)="part('unified')">
+            MEMORIA COMPARTIDA
+          </button>
+        </div>
+        <h3>Una dependencia real</h3>
+        <div class="buffer-readout">
+          <div>
+            <span>B0 · entrada</span><code>{{ bufferView().input.values.join(' · ') }}</code>
+          </div>
+          <svg viewBox="0 0 300 36" role="img" aria-label="Dependencia CPU GPU CPU">
+            <path d="M28 18h244m-8-7 8 7-8 7" />
+            <text x="38" y="12">CPU</text>
+            <text x="148" y="12">GPU × 2</text>
+            <text x="240" y="12">CPU</text>
+          </svg>
+          <div [class.ready]="bufferView().completed">
+            <span>B1 · versión {{ bufferView().version }}</span
+            ><code>{{
+              bufferView().completed
+                ? bufferView().output.values.join(' · ')
+                : 'ESPERANDO FINALIZACIÓN'
+            }}</code>
+          </div>
+        </div>
+        <ol class="buffer-steps">
+          @for (s of bufferStages; track s; let i = $index) {
+            <li [class.current]="bufferStage() === i">{{ s }}</li>
+          }
+        </ol>
+        <button type="button" class="primary wide" (click)="nextBuffer()">
+          {{ bufferStage() === 2 ? 'Reiniciar recorrido' : 'Avanzar dependencia' }}
+        </button>
+        <p>
+          Transformación ilustrativa: la GPU duplica cada elemento. B0 y B1 conservan su identidad;
+          la CPU recibe B1 después de la finalización.
+        </p>
+      }
+      @if (sections() === 'machine') {
+        <div class="machine-diagram">
+          <button type="button" (click)="part('cpu')">CPU</button
+          ><svg viewBox="0 0 300 100" role="img" aria-label="Buses del sistema">
+            <path
+              d="M55 20h190m-10-7 10 7-10 7M55 50h190m-10-7 10 7-10 7M55 80h190m-10-7 10 7-10 7"
+            />
+            <text x="150" y="15">DIRECCIONES</text>
+            <text x="150" y="45">DATOS</text>
+            <text x="150" y="75">CONTROL</text>
+          </svg>
+          <div>
+            <button type="button" (click)="part('ram')">RAM</button
+            ><button type="button" (click)="part('io')">E/S</button>
+          </div>
+        </div>
+        @for (b of busNames; track b.id) {
+          <button
+            type="button"
+            class="bus-option"
+            [attr.aria-pressed]="bus() === b.id"
+            (click)="transferBus(b.id)"
+          >
+            <b>{{ b.name }}</b
+            ><span>{{ b.detail }}</span>
+          </button>
+        }
+        <a class="text-link" routerLink="/8086">Observar una ejecución del 8086 →</a>
+      }
+      @if (sections() === '8086' || sections() === 'machine' || activePart() === 'scope') {
+        <section class="signal-instrument" aria-label="Captura didáctica de señales">
+          <div class="instrument-title">
+            <h3>Captura de bus</h3>
+            <select
+              aria-label="Canal de señal"
+              [ngModel]="signalChannel()"
+              (ngModelChange)="signalChannel.set($event)"
+            >
+              <option>ALE</option>
+              <option>RD</option>
+              <option>WR</option>
+            </select>
+          </div>
+          <svg
+            viewBox="0 0 320 100"
+            role="img"
+            [attr.aria-label]="'Canal ' + signalChannel() + ', ciclo ilustrativo'"
+          >
+            <path
+              class="scope-grid"
+              d="M20 10v65m70-65v65m70-65v65m70-65v65m70-65v65M20 25h280M20 50h280M20 75h280"
+            />
+            <path
+              class="scope-trace"
+              [attr.d]="
+                signalChannel() === 'ALE'
+                  ? 'M20 70h20V25h50v45h210'
+                  : signalChannel() === 'RD' && lastReads()
+                    ? 'M20 25h110v45h80V25h90'
+                    : signalChannel() === 'WR' && lastWrites()
+                      ? 'M20 25h110v45h80V25h90'
+                      : 'M20 25h280'
+              "
+            />
+            <text x="40" y="94">DIRECCIÓN</text>
+            <text x="180" y="94">TRANSFERENCIA</text>
+          </svg>
+          <p>Pasos didácticos de la última instrucción; no son nanosegundos medidos.</p>
+        </section>
+      }
+      <section class="piece-inspector">
+        <h3>Pieza seleccionada</h3>
+        <p>{{ selectedDescription() }}</p>
+        <label class="field-label" for="piece">Inspeccionar en el banco</label
+        ><select id="piece" [ngModel]="activePart()" (ngModelChange)="part($event)">
+          <option [value]="activePart()">{{ activePart() }}</option>
+          @for (p of selectablePieces(); track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+          @if (sections() === '8086' || sections() === 'atrium') {
+            <option value="lid">Encapsulado</option>
+            <option value="socket">Zócalo</option>
+            <option value="clock">Reloj</option>
+            @for (p of pins; track p.id) {
+              <option [value]="p.id">{{ p.label }}</option>
+            }
+          }
+        </select>
+      </section>
+      @if (error()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
+      <details class="settings">
+        <summary>Sesión y preferencias</summary>
+        <label class="field-label" for="session-file">Recuperar sesión JSON</label
+        ><input
+          id="session-file"
+          type="file"
+          accept="application/json,.json"
+          (change)="importSession($event)"
+        /><button type="button" class="wide" (click)="exportSession()">
+          Exportar sesión y ramas</button
+        ><label
+          ><input type="checkbox" [ngModel]="reduced()" (ngModelChange)="setReduced($event)" />
+          Reducir movimiento</label
+        ><label
+          >Gráficos<select [ngModel]="quality()" (ngModelChange)="setQuality($event)">
+            <option value="high">Detalle</option>
+            <option value="low">Ligero</option>
+          </select></label
+        ><button type="button" [attr.aria-pressed]="sound()" (click)="toggleSound()">
+          Sonido {{ sound() ? 'activado' : 'desactivado' }}
+        </button>
+      </details>
+      <details>
+        <summary>Conceptos y alcance del simulador</summary>
+        <p>
+          El 8086 decodifica bytes del subconjunto admitido: MOV, ADD, SUB, CMP, INC, DEC, saltos,
+          LOOP, NOP y HLT. Sin temporización eléctrica ni interrupciones. La cola de seis bytes es
+          un esquema estático.
+        </p>
+        <p>
+          Segmentación: dirección = segmento × 16 + offset, limitada a 20 bits. Las palabras se
+          almacenan con el byte menos significativo primero.
+        </p>
+        <p>
+          Arquitectura: contrato visible al programador. Organización: implementación física de ese
+          contrato.
+        </p>
+        <a
+          class="source"
+          href="https://userpages.cs.umbc.edu/squire/8086-datasheet.pdf"
+          target="_blank"
+          rel="noopener"
+          >Intel 8086 · ficha técnica</a
+        ><a
+          class="source"
+          href="https://www.kingston.com/dataSheets/KVR26N19S8_8.pdf"
+          target="_blank"
+          rel="noopener"
+          >Kingston · referencia del DIMM</a
+        >
+      </details>
+    </div>
+  </aside>
+  <footer class="footer">
+    <span>SILICIO / ARQUITECTURA DE MÁQUINAS</span><span>8086 · MEMORIA · APPLE SILICON</span>
+  </footer>
+</main>

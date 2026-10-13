@@ -1,0 +1,6 @@
+<canvas #canvas aria-hidden="true"></canvas>
+@if (!supported()) {
+  <div class="fallback" role="status">
+    La vista 3D necesita WebGL. El recorrido textual sigue disponible.
+  </div>
+}
