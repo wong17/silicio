@@ -40,6 +40,24 @@ export interface StationActivity {
   mnemonic?: string;
   /** Apple M5 shared-buffer dependency, when the station is the SoC. */
   buffer?: BufferActivity;
+  /** La máquina: which bus carries a value in the current step, and the values the chips show. */
+  machine?: MachineActivity;
+}
+
+export interface MachineActivity {
+  stage: number;
+  /** Bus that lights in this step, or none while the machine waits or the ALU works. */
+  bus: 'address' | 'data' | 'control' | null;
+  /** Direction of travel along the bus: `out` goes from the processor, `in` goes toward it. */
+  direction: 'out' | 'in';
+  /** Where the value ends up on a control step: the output port instead of the RAM. */
+  target: 'ram' | 'io';
+  /** Text carried by the packet, e.g. 0007h or RD. */
+  value: string;
+  accumulator: number;
+  memory: number[];
+  output: number;
+  aluFrom?: number;
 }
 
 export interface BufferActivity {

@@ -44,3 +44,32 @@ export class MachineExperiment {
     this.memory = [7, 0];
   }
 }
+
+import type { MachineActivity } from '../laboratory/station-activity';
+
+const h4 = (n: number) => n.toString(16).toUpperCase().padStart(4, '0') + 'h';
+
+/** Reads the machine experiment as station activity: the only bus that lights is the one the step uses. */
+export function machineActivity(m: MachineExperiment): MachineActivity {
+  const base = { stage: m.stage, accumulator: m.accumulator, memory: [...m.memory], output: m.output };
+  switch (m.stage) {
+    case 1:
+      return { ...base, bus: 'address', direction: 'out', target: 'ram', value: h4(m.address) };
+    case 2:
+      return { ...base, bus: 'control', direction: 'out', target: 'ram', value: 'RD' };
+    case 3:
+      return { ...base, bus: 'data', direction: 'in', target: 'ram', value: h4(m.data) };
+    case 4:
+      return { ...base, bus: null, direction: 'out', target: 'ram', value: h4(m.accumulator), aluFrom: m.data };
+    case 5:
+      return { ...base, bus: 'address', direction: 'out', target: 'ram', value: h4(m.address) };
+    case 6:
+      return { ...base, bus: 'control', direction: 'out', target: 'ram', value: 'WR' };
+    case 7:
+      return { ...base, bus: 'data', direction: 'out', target: 'ram', value: h4(m.data) };
+    case 8:
+      return { ...base, bus: 'control', direction: 'out', target: 'io', value: h4(m.output) };
+    default:
+      return { ...base, bus: null, direction: 'out', target: 'ram', value: '' };
+  }
+}

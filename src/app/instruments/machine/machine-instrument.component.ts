@@ -1,6 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { LabSession } from '../../laboratory/lab-session.service';
-import { MachineExperiment } from '../machine-experiment';
 
 /** Conceptual machine: read a value, add five, write it back and send it to the output. */
 @Component({
@@ -10,8 +9,7 @@ import { MachineExperiment } from '../machine-experiment';
 })
 export class MachineInstrumentComponent {
   readonly session = inject(LabSession);
-  readonly experiment = new MachineExperiment();
-  private readonly revision = signal(0);
+  readonly experiment = this.session.machine;
   readonly steps = [
     'En espera',
     'Seleccionar dirección 0000h',
@@ -25,10 +23,7 @@ export class MachineInstrumentComponent {
   ];
   /** Bus line that carries the value at each stage; empty when nothing moves. */
   readonly channels = ['', 'address', 'control', 'data', 'data', 'address', 'control', 'data', 'control'];
-  readonly stage = computed(() => {
-    this.revision();
-    return this.experiment.stage;
-  });
+  readonly stage = computed(() => this.session.machineStage());
   readonly activeChannel = computed(() => this.channels[this.stage()] || '');
 
   h(n: number): string {
@@ -36,13 +31,11 @@ export class MachineInstrumentComponent {
   }
 
   advance(): void {
-    this.experiment.advance();
-    this.revision.update((v) => v + 1);
+    this.session.advanceMachine();
     this.session.transferBus(this.channels[this.stage()] || 'address');
   }
 
   reset(): void {
-    this.experiment.reset();
-    this.revision.update((v) => v + 1);
+    this.session.resetMachine();
   }
 }

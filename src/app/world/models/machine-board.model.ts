@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { WorkshopGeometry } from './workshop-geometry';
+import type { MachineActivity } from '../../laboratory/station-activity';
 
 /** Board datum: its underside is the station origin, so the station rests on the mat. */
 export const MACHINE_BOARD_BASE = 0;
@@ -14,30 +15,26 @@ const CHIPS = [
   { id: 'io', label: 'ENTRADA / SALIDA', color: '#68869d', x: 1.3, z: 1.3, w: 2.6, d: 1.0 },
 ] as const;
 
-/** Bundles of copper traces between chips, each with the chip-edge points it joins. */
-const BUSES = [
-  {
-    name: 'DIRECCIONES',
-    from: [-1.5, -0.35],
-    to: [0.05, -0.95],
-    spread: [-0.1, 0, 0.1],
-    colour: '#c9925a',
-  },
-  {
-    name: 'DATOS',
-    from: [-1.5, 0.22],
-    to: [0.05, -0.8],
-    spread: [-0.08, 0, 0.08],
-    colour: '#d6a46c',
-  },
-  {
-    name: 'CONTROL',
-    from: [-1.5, 0.45],
-    to: [0.05, 1.3],
-    spread: [-0.07, 0, 0.07],
-    colour: '#9fb5c4',
-  },
-] as const;
+/** The three buses, routed in right angles: out of the processor, along a vertical channel, into the chip. */
+export const BUS_ROUTES = {
+  address: { name: 'DIRECCIONES', from: [-1.5, -0.35], to: [0.05, -0.95], elbow: -1.15, colour: '#c9925a', target: 'ram' },
+  data: { name: 'DATOS', from: [-1.5, 0.22], to: [0.05, -0.8], elbow: -0.7, colour: '#d6a46c', target: 'ram' },
+  control: { name: 'CONTROL', from: [-1.5, 0.45], to: [0.05, 1.3], elbow: -0.95, colour: '#9fb5c4', target: 'io' },
+} as const;
+
+const LANES = [-0.08, 0, 0.08];
+
+/** Corner points of one lane of a bus, from the processor to the far chip. */
+export function busPath(bus: keyof typeof BUS_ROUTES, lane: number): [number, number][] {
+  const r = BUS_ROUTES[bus];
+  const o = LANES[lane];
+  return [
+    [r.from[0], r.from[1] + o],
+    [r.elbow + o, r.from[1] + o],
+    [r.elbow + o, r.to[1] + o],
+    [r.to[0], r.to[1] + o],
+  ];
+}
 
 /**
  * La máquina's board: a green PCB with three chips on sockets, copper buses between them, a crystal,
@@ -78,40 +75,79 @@ export class MachineBoardModel extends WorkshopGeometry {
       group.add(pins);
     }
 
-    // Copper traces: each bus is a bundle of parallel segments from the processor to a chip.
-    const packets: { a: [number, number]; b: [number, number]; phase: number; mesh: T.Mesh }[] = [];
+    // Copper traces: every bus is three parallel lanes of right-angled segments. Each bus has its own
+    // material so only the bus the current step uses lights up.
+    const busMaterials = new Map<string, T.MeshStandardMaterial>();
+    const packets = new Map<string, T.Mesh>();
     const packetMaterial = this.tools.track(
       new T.MeshStandardMaterial({ color: '#ffe9a7', emissive: '#ffc35c', emissiveIntensity: 1.6 }),
     );
-    for (const bus of BUSES) {
-      for (const offset of bus.spread) {
-        const a: [number, number] = [bus.from[0], bus.from[1] + offset];
-        const b: [number, number] = [bus.to[0], bus.to[1] + offset];
-        this.segment(root, a, b, 0.035, PCB_TOP + 0.006, copper);
+    for (const key of Object.keys(BUS_ROUTES) as (keyof typeof BUS_ROUTES)[]) {
+      const bus = BUS_ROUTES[key];
+      const material = this.tools.track(copper.clone());
+      material.emissive.set('#000000');
+      busMaterials.set(key, material);
+      for (let lane = 0; lane < LANES.length; lane++) {
+        const path = busPath(key, lane);
+        for (let i = 0; i < path.length - 1; i++) {
+          const trace = this.segment(root, path[i], path[i + 1], 0.035, PCB_TOP + 0.006, material);
+          trace.name = `bus-${key}`;
+        }
       }
-      this.tools.label(root, bus.name, (bus.from[0] + bus.to[0]) / 2, PCB_TOP + 0.012, bus.to[1] + 0.3, 1.5);
-      for (const offset of bus.spread) {
-        const packet = new T.Mesh(this.tools.track(new T.SphereGeometry(0.06, 10, 8)), packetMaterial);
-        packet.userData['dynamic'] = true;
-        root.add(packet);
-        packets.push({
-          a: [bus.from[0], bus.from[1] + offset],
-          b: [bus.to[0], bus.to[1] + offset],
-          phase: (packets.length * 0.37) % 1,
-          mesh: packet,
-        });
-      }
+      this.tools.label(root, bus.name, bus.elbow, PCB_TOP + 0.012, bus.to[1] + (key === 'control' ? 0.3 : -0.3), 1.2);
+      const packet = new T.Mesh(this.tools.track(new T.SphereGeometry(0.075, 10, 8)), packetMaterial);
+      packet.userData['dynamic'] = true;
+      packet.userData['noBounds'] = true;
+      packet.visible = false;
+      packet.name = `packet-${key}`;
+      root.add(packet);
+      packets.set(key, packet);
     }
+    // One legend per chip, rewritten from the activity: the ALU on the processor, the cells on the RAM.
+    const chipLegends = new Map<string, T.Object3D>();
+    for (const chip of CHIPS) {
+      const group = parts.get(chip.id)!;
+      const legend = this.tools.label(group, '', 0, 0.335, chip.d * 0.3, chip.w * 0.9);
+      if (legend) chipLegends.set(chip.id, legend as T.Object3D);
+    }
+    let active: MachineActivity | undefined;
+    let progress = 0;
+    let lastT = 0;
+    let lastStage = -1;
+    this.tools.onActivity?.((a) => {
+      active = a.machine;
+      if (!active) return;
+      if (active.stage !== lastStage) {
+        lastStage = active.stage;
+        progress = 0;
+      }
+      const hex = (n: number) => n.toString(16).toUpperCase().padStart(4, '0') + 'h';
+      const set = (id: string, text: string) => {
+        const legend = chipLegends.get(id);
+        if (legend) this.tools.relabel?.(legend, text);
+      };
+      set('cpu', active.aluFrom !== undefined ? `ALU ${hex(active.aluFrom)} + 5 = ${hex(active.accumulator)}` : `ACC ${hex(active.accumulator)}`);
+      set('ram', `0000:${hex(active.memory[0])}  0001:${hex(active.memory[1])}`);
+      set('io', `SALIDA ${hex(active.output)}`);
+      for (const [key, material] of busMaterials) {
+        const lit = key === active.bus;
+        material.emissive.set(lit ? '#ffb347' : '#000000');
+        material.emissiveIntensity = lit ? 0.9 : 0;
+      }
+    });
     animate((t) => {
-      for (const p of packets) {
-        // Packets travel out and back along their trace, so each bus reads as a two-way conversation.
-        const q = (t * 0.32 + p.phase * 2) % 2,
-          u = q <= 1 ? q : 2 - q;
-        p.mesh.position.set(
-          p.a[0] + (p.b[0] - p.a[0]) * u,
-          PCB_TOP + 0.09,
-          p.a[1] + (p.b[1] - p.a[1]) * u,
-        );
+      const dt = t - lastT;
+      lastT = t;
+      // A frozen clock (reduced motion) lands the packet at the end of its run, so the still frame shows the value.
+      progress = dt <= 0 || dt > 0.5 ? 1 : Math.min(1, progress + dt * 0.9);
+      for (const [key, packet] of packets) {
+        const lit = !!active && active.bus === key;
+        packet.visible = lit;
+        if (!lit || !active) continue;
+        const path = busPath(key as keyof typeof BUS_ROUTES, 1);
+        const u = active.direction === 'in' ? 1 - progress : progress;
+        const point = pointAlong(path, u);
+        packet.position.set(point[0], PCB_TOP + 0.09, point[1]);
       }
     });
 
@@ -163,7 +199,7 @@ export class MachineBoardModel extends WorkshopGeometry {
     width: number,
     y: number,
     material: T.Material,
-  ): void {
+  ): T.Mesh {
     const dx = b[0] - a[0],
       dz = b[1] - a[1];
     const length = Math.hypot(dx, dz);
@@ -176,5 +212,21 @@ export class MachineBoardModel extends WorkshopGeometry {
       (a[1] + b[1]) / 2,
     );
     mesh.rotation.y = -Math.atan2(dz, dx);
+    return mesh;
   }
+}
+
+/** Point at fraction `u` of the total length of a polyline. */
+export function pointAlong(path: [number, number][], u: number): [number, number] {
+  const lengths = path.slice(1).map((p, i) => Math.hypot(p[0] - path[i][0], p[1] - path[i][1]));
+  const total = lengths.reduce((n, l) => n + l, 0);
+  let remaining = Math.min(1, Math.max(0, u)) * total;
+  for (let i = 0; i < lengths.length; i++) {
+    if (remaining <= lengths[i] || i === lengths.length - 1) {
+      const k = lengths[i] === 0 ? 0 : remaining / lengths[i];
+      return [path[i][0] + (path[i + 1][0] - path[i][0]) * k, path[i][1] + (path[i + 1][1] - path[i][1]) * k];
+    }
+    remaining -= lengths[i];
+  }
+  return path[path.length - 1];
 }

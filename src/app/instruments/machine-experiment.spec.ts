@@ -26,3 +26,22 @@ it('machine_reset_restores_data_and_bus_state', () => {
   expect(m.accumulator).toBe(0);
   expect(m.stage).toBe(0);
 });
+
+import { machineActivity } from './machine-experiment';
+it('only_the_active_bus_is_reported', () => {
+  const m = new MachineExperiment();
+  const buses: (string | null)[] = [machineActivity(m).bus];
+  for (let i = 0; i < 8; i++) {
+    m.advance();
+    buses.push(machineActivity(m).bus);
+  }
+  expect(buses).toEqual([null, 'address', 'control', 'data', null, 'address', 'control', 'data', 'control']);
+});
+it('value_travels_with_the_bus', () => {
+  const m = new MachineExperiment();
+  for (let i = 0; i < 3; i++) m.advance();
+  const a = machineActivity(m);
+  expect(a).toMatchObject({ bus: 'data', direction: 'in', value: '0007h' });
+  m.advance();
+  expect(machineActivity(m)).toMatchObject({ bus: null, accumulator: 12, aluFrom: 7 });
+});

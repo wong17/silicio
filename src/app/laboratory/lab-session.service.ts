@@ -10,7 +10,8 @@ import { forkOrigin, type TimelineState } from '../world/timeline-layout';
 import type { SceneCommand } from '../world/scene-toolbar/scene-toolbar.component';
 import { BufferExperiment, LaboratoryFacade } from './laboratory.facade';
 import type { CameraView, PieceAnchor, ScreenAnchor } from '../world/scene-inputs';
-import { PHASES, projectActivity, projectBufferActivity, type Phase, type StationActivity } from './station-activity';
+import { IDLE_ACTIVITY, PHASES, projectActivity, projectBufferActivity, type Phase, type StationActivity } from './station-activity';
+import { MachineExperiment, machineActivity } from '../instruments/machine-experiment';
 import { describePiece, type PieceOption } from './piece-descriptions';
 
 export type Tab = 'state' | 'program' | 'trace';
@@ -109,6 +110,9 @@ export class LabSession {
   private phaseTimer?: ReturnType<typeof setTimeout>;
   /** Conceptual contrast switch of the SoC station: separate memories with a copy between them. */
   readonly separateMemory = signal(false);
+  /** The conceptual machine: one experiment, shared by its panel and the board scene. */
+  readonly machine = new MachineExperiment();
+  readonly machineStage = signal(0);
   readonly activity = computed<StationActivity>(() => {
     if (this.section() === 'apple') {
       const view = this.bufferView();
@@ -122,6 +126,16 @@ export class LabSession {
         this.laboratory().sessionId,
         this.tick(),
       );
+    }
+    if (this.section() === 'machine') {
+      this.machineStage();
+      return {
+        ...IDLE_ACTIVITY,
+        sessionId: this.laboratory().sessionId,
+        revision: this.machineStage(),
+        phase: this.machineStage() ? 'execute' : 'idle',
+        machine: machineActivity(this.machine),
+      };
     }
     return projectActivity(this.laboratory() as never, this.phase(), this.revision());
   });
@@ -551,6 +565,16 @@ export class LabSession {
     this.bufferStage.set(next);
     this.activePart.set(next === 1 ? 'gpu' : next === 2 ? 'unified' : 'performance');
     this.tick.update((n) => n + 1);
+  }
+
+  advanceMachine(): void {
+    this.machine.advance();
+    this.machineStage.set(this.machine.stage);
+  }
+
+  resetMachine(): void {
+    this.machine.reset();
+    this.machineStage.set(0);
   }
 
   transferBus(id: string): void {
