@@ -15,6 +15,8 @@ import { LabSession } from '../../laboratory/lab-session.service';
 export class PieceInspectorComponent {
   readonly session = inject(LabSession);
   readonly focus = output<void>();
+  readonly modelPieces = computed(() => this.session.catalogPieces().filter((p) => p.scope !== 'bench'));
+  readonly benchPieces = computed(() => this.session.catalogPieces().filter((p) => p.scope === 'bench'));
   readonly name = computed(() => {
     const id = this.session.activePart();
     return this.session.catalogPieces().find((p) => p.id === id)?.name ?? id.replaceAll('-', ' ');

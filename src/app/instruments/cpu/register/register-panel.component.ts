@@ -3,6 +3,19 @@ import { FormsModule } from '@angular/forms';
 import { LabSession } from '../../../laboratory/lab-session.service';
 import type { Registers } from '../../../simulation/cpu8086';
 
+/** Register groups for the selector; labels follow the 8086 programmer's model. */
+export const REGISTER_GROUPS: { label: string; names: (keyof Registers)[] }[] = [
+  { label: 'Datos', names: ['AX', 'BX', 'CX', 'DX'] },
+  { label: 'Punteros e índices', names: ['SP', 'BP', 'SI', 'DI'] },
+  { label: 'Segmentos', names: ['CS', 'DS', 'SS', 'ES'] },
+  { label: 'Control', names: ['IP'] },
+];
+export const REGISTER_TITLES: Record<string, string> = {
+  AX: 'Acumulador', BX: 'Base', CX: 'Contador', DX: 'Datos',
+  SP: 'Puntero de pila', BP: 'Puntero base', SI: 'Índice fuente', DI: 'Índice destino',
+  CS: 'Segmento de código', DS: 'Segmento de datos', SS: 'Segmento de pila', ES: 'Segmento extra',
+  IP: 'Puntero de instrucción',
+};
 /** Sixteen-bit register as a row of switchable LEDs; changed bits flash when a step moves them. */
 @Component({
   selector: 'app-register-panel',
@@ -11,6 +24,8 @@ import type { Registers } from '../../../simulation/cpu8086';
   styleUrl: './register-panel.component.scss',
 })
 export class RegisterPanelComponent {
+  readonly groups = REGISTER_GROUPS;
+  readonly titles = REGISTER_TITLES;
   readonly session = inject(LabSession);
   readonly selected = signal<keyof Registers>('AX');
   readonly selectedBit = signal(0);

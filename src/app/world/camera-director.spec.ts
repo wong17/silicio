@@ -31,3 +31,9 @@ it('camera_distance_scales_with_subject', () => {
   });
   expect(big.length()).toBeCloseTo(small.length() * 3, 4);
 });
+it('framing_never_clips_the_room', () => {
+  const c = new T.PerspectiveCamera(38, 1, 0.01, 100);
+  frameBounds(c, new T.Box3(new T.Vector3(-0.2, -0.2, -0.2), new T.Vector3(0.2, 0.2, 0.2)), { x: 0, y: 0, width: 500, height: 500 }, { width: 500, height: 500 });
+  expect(c.far).toBeGreaterThanOrEqual(140);
+  expect(c.near).toBeGreaterThanOrEqual(0.05);
+});

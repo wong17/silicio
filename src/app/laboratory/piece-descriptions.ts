@@ -6,6 +6,7 @@ export interface PieceOption {
   id: string;
   name: string;
   description?: string;
+  scope?: 'model' | 'bench';
 }
 
 const PIN_ROLES: [test: (name: string) => boolean, text: string][] = [

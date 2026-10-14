@@ -85,3 +85,18 @@ it('props that carry leads keep their leads out of the bench objects', () => {
   const bounds = new T.Box3().setFromObject(meter);
   expect(bounds.min.y).toBeGreaterThan(BENCH.top - tolerance);
 });
+
+it('logical_window_rests_on_the_mat', async () => {
+  const { StationBuilder } = await import('./station-builder');
+  const { CLASSIC_BOARD_BASE } = await import('./intel-2164a-memory.model');
+  const labels: { text: string; y: number }[] = [];
+  const spy = {
+    ...tools,
+    label: (_p: T.Object3D, text: string, _x: number, y: number) => labels.push({ text, y }),
+  };
+  const root = new T.Group();
+  new StationBuilder(spy).build('memory', 'classic', root, new Map());
+  const window = labels.find((l) => l.text.startsWith('VENTANA'))!;
+  expect(window.y - CLASSIC_BOARD_BASE).toBeGreaterThan(0.004);
+  expect(window.y - CLASSIC_BOARD_BASE).toBeLessThan(0.03);
+});

@@ -5,6 +5,8 @@ export interface ViewportRegion {
   width: number;
   height: number;
 }
+/** Fixed clip planes: the room is 76 wide, so framing a small piece must never shorten the far plane. */
+export const CAMERA_CLIP = { near: 0.1, far: 140 } as const;
 /** Off-axis projection places the subject in the visible editor region, not behind its overlays. */
 export function frameBounds(
   camera: T.PerspectiveCamera,
@@ -25,8 +27,8 @@ export function frameBounds(
     .add(direction.clone().normalize().multiplyScalar(distance));
   camera.position.copy(position);
   camera.lookAt(sphere.center);
-  camera.near = Math.max(0.02, distance / 100);
-  camera.far = Math.max(60, distance + sphere.radius * 3);
+  camera.near = CAMERA_CLIP.near;
+  camera.far = CAMERA_CLIP.far;
   camera.setViewOffset(
     w,
     h,

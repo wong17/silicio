@@ -134,6 +134,62 @@ const names: Record<string, [string, string]> = {
     'Bandeja de integrados',
     'Circuitos DIP de reposición sobre espuma conductiva. Manipularlos sin protección puede dañarlos.',
   ],
+  dimm: [
+    'Módulo DIMM DDR4',
+    'Módulo de memoria con ocho chips de datos y un chip SPD. La disposición es una aproximación didáctica del módulo.',
+  ],
+  'dimm-socket': [
+    'Zócalo DIMM',
+    'Conector de la placa que sujeta el módulo y conecta sus contactos dorados. La llave central impide girarlo.',
+  ],
+  spd: [
+    'Chip SPD',
+    'Memoria pequeña que describe al controlador las características del módulo al arrancar.',
+  ],
+  alu: [
+    'Unidad aritmético-lógica',
+    'Realiza las sumas, restas y operaciones lógicas de la ejecución y actualiza los indicadores.',
+  ],
+  registers: [
+    'Banco de registros',
+    'Registros de dieciséis bits donde la unidad de ejecución guarda operandos, punteros y segmentos.',
+  ],
+  control: [
+    'Control',
+    'Decodifica la instrucción y ordena qué bloque actúa en cada fase.',
+  ],
+  biu: [
+    'Unidad de interfaz de bus',
+    'Calcula direcciones físicas, busca instrucciones y accede a memoria y entrada/salida.',
+  ],
+  queue: [
+    'Cola de instrucciones',
+    'Almacena por adelantado los bytes de código que la unidad de ejecución consumirá.',
+  ],
+  performance: [
+    'Núcleos de rendimiento',
+    'Grupo de núcleos pensado para trabajo exigente. El recuento sigue la ficha pública del M5.',
+  ],
+  efficiency: [
+    'Núcleos de eficiencia',
+    'Grupo de núcleos pensado para tareas de bajo consumo. El recuento sigue la ficha pública del M5.',
+  ],
+  gpu: [
+    'Procesador gráfico',
+    'Procesa trabajo paralelo y lee los mismos datos de la memoria unificada que la CPU.',
+  ],
+  neural: [
+    'Motor neuronal',
+    'Unidad dedicada a operaciones de aprendizaje automático; su posición es conceptual.',
+  ],
+  unified: [
+    'Memoria unificada',
+    'Memoria compartida por CPU, GPU y motor neuronal. La disposición representada es conceptual.',
+  ],
+  initial: [
+    'Estado inicial',
+    'Estado de la sesión antes de ejecutar ninguna instrucción.',
+  ],
   'pegboard-tools': [
     'Herramientas colgadas',
     'Destornilladores a la vista sobre el panel perforado. Pulsa para ver cómo oscilan al tocarlos.',
@@ -161,6 +217,7 @@ export function pieceDefinition(id: string, experience: string): PieceDefinition
     id,
     name,
     description,
+    scope: OPERABLE.has(id) || id.startsWith('tool') || id === 'supports' ? 'bench' : 'model',
     role:
       id.startsWith('tool') || OPERABLE.has(id)
         ? 'operable'

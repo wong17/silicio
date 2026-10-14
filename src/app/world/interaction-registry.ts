@@ -5,6 +5,8 @@ export interface PieceDefinition {
   role: 'academic' | 'operable' | 'environment';
   actions: string[];
   description?: string;
+  /** Where the piece lives: the station's own model or the shared workbench. */
+  scope?: 'model' | 'bench';
   sourceRefs?: string[];
   modelFidelity?: string;
 }

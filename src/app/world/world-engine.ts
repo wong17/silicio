@@ -11,7 +11,7 @@ import { gsap } from 'gsap';
 import { bindCancellation, applyInputPolicy } from './scene-input';
 import { classifySubject, pieceDefinition } from './piece-catalog';
 import { instanceContacts } from './static-instancing';
-import { frameBounds, ViewportRegion } from './camera-director';
+import { CAMERA_CLIP, frameBounds, ViewportRegion } from './camera-director';
 import { EffectsPipeline, qualitySettings, QualityTier } from './effects/effects-pipeline';
 import { GpuProfile } from './gpu-profile';
 import { FrameProfile } from './frame-profile';
@@ -197,7 +197,7 @@ export class WorldEngine implements SceneInputs {
     this.scene.background = new THREE.Color(HAZE);
     this.scene.fog = new THREE.Fog(HAZE, 44, 150);
     // Far enough for the far corners of the closed room, which the camera can see from the bench.
-    this.camera = new THREE.PerspectiveCamera(38, 1, 0.25, 180);
+    this.camera = new THREE.PerspectiveCamera(38, 1, CAMERA_CLIP.near, CAMERA_CLIP.far);
     this.camera.position.set(5.8, 9.2, 10.8);
     this.camera.lookAt(-0.45, 0.7, 0);
     this.renderer = new THREE.WebGLRenderer({
@@ -559,6 +559,9 @@ export class WorldEngine implements SceneInputs {
     this.cameraMotion?.kill();
     this.focusedObject = undefined;
     this.camera.clearViewOffset();
+    this.camera.near = CAMERA_CLIP.near;
+    this.camera.far = CAMERA_CLIP.far;
+    this.camera.updateProjectionMatrix();
     this.controls.minDistance = 1.6;
     this.controls.enabled = false;
     const mobile = matchMedia('(max-width:899px)').matches;

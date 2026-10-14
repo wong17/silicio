@@ -103,3 +103,22 @@ describe('etiquetas', () => {
     expect(fitFontSize((size) => size * 100, 100, 26, 12)).toBe(12);
   });
 });
+
+describe('tapa del 8086', () => {
+  const linear = (v: number) => (v / 255 <= 0.04045 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4);
+  const meanLuminance = (a: Uint8ClampedArray | Uint8Array) => {
+    let sum = 0;
+    for (let i = 0; i < a.length; i += 4)
+      sum += 0.2126 * linear(a[i]) + 0.7152 * linear(a[i + 1]) + 0.0722 * linear(a[i + 2]);
+    return sum / (a.length / 4);
+  };
+  it('cpu_lid_stays_dark', async () => {
+    const { resolveSurface } = await import('./surface-library');
+    const { CPU_LID_LOOK } = await import('../models/intel-8086.model');
+    const dressed = { ...resolveSurface('cpu-lid', '#292d2c', 0.48, 0.5, CPU_LID_LOOK), size: 64 };
+    const bare = { ...resolveSurface('cpu-lid', '#292d2c', 0.48, 0.5), size: 64 };
+    const fixed = meanLuminance(computeSurface(dressed).albedo);
+    expect(fixed).toBeLessThan(0.12);
+    expect(fixed).toBeLessThan(meanLuminance(computeSurface(bare).albedo));
+  });
+});

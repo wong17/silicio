@@ -2,8 +2,12 @@
   <header class="head">
     <label class="kicker" for="register">Registro</label>
     <select id="register" [ngModel]="selected()" (ngModelChange)="selected.set($event)">
-      @for (r of names; track r) {
-        <option [value]="r">{{ r }}</option>
+      @for (g of groups; track g.label) {
+        <optgroup [label]="g.label">
+          @for (r of g.names; track r) {
+            <option [value]="r">{{ r }} · {{ titles[r] }}</option>
+          }
+        </optgroup>
       }
     </select>
   </header>

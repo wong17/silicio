@@ -27,3 +27,21 @@ it('semantic_grouping_preserves_pose_and_inspection_coverage', () => {
   );
   expect(registry.auditCoverage(root).missing).toEqual([]);
 });
+
+import { accessibleCatalog } from './piece-definitions';
+const EXPERIENCES: [string, 'classic' | 'dimm', number][] = [
+  ['8086', 'classic', 0], ['memory', 'classic', 0], ['memory', 'dimm', 0],
+  ['apple', 'classic', 0], ['machine', 'classic', 0], ['time', 'classic', 0],
+];
+it('every_piece_has_a_human_name', () => {
+  for (const [experience, variant, history] of EXPERIENCES)
+    for (const p of accessibleCatalog(experience, variant, history))
+      expect(p.name, experience + ':' + p.id).not.toBe(p.id);
+});
+it('model_pieces_come_before_bench_objects', () => {
+  for (const [experience, variant, history] of EXPERIENCES) {
+    const scopes = accessibleCatalog(experience, variant, history).map((p) => p.scope);
+    expect(scopes).toContain('model');
+    expect(scopes).toContain('bench');
+  }
+});

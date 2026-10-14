@@ -1,6 +1,8 @@
 import * as T from 'three';
 import { WorkshopGeometry } from './workshop-geometry';
 import { CPU_ASSEMBLY as C, cpuPinX } from './cpu-assembly';
+/** Painted ceramic lid: wear must not expose pale bare metal, or the markings vanish. */
+export const CPU_LID_LOOK = { finish: 'paint', metal: false, wear: 0.12, exposed: '#3b403e' } as const;
 export class Intel8086Model extends WorkshopGeometry {
   build(parent: T.Group, parts: Map<string, T.Object3D>): void {
     const pcb = this.tools.material('board-soldermask', '#244436', 0.8, 0.06);
@@ -155,7 +157,7 @@ export class Intel8086Model extends WorkshopGeometry {
     });
     geo.rotateX(-Math.PI / 2);
     geo.translate(0, -0.07, 0);
-    this.mesh(cap, geo, this.tools.material('cpu-lid', '#292d2c', 0.48, 0.5));
+    this.mesh(cap, geo, this.tools.material('cpu-lid', '#292d2c', 0.48, 0.5, CPU_LID_LOOK));
     this.tools.label(cap, 'INTEL   8086', 0, 0.102, -0.2, 3.7);
     this.tools.label(cap, '16-BIT HMOS   /   DIP-40', 0, 0.103, 0.27, 3.5);
     this.cylinder(cap, 0.055, 0.012, -2.64, 0.106, 0.58, brass).name = 'pin-one-marker';

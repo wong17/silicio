@@ -128,7 +128,7 @@ export class StationBuilder extends WorkshopGeometry {
         const logical = new THREE.Group();
         logical.userData['part'] = 'memory-board';
         root.add(logical);
-        this.tools.label(logical, 'VENTANA LÓGICA / 32 BYTES', 0, 0.15, 3.65, 5.8);
+        this.tools.label(logical, 'VENTANA LÓGICA / 32 BYTES', 0, CLASSIC_BOARD_BASE + 0.006, 3.65, 5.8);
         for (let n = 0; n < 32; n++) {
           const cell = this.box(
             logical,
@@ -136,7 +136,7 @@ export class StationBuilder extends WorkshopGeometry {
             0.06,
             0.43,
             ((n % 16) - 7.5) * 0.46,
-            0.14,
+            CLASSIC_BOARD_BASE + 0.03,
             4.15 + Math.floor(n / 16) * 0.48,
             this.tools.material('logical-cell', '#35483c', 0.9, 0.02),
           );
