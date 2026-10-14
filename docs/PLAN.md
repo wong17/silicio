@@ -52,14 +52,16 @@ Los documentos anteriores decían 83 o 122 pruebas y «cambios sin commit»; amb
 
 Hecho y verificado con pruebas (303 en verde, build inicial 607 kB): fases Q, C (salvo C7), E, H, U (salvo U5), M, X, N y A2 a A7, más L1 a L4, L6 y L7.
 
+Revisión posterior (14 de octubre): corregidos el temblor al alejar la cámara (el límite de la sala y el de zoom discrepaban), el parpadeo negro (el cambio de resolución vaciaba el lienzo al final del fotograma) y las recompilaciones de shaders al generar miniaturas; plano cercano dinámico; tubo del techo fijo; texto de los portales a la izquierda; HUD usable en móvil (bandeja compacta, mapa solo en pantallas anchas).
+
 Pendiente, con la razón:
 
-| Tarea | Por qué sigue abierta |
+| Tarea | Estado |
 |---|---|
-| C7 · profundidad invertida | Hay que compararla en la GT 730 con vistas fijas; no se adopta sin esa medida |
-| L5 · GTAO, bloom, viñeta | El plan exige medir cada pase aislado en la GPU de referencia y descartar los que pasen de 2 ms; sin esa medida no se activan |
-| U5 · tokens y detector de Impeccable | El detector no está instalado en este repositorio; falta correrlo antes y después |
-| A1 · línea base de rendimiento | El panel del navegador integrado no avanza los fotogramas; se toma en Brave con Mayús+D y se anota en `docs/qa/HOJA-DISPOSITIVOS.md` |
+| C7 · profundidad invertida | Disponible con `?depth=reversed` para comparar; falta medirla y decidir en la GT 730 |
+| L5 · GTAO, bloom, viñeta | Pases construidos y desactivados; se encienden con `?fx=ao,bloom,vignette` para medirlos uno a uno y descartar los que pasen de 2 ms |
+| U5 · tokens | `npm run check:tokens` cuenta los colores fuera de tokens (118 → 91 usos); falta el detector de Impeccable, que no está instalado |
+| A1 · línea base de rendimiento | El panel integrado no avanza los fotogramas: medir en Brave con Mayús+D y anotar en `docs/qa/HOJA-DISPOSITIVOS.md` |
 
 Desviaciones declaradas: C1 se resolvió con `OrbitControls` + `CameraRig` (la variante de reserva del plan), sin añadir `camera-controls`; E4 bajó el desgaste por defecto pero no subió a 256 px las superficies protagonistas.
 

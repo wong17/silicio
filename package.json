@@ -9,7 +9,8 @@
     "test": "ng test",
     "preview": "node tools/serve-production.mjs",
     "check:geometry": "node tools/check-workshop.mjs",
-    "check:offline": "node tools/check-offline.mjs"
+    "check:offline": "node tools/check-offline.mjs",
+    "check:tokens": "node tools/check-tokens.mjs"
   },
   "prettier": {
     "printWidth": 100,

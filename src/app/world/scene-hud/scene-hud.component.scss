@@ -170,3 +170,11 @@
     max-height: none;
   }
 }
+
+// Phones: the scene is too short for a map beside the tray, so only the tray is offered there.
+@media (max-width: 899px) {
+  .map-toggle,
+  .drawer.map {
+    display: none;
+  }
+}
