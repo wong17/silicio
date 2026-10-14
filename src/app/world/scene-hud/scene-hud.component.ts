@@ -1,5 +1,5 @@
-import { Component, computed, ElementRef, inject, input, output } from '@angular/core';
-import { LabSession } from '../../laboratory/lab-session.service';
+import { Component, computed, ElementRef, HostListener, inject, input, output, signal } from '@angular/core';
+import { LabSession, type Quality } from '../../laboratory/lab-session.service';
 import { BenchMapComponent } from './bench-map/bench-map.component';
 import { PieceTrayComponent, type Thumbnailer } from './piece-tray/piece-tray.component';
 import { layoutCallouts } from './callout-layout';
@@ -24,6 +24,12 @@ export class SceneHudComponent {
   readonly aimSelected = output<void>();
 
   readonly hud = this.session.hud;
+  readonly graphicsOpen = signal(false);
+  readonly qualities: { value: Quality; label: string; hint: string }[] = [
+    { value: 'high', label: 'Detalle', hint: 'Sombras y reflejos completos' },
+    { value: 'balanced', label: 'Equilibrado', hint: 'Recomendado' },
+    { value: 'low', label: 'Ligero', hint: 'Para equipos modestos' },
+  ];
   /** Legends laid out inside the area the drawers and the title leave free. */
   readonly legends = computed(() => {
     if (!this.session.callouts()) return [];
@@ -39,6 +45,16 @@ export class SceneHudComponent {
       height: Math.max(80, height - top - bottom),
     });
   });
+
+  chooseQuality(value: Quality): void {
+    this.session.setQuality(value);
+    this.graphicsOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  closeGraphics(): void {
+    this.graphicsOpen.set(false);
+  }
 
   toggleMap(): void {
     this.session.setHud({ map: !this.hud().map });

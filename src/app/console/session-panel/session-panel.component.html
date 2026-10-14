@@ -12,12 +12,6 @@
         <input type="checkbox" [ngModel]="session.reduced()" (ngModelChange)="session.setReduced($event)" />
         Reducir movimiento
       </label>
-      <label class="kicker" for="quality">Gráficos</label>
-      <select id="quality" [ngModel]="session.quality()" (ngModelChange)="quality($event)">
-        <option value="high">Detalle</option>
-        <option value="balanced">Equilibrado</option>
-        <option value="low">Ligero</option>
-      </select>
       <button type="button" [attr.aria-pressed]="session.sound()" (click)="session.toggleSound()">
         Sonido {{ session.sound() ? 'activado' : 'desactivado' }}
       </button>

@@ -31,6 +31,21 @@
   }
   </div>
   <div class="toggles">
+    @if (graphicsOpen()) {
+      <div class="gfx-menu" role="radiogroup" aria-label="Calidad gráfica" id="hud-graphics" data-occludes>
+        @for (o of qualities; track o.value) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="session.quality() === o.value"
+            (click)="chooseQuality(o.value)"
+          >
+            <span class="name">{{ o.label }}</span>
+            <small>{{ o.hint }}</small>
+          </button>
+        }
+      </div>
+    }
     <button
       type="button"
       class="toggle"
@@ -51,6 +66,16 @@
     >
       <span class="led" [class.on]="session.lampOn()" aria-hidden="true"></span>
       Mapa
+    </button>
+    <button
+      type="button"
+      class="toggle gfx"
+      [attr.aria-pressed]="graphicsOpen()"
+      aria-controls="hud-graphics"
+      aria-haspopup="true"
+      (click)="graphicsOpen.set(!graphicsOpen())"
+    >
+      Gráficos
     </button>
   </div>
 </div>

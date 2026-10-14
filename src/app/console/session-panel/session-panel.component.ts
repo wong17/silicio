@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { GLOSSARY, searchGlossary } from '../../content/glossary';
 import { TermDirective } from '../../shared/term.directive';
-import { LabSession, type Quality } from '../../laboratory/lab-session.service';
+import { LabSession } from '../../laboratory/lab-session.service';
 
 /** Session files, comfort settings and the keyboard shortcuts that drive the bench. */
 @Component({
@@ -31,10 +31,6 @@ export class SessionPanelComponent {
     ['B', 'Mapa del banco'],
     ['Esc', 'Cancelar manipulación'],
   ];
-
-  quality(value: string): void {
-    this.session.setQuality(value as Quality);
-  }
 
   importFile(event: Event): void {
     const input = event.target as HTMLInputElement;

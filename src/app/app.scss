@@ -104,6 +104,13 @@
   color: #b7b6ae;
 }
 
+// The toolbar shares the bottom row on wide stages, so the hint rides just above it.
+@container stage (min-width: 1060px) {
+  .scene-caption {
+    bottom: 68px;
+  }
+}
+
 .scene-caption {
   position: absolute;
   left: 16px;

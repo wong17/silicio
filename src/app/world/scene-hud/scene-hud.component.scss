@@ -98,9 +98,46 @@
 }
 
 .toggles {
+  position: relative;
   display: flex;
   gap: 8px;
   pointer-events: auto;
+}
+
+.gfx-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid kit.$edge-strong;
+  border-radius: 10px;
+  background: rgba(14, 17, 18, 0.96);
+  animation: grow 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  transform-origin: bottom right;
+  button {
+    display: grid;
+    gap: 2px;
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: kit.$ink;
+    text-align: left;
+    font: 500 13px kit.$mono;
+    small {
+      color: kit.$dim;
+      font: 400 11px kit.$mono;
+    }
+    &[aria-checked='true'] {
+      border-color: kit.$amber;
+      background: kit.$amber-deep;
+      color: kit.$amber-soft;
+    }
+  }
 }
 
 .toggle {
@@ -126,6 +163,17 @@
   @include kit.led(kit.$amber, 8px);
 }
 
+// A stage wide enough for the toolbar plus the three toggles puts them on the toolbar's own row
+// (the toolbar drops to the same level, see scene-toolbar).
+@container stage (min-width: 1060px) {
+  .dock {
+    bottom: 14px;
+  }
+  .drawers {
+    margin-bottom: 0;
+  }
+}
+
 @keyframes grow {
   from {
     opacity: 0;
@@ -134,7 +182,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .drawer.map {
+  .drawer.map,
+  .gfx-menu {
     animation: none;
   }
 }

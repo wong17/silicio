@@ -258,3 +258,10 @@ $lift: 44px;
     display: none;
   }
 }
+
+// With room for the bar and the three HUD toggles side by side, the bar drops to the toggles' level.
+@container stage (min-width: 1060px) {
+  .bar {
+    bottom: 12px;
+  }
+}

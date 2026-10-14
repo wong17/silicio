@@ -40,8 +40,27 @@ describe('HUD de escena', () => {
     const fixture = TestBed.createComponent(SceneHudComponent);
     fixture.detectChanges();
     const toggles = (fixture.nativeElement as HTMLElement).querySelectorAll('.toggle');
-    expect(toggles.length).toBe(2);
+    expect(toggles.length).toBe(3);
     for (const t of Array.from(toggles)) expect(t.getAttribute('aria-controls')).toMatch(/^hud-/);
+  });
+});
+
+describe('gráficos en el HUD', () => {
+  it('the_menu_changes_the_session_quality', async () => {
+    await TestBed.configureTestingModule({ imports: [SceneHudComponent] }).compileComponents();
+    const session = TestBed.inject(LabSession);
+    const fixture = TestBed.createComponent(SceneHudComponent);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('.gfx') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const options = root.querySelectorAll<HTMLButtonElement>('.gfx-menu [role=radio]');
+    expect(options.length).toBe(3);
+    options[2].click();
+    fixture.detectChanges();
+    expect(session.quality()).toBe('low');
+    expect(session.qualityChosen).toBe(true);
+    expect(root.querySelector('.gfx-menu')).toBeNull();
   });
 });
 
