@@ -96,6 +96,8 @@ export class SceneToolbarComponent {
   @Input() manipulate = false;
   @Input() lampOn = true;
   @Input() callouts = false;
+  /** The memory station shows the DIMM, whose layers can be opened too. */
+  @Input() dimm = false;
   /** True while a tool is in hand; the release command has nothing to do otherwise. */
   @Input() holding = false;
   @Output() command = new EventEmitter<SceneCommand>();
@@ -112,7 +114,7 @@ export class SceneToolbarComponent {
   })).filter((group) => group.tools.length);
 
   visible(tool: SceneTool): boolean {
-    return !tool.chipOnly || this.section === '8086' || this.section === 'apple';
+    return !tool.chipOnly || this.section === '8086' || this.section === 'apple' || (this.section === 'memory' && this.dimm);
   }
 
   pressed(tool: SceneTool): boolean | null {

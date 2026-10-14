@@ -60,3 +60,41 @@ describe('actividad de estación', () => {
     expect(channel.current.phase).toBe('fetch');
   });
 });
+
+import { projectMemory } from './station-activity';
+describe('memoria: de segmento:offset a banco, fila y columna', () => {
+  const read = (a: number) => (a === 0x2000a ? 0x05 : a === 0x2000b ? 0x00 : 0);
+  it('row_and_column_address_the_selected_cell', () => {
+    const m = projectMemory(0x2000, 0x000a, read);
+    expect(m.physical).toBe(0x2000a);
+    expect(m.low).toMatchObject({ bank: 0, index: 0x0005, row: 0x05, col: 0x00, value: 5 });
+    expect(m.high).toMatchObject({ bank: 1, index: 0x0005 });
+    expect(m.cycles).toBe(1);
+    expect(m.word).toBe(5);
+  });
+  it('odd_word_takes_two_cycles_and_swaps_banks', () => {
+    const m = projectMemory(0x2000, 0x000b, read);
+    expect(m.a0).toBe(true);
+    expect(m.cycles).toBe(2);
+    expect(m.low.bank).toBe(1);
+    expect(m.high.bank).toBe(0);
+    expect(m.high.index).toBe(m.low.index + 1);
+  });
+  it('two_pairs_land_on_the_same_cell', () => {
+    const m = projectMemory(0x2000, 0x000a, read);
+    const again = projectMemory(m.alias.segment, m.alias.offset, read);
+    expect(again.physical).toBe(m.physical);
+    expect(m.alias.segment).not.toBe(m.segment);
+  });
+  it('little_endian_visual_uses_real_bytes', () => {
+    const word = projectMemory(0x2000, 0x000a, (a) => (a === 0x2000a ? 0x34 : a === 0x2000b ? 0x12 : 0));
+    expect(word.low.value).toBe(0x34);
+    expect(word.high.value).toBe(0x12);
+    expect(word.word).toBe(0x1234);
+  });
+  it('burst_covers_the_aligned_eight_bytes', () => {
+    const m = projectMemory(0x2000, 0x000a, (a) => a & 0xff);
+    expect(m.burstBase).toBe(0x20008);
+    expect(m.burst).toEqual([8, 9, 10, 11, 12, 13, 14, 15]);
+  });
+});

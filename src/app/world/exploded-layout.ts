@@ -22,6 +22,13 @@ function ease(t: number): number {
 export function explodedOffset(id: string, section: string, amount: number): ExplodedOffset {
   const a = Math.min(1, Math.max(0, amount));
   if (section === 'atrium') return { x: 0, y: 0, z: 0 };
+  if (section === 'memory') {
+    // DIMM layers separate out of the module plane: the chips first, the SPD a little farther.
+    const k = ease(a);
+    if (id.startsWith('dimm-chip-')) return { x: 0, y: 0, z: 0.9 * k + 0 };
+    if (id === 'spd') return { x: 0, y: 0, z: 1.5 * k + 0 };
+    return { x: 0, y: 0, z: 0 };
+  }
   if (id === 'lid') {
     const k = ease(a / 0.6);
     return { x: FULL.lid.x * k + 0, y: FULL.lid.y * k + 0, z: FULL.lid.z * k + 0 };

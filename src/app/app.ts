@@ -155,6 +155,8 @@ export class App implements AfterViewInit, OnDestroy {
                 ? 'initial'
                 : 'lid',
     );
+    // The 8086 and the SoC open by default; the memory modules start closed so their layers read as a choice.
+    this.session.exploded.set(section === '8086' || section === 'apple');
     this.session.tab.set('state' as Tab);
     this.consoleEl().nativeElement.scrollTo(0, 0);
   }

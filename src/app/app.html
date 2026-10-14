@@ -81,6 +81,7 @@
       [lampOn]="session.lampOn()"
       [holding]="holding() !== null"
       [callouts]="session.callouts()"
+      [dimm]="session.memoryModel() === 'dimm'"
       (command)="sceneCommand($event)"
     />
 

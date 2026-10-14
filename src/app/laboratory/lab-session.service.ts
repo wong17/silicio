@@ -10,7 +10,7 @@ import { forkOrigin, type TimelineState } from '../world/timeline-layout';
 import type { SceneCommand } from '../world/scene-toolbar/scene-toolbar.component';
 import { BufferExperiment, LaboratoryFacade } from './laboratory.facade';
 import type { CameraView, PieceAnchor, ScreenAnchor } from '../world/scene-inputs';
-import { IDLE_ACTIVITY, PHASES, projectActivity, projectBufferActivity, type Phase, type StationActivity } from './station-activity';
+import { IDLE_ACTIVITY, PHASES, projectActivity, projectBufferActivity, projectMemory, type Phase, type StationActivity } from './station-activity';
 import { MachineExperiment, machineActivity } from '../instruments/machine-experiment';
 import { describePiece, type PieceOption } from './piece-descriptions';
 
@@ -135,6 +135,16 @@ export class LabSession {
         revision: this.machineStage(),
         phase: this.machineStage() ? 'execute' : 'idle',
         machine: machineActivity(this.machine),
+      };
+    }
+    if (this.section() === 'memory') {
+      this.revision();
+      return {
+        ...IDLE_ACTIVITY,
+        sessionId: this.laboratory().sessionId,
+        revision: this.revision(),
+        phase: 'execute',
+        memory: projectMemory(this.segment(), this.offset(), (a) => this.cpu.memory[a] ?? 0),
       };
     }
     return projectActivity(this.laboratory() as never, this.phase(), this.revision());

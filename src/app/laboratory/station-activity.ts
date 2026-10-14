@@ -42,6 +42,39 @@ export interface StationActivity {
   buffer?: BufferActivity;
   /** La máquina: which bus carries a value in the current step, and the values the chips show. */
   machine?: MachineActivity;
+  /** Memory station: where the selected address lands and what the cells hold. */
+  memory?: MemoryActivity;
+}
+
+/** One byte of a word as the classic board stores it: a bank, a row and a column in each one-bit chip. */
+export interface MemoryByte {
+  address: number;
+  /** 0 even bank (D0 to D7), 1 odd bank (D8 to D15). */
+  bank: 0 | 1;
+  /** Cell index inside the bank: the address without its A0 bit. */
+  index: number;
+  row: number;
+  col: number;
+  value: number;
+}
+
+export interface MemoryActivity {
+  segment: number;
+  offset: number;
+  physical: number;
+  a0: boolean;
+  bhe: boolean;
+  /** One bus cycle for an even address, two for a word that starts on an odd one. */
+  cycles: 1 | 2;
+  /** Low byte (the one at `physical`) and high byte (the next address). */
+  low: MemoryByte;
+  high: MemoryByte;
+  word: number;
+  /** Another segment:offset pair that names the same physical cell. */
+  alias: { segment: number; offset: number };
+  /** Eight bytes of the aligned 64-bit burst that the DIMM serves for this address. */
+  burstBase: number;
+  burst: number[];
 }
 
 export interface MachineActivity {
@@ -200,5 +233,39 @@ export function projectBufferActivity(
     wr: buffer.stage !== 2,
     changed: buffer.completed ? ['B1'] : [],
     buffer,
+  };
+}
+
+const MASK20 = 0xfffff;
+
+function memoryByte(address: number, read: (a: number) => number): MemoryByte {
+  const a = address & MASK20;
+  const index = (a >>> 1) & 0xffff;
+  return { address: a, bank: (a & 1) as 0 | 1, index, row: index & 0xff, col: (index >>> 8) & 0xff, value: read(a) & 0xff };
+}
+
+/** Pure projection of the selected segment:offset onto the banks, rows and columns of the board. */
+export function projectMemory(segment: number, offset: number, read: (address: number) => number): MemoryActivity {
+  const seg = segment & 0xffff,
+    off = offset & 0xffff;
+  const physical = (seg * 16 + off) & MASK20;
+  const low = memoryByte(physical, read),
+    high = memoryByte(physical + 1, read);
+  const burstBase = physical & ~7 & MASK20;
+  const aliasSegment = off >= 16 ? (seg + 1) & 0xffff : (seg - 1) & 0xffff;
+  const aliasOffset = off >= 16 ? off - 16 : (off + 16) & 0xffff;
+  return {
+    segment: seg,
+    offset: off,
+    physical,
+    a0: (physical & 1) === 1,
+    bhe: (physical & 1) === 0,
+    cycles: (physical & 1) === 1 ? 2 : 1,
+    low,
+    high,
+    word: (high.value << 8) | low.value,
+    alias: { segment: aliasSegment, offset: aliasOffset },
+    burstBase,
+    burst: Array.from({ length: 8 }, (_, i) => read(burstBase + i) & 0xff),
   };
 }

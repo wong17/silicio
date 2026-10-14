@@ -9,6 +9,7 @@ import { ChronoscopeModel, CHRONOSCOPE_BASE, type ChronoscopeRig } from './chron
 import { ElectronicsWorkshop } from '../electronics-workshop';
 import { MemoryModels } from './memory-models';
 import { CpuActivityView } from './cpu-activity';
+import { MemoryActivityView } from './memory-activity';
 import { AppleActivityView } from './apple-activity';
 import { APPLE_PARTS, type Part } from './station-layouts';
 import type { Section } from '../scene-inputs';
@@ -138,6 +139,10 @@ export class StationBuilder extends WorkshopGeometry {
       if (variant === 'classic') models.classic(root, parts);
       else models.dimm(root, parts);
       datum = variant === 'classic' ? CLASSIC_BOARD_BASE : KINGSTON_BOARD_BASE;
+      const activity = new MemoryActivityView(this.tools);
+      if (variant === 'classic')
+        activity.buildClassic(root, parts, CLASSIC_BOARD_BASE, (fn) => this.tools.animate(fn, 'subject'));
+      else activity.buildDimm(parts);
       if (variant === 'classic') {
         const logical = new THREE.Group();
         logical.userData['part'] = 'memory-board';

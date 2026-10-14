@@ -419,6 +419,8 @@ export class WorldEngine implements SceneInputs {
     for (const [id, object] of this.parts) {
       const rest = object.userData['restY'] as number | undefined;
       const offset = explodedOffset(id, this.section, amount);
+      const restZ = object.userData['restZ'] as number | undefined;
+      if (restZ !== undefined) this.explodedMotion.to(object.position, { z: restZ + offset.z }, 0);
       if (rest !== undefined && !id.startsWith('tool')) {
         this.explodedMotion.to(object.position, { y: rest + offset.y }, 0);
         if (id === 'lid')

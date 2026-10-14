@@ -61,6 +61,7 @@ export class KingstonDimmModel extends MemoryGeometry {
       const c = new T.Group();
       c.position.set(-2.73 + n * 0.78, base + 0.85, 0.105);
       c.userData['part'] = 'dimm-chip-' + n;
+      c.userData['restZ'] = c.position.z;
       parts.set(c.userData['part'], c);
       module.add(c);
       this.box(c, 0.54, 0.66, 0.12, 0, 0, 0, black).name = 'FBGA-1Gx8';
@@ -93,6 +94,7 @@ export class KingstonDimmModel extends MemoryGeometry {
     );
     const spd = this.box(module, 0.28, 0.24, 0.085, -2.9, base + 0.48, -0.072, black);
     spd.userData['part'] = 'spd';
+    spd.userData['restZ'] = spd.position.z;
     parts.set('spd', spd);
     const label = new T.Group();
     label.rotation.x = Math.PI / 2;
