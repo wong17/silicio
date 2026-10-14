@@ -2,6 +2,7 @@ import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 import { Cpu8086, hex, physicalAddress, REGISTER_NAMES, Registers, Snapshot, Trace } from '../simulation/cpu8086';
 import { readSession } from '../simulation/session-codec';
 import { MISSIONS } from '../content/missions';
+import type { MissionContext } from '../content/station-missions';
 import { accessibleCatalog } from '../world/piece-definitions';
 import { INSTRUMENT_PARTS } from '../world/internal-parts';
 import type { Section } from '../world/scene-inputs';
@@ -110,6 +111,30 @@ export class LabSession {
   private phaseTimer?: ReturnType<typeof setTimeout>;
   /** Conceptual contrast switch of the SoC station: separate memories with a copy between them. */
   readonly separateMemory = signal(false);
+  /** Exhibition mode: index of the step on screen, or null when it is off. */
+  readonly tourIndex = signal<number | null>(null);
+  /** Snapshot of the real state for the per-station missions. */
+  readonly missionContext = computed<MissionContext>(() => {
+    this.revision();
+    const view = this.bufferView();
+    return {
+      segment: this.segment(),
+      offset: this.offset(),
+      physical: this.physical(),
+      trace: this.trace().map((t) => ({
+        changed: (Object.keys(t.after.registers) as (keyof Registers)[]).filter(
+          (r) => t.before.registers[r] !== t.after.registers[r],
+        ),
+      })),
+      cursor: this.cursor(),
+      bufferStage: this.bufferStage(),
+      bufferCompleted: view.completed,
+      bufferVersion: view.version,
+      separateMemory: this.separateMemory(),
+      machineStage: this.machineStage(),
+      machineOutput: this.machineStage() >= 8 ? this.machine.output : 0,
+    };
+  });
   /** The conceptual machine: one experiment, shared by its panel and the board scene. */
   readonly machine = new MachineExperiment();
   readonly machineStage = signal(0);
@@ -337,6 +362,9 @@ export class LabSession {
         break;
       case 'callouts':
         this.callouts.set(!this.callouts());
+        break;
+      case 'tour':
+        this.tourIndex.set(this.tourIndex() === null ? 0 : null);
         break;
       case 'tray':
         this.setHud({ tray: !this.hud().tray });

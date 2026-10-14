@@ -20,6 +20,9 @@ import { EXPERIENCES } from './content/experiences';
 import { LabSession, type Tab } from './laboratory/lab-session.service';
 import { fromQuery, toQuery } from './content/deeplink';
 import { PerfMeterComponent } from './shell/perf-meter/perf-meter.component';
+import { TourComponent } from './shell/tour/tour.component';
+import { StationMissionComponent } from './console/station-mission/station-mission.component';
+import { TOUR } from './content/tour';
 import type { Section } from './world/scene-inputs';
 import { AtriumSceneComponent } from './world/atrium-scene.component';
 import { SceneToolbarComponent, type SceneCommand } from './world/scene-toolbar/scene-toolbar.component';
@@ -67,6 +70,8 @@ const NARROW = '(max-width: 899px)';
     AtriumPortalsComponent,
     SceneHudComponent,
     PerfMeterComponent,
+    TourComponent,
+    StationMissionComponent,
     PieceInspectorComponent,
     SessionPanelComponent,
     TransportComponent,
@@ -304,12 +309,30 @@ export class App implements AfterViewInit, OnDestroy {
       m: 'manipulate',
       t: 'callouts',
       p: 'tray',
+      x: 'tour',
       b: 'map',
     };
     if (event.shiftKey && event.key.toLowerCase() === 'd') {
       event.preventDefault();
       this.meter.set(!this.meter());
       return;
+    }
+    // In exhibition mode the arrows and the space bar move through the talk.
+    if (this.session.tourIndex() !== null) {
+      if (event.key === 'ArrowRight' || event.key === ' ') {
+        event.preventDefault();
+        this.tourGo(1);
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        this.tourGo(-1);
+        return;
+      }
+      if (event.key === 'Escape') {
+        this.tourExit();
+        return;
+      }
     }
     // Escape lets go of a tool in hand first; a second press leaves manipulation.
     if (event.key === 'Escape' && this.holding()) {
@@ -324,6 +347,32 @@ export class App implements AfterViewInit, OnDestroy {
     if (!command) return;
     event.preventDefault();
     this.sceneCommand(command);
+  }
+
+  /** Moves the exhibition one step and puts the station, the chip, the piece and the camera in place. */
+  tourGo(delta: number): void {
+    const current = this.session.tourIndex() ?? 0;
+    const next = Math.min(TOUR.length - 1, Math.max(0, current + delta));
+    this.session.tourIndex.set(next);
+    const step = TOUR[next];
+    if (step.memoryModel) this.session.memoryModel.set(step.memoryModel);
+    const place = () => {
+      this.session.part(step.piece);
+      if (step.tab) this.session.tab.set(step.tab);
+      if (step.open !== undefined) {
+        this.session.exploded.set(step.open);
+        if (step.open && this.session.explodeAmount() === 0) this.session.explodeAmount.set(100);
+      }
+      setTimeout(() => this.world()?.focusSelected(), 250);
+    };
+    if (this.session.section() === step.station) place();
+    else {
+      void this.router.navigateByUrl('/' + step.station).then(() => setTimeout(place, 400));
+    }
+  }
+
+  tourExit(): void {
+    this.session.tourIndex.set(null);
   }
 
   pick(id: string): void {

@@ -16,7 +16,8 @@ export type SceneCommand =
   | 'lamp-power'
   | 'callouts'
   | 'tray'
-  | 'map';
+  | 'map'
+  | 'tour';
 
 export interface SceneTool {
   command: SceneCommand;
@@ -68,6 +69,7 @@ export const SCENE_TOOL_GROUPS: SceneToolGroup[] = [
       { command: 'manipulate', label: 'Manipular objetos', icon: 'move', key: 'M', toggle: true },
       { command: 'drop', label: 'Soltar herramienta', icon: 'drop', key: '' },
       { command: 'reset-tools', label: 'Ordenar bandeja', icon: 'tray', key: '' },
+      { command: 'tour', label: 'Modo exposición', icon: 'present', key: 'X', toggle: true },
     ],
   },
 ];
@@ -96,6 +98,7 @@ export class SceneToolbarComponent {
   @Input() manipulate = false;
   @Input() lampOn = true;
   @Input() callouts = false;
+  @Input() tour = false;
   /** The memory station shows the DIMM, whose layers can be opened too. */
   @Input() dimm = false;
   /** True while a tool is in hand; the release command has nothing to do otherwise. */
@@ -132,6 +135,8 @@ export class SceneToolbarComponent {
         return this.lampOn;
       case 'callouts':
         return this.callouts;
+      case 'tour':
+        return this.tour;
       default:
         return null;
     }

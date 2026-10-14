@@ -1,0 +1,14 @@
+@if (mission(); as m) {
+  <section class="mission" [class.done]="done()" aria-label="Misión de la estación">
+    <header>
+      <p class="kicker">Misión {{ m.id }}</p>
+      <span class="status" role="status">{{ done() ? 'Resuelta' : 'Pendiente' }}</span>
+    </header>
+    <h3>{{ m.title }}</h3>
+    <p class="goal">{{ m.goal }}</p>
+    <details>
+      <summary>Pista</summary>
+      <p>{{ m.hint }}</p>
+    </details>
+  </section>
+}

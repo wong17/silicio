@@ -81,6 +81,7 @@
       [lampOn]="session.lampOn()"
       [holding]="holding() !== null"
       [callouts]="session.callouts()"
+      [tour]="session.tourIndex() !== null"
       [dimm]="session.memoryModel() === 'dimm'"
       (command)="sceneCommand($event)"
     />
@@ -98,6 +99,13 @@
     @if (meter()) {
       <app-perf-meter />
     }
+
+    <app-tour
+      [index]="session.tourIndex()"
+      (next)="tourGo(1)"
+      (previous)="tourGo(-1)"
+      (close)="tourExit()"
+    />
 
     <p class="scene-caption"><span aria-hidden="true"></span>{{ caption() }}</p>
     <div class="hover-tip" #tip [class.visible]="!!hoveredId()" aria-hidden="true">
@@ -191,6 +199,8 @@
           <app-machine-instrument />
         }
       }
+
+      <app-station-mission />
 
       <app-piece-inspector (focus)="focusSelected()" (aim)="aimSelected()" />
 
