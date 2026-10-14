@@ -8,6 +8,7 @@ import { SelectionMarker, selectionBounds } from './selection-marker';
 import { ActivityChannel, IDLE_ACTIVITY, type StationActivity } from '../laboratory/station-activity';
 import { EMPTY_TIMELINE, type TimelineState } from './timeline-layout';
 import type { ChronoscopeRig } from './models/chronoscope.model';
+import { INSTRUMENT_PARTS } from './internal-parts';
 import { explodedOffset } from './exploded-layout';
 import { familyOf } from './piece-families';
 import { CameraRig } from './camera-rig';
@@ -609,7 +610,19 @@ export class WorldEngine implements SceneInputs {
     this.lampDragging = false;
     this.physics?.suspend();
   };
+  /** The SoC lid turns see-through while an internal piece is hovered or selected, so what is under it reads. */
+  private updateLidGhost(): void {
+    const lid = this.parts.get('lid');
+    const material = lid?.userData['ghostMaterial'] as THREE.MeshStandardMaterial | undefined;
+    if (!material) return;
+    const internal = (id: string | null) => !!id && INSTRUMENT_PARTS.includes(id);
+    const ghost = internal(this.hoverId) || internal(this.activePart);
+    material.opacity = ghost ? 0.28 : 1;
+    material.depthWrite = !ghost;
+    material.needsUpdate = true;
+  }
   private updateSelection(): void {
+    this.updateLidGhost();
     const o = this.parts.get(this.activePart) || this.environmentParts.get(this.activePart);
     if (this.selectionBox) {
       this.selectionBox.fit(o);
@@ -964,6 +977,7 @@ export class WorldEngine implements SceneInputs {
     this.canvas.style.cursor = id ? (hit?.hit.object.userData['lampHandle'] ? 'grab' : 'pointer') : '';
     if (id !== this.hoverId) {
       this.hoverId = id;
+      this.updateLidGhost();
       this.callbacks.hovered(id);
     }
   };
@@ -971,6 +985,7 @@ export class WorldEngine implements SceneInputs {
     this.canvas.style.cursor = '';
     if (this.hoverId !== null) {
       this.hoverId = null;
+      this.updateLidGhost();
       this.callbacks.hovered(null);
     }
   };

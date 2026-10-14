@@ -3,13 +3,14 @@ import { Cpu8086, hex, physicalAddress, REGISTER_NAMES, Registers, Snapshot, Tra
 import { readSession } from '../simulation/session-codec';
 import { MISSIONS } from '../content/missions';
 import { accessibleCatalog } from '../world/piece-definitions';
+import { INSTRUMENT_PARTS } from '../world/internal-parts';
 import type { Section } from '../world/scene-inputs';
 import type { LampTarget } from '../world/lamp-limits';
 import { forkOrigin, type TimelineState } from '../world/timeline-layout';
 import type { SceneCommand } from '../world/scene-toolbar/scene-toolbar.component';
 import { BufferExperiment, LaboratoryFacade } from './laboratory.facade';
 import type { CameraView, PieceAnchor, ScreenAnchor } from '../world/scene-inputs';
-import { PHASES, projectActivity, type Phase, type StationActivity } from './station-activity';
+import { PHASES, projectActivity, projectBufferActivity, type Phase, type StationActivity } from './station-activity';
 import { describePiece, type PieceOption } from './piece-descriptions';
 
 export type Tab = 'state' | 'program' | 'trace';
@@ -25,18 +26,7 @@ export const BUS_LIST = [
   { id: 'control', name: 'Control', detail: 'Indica la operación y coordina su realización.' },
 ];
 
-export const INSTRUMENT_PARTS = [
-  'alu',
-  'registers',
-  'control',
-  'biu',
-  'queue',
-  'performance',
-  'efficiency',
-  'gpu',
-  'neural',
-  'unified',
-];
+export { INSTRUMENT_PARTS };
 
 /**
  * Session state shared by the console instruments, the 3D bench and the toolbar. The 8086 core and
@@ -117,9 +107,24 @@ export class LabSession {
   /** Revision of the executed step the activity belongs to. */
   private stepSerial = 0;
   private phaseTimer?: ReturnType<typeof setTimeout>;
-  readonly activity = computed<StationActivity>(() =>
-    projectActivity(this.laboratory() as never, this.phase(), this.revision()),
-  );
+  /** Conceptual contrast switch of the SoC station: separate memories with a copy between them. */
+  readonly separateMemory = signal(false);
+  readonly activity = computed<StationActivity>(() => {
+    if (this.section() === 'apple') {
+      const view = this.bufferView();
+      return projectBufferActivity(
+        {
+          stage: this.bufferStage() as 0 | 1 | 2,
+          completed: view.completed,
+          separate: this.separateMemory(),
+          version: view.version,
+        },
+        this.laboratory().sessionId,
+        this.tick(),
+      );
+    }
+    return projectActivity(this.laboratory() as never, this.phase(), this.revision());
+  });
   readonly lastReads = computed(() => this.laboratory().accesses.some((a) => a.kind === 'read'));
   readonly lastWrites = computed(() => this.laboratory().accesses.some((a) => a.kind === 'write'));
   readonly bufferView = computed(() => {

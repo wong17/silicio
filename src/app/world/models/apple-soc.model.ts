@@ -1,6 +1,5 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { RENDER_ORDER } from '../render-order';
 import { APPLE_PARTS } from './station-layouts';
 import { WorkshopGeometry } from './workshop-geometry';
 export class AppleSocModel extends WorkshopGeometry {
@@ -78,8 +77,7 @@ export class AppleSocModel extends WorkshopGeometry {
   /** The die's blocks on the carrier, each with a lit plate; the activity glow moves from block to block. */
   private blocks(parent: T.Group): void {
     const top = 0.585;
-    const glows: { material: T.MeshBasicMaterial; order: number }[] = [];
-    APPLE_PARTS.forEach((part, order) => {
+    APPLE_PARTS.forEach((part) => {
       this.box(
         parent,
         part.w - 0.1,
@@ -91,22 +89,7 @@ export class AppleSocModel extends WorkshopGeometry {
         this.tools.material('die-' + part.id, part.color, 0.45, 0.4, { finish: 'steel', size: 128 }),
       );
       this.tools.label(parent, part.label, part.x, top + 0.02, part.z, part.w * 0.8);
-      const material = this.tools.track(
-        new T.MeshBasicMaterial({ color: part.color, transparent: true, opacity: 0.04, depthWrite: false }),
-      );
-      const glow = this.mesh(parent, this.tools.track(new T.PlaneGeometry(part.w - 0.18, part.d - 0.18)), material, part.x, top + 0.0135, part.z);
-      glow.rotation.x = -Math.PI / 2;
-      glow.userData['dynamic'] = true;
-      glow.renderOrder = RENDER_ORDER.glow;
-      glows.push({ material, order });
     });
-    // Each block lights in turn, as the cores and the GPU take their share of the work.
-    this.tools.animate((t) => {
-      for (const g of glows) {
-        const phase = (t * 0.3 + g.order * 0.23) % 1;
-        g.material.opacity = 0.04 + 0.4 * (phase < 0.35 ? Math.sin((phase / 0.35) * Math.PI) : 0);
-      }
-    }, 'subject');
   }
 
   /** Power management IC, crystal, inductors, copper traces and test points in the free strips of the board. */

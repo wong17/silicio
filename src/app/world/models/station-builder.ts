@@ -9,6 +9,7 @@ import { ChronoscopeModel, CHRONOSCOPE_BASE, type ChronoscopeRig } from './chron
 import { ElectronicsWorkshop } from '../electronics-workshop';
 import { MemoryModels } from './memory-models';
 import { CpuActivityView } from './cpu-activity';
+import { AppleActivityView } from './apple-activity';
 import { APPLE_PARTS, type Part } from './station-layouts';
 import type { Section } from '../scene-inputs';
 export class StationBuilder extends WorkshopGeometry {
@@ -122,7 +123,12 @@ export class StationBuilder extends WorkshopGeometry {
     } else if (section === 'apple') {
       new ElectronicsWorkshop(this.tools).soc(root);
       this.tiles(root, parts, APPLE_PARTS);
-      const lid = this.box(root, 4.65, 0.15, 4.9, 0, 1.23, 0.2, dark);
+      new AppleActivityView(this.tools).build(parts, (fn) => this.tools.animate(fn, 'subject'));
+      // The lid has its own material so it can turn translucent when an internal piece is hovered or selected.
+      const lidMaterial = this.tools.track(dark.clone());
+      lidMaterial.transparent = true;
+      const lid = this.box(root, 4.65, 0.15, 4.9, 0, 1.23, 0.2, lidMaterial);
+      lid.userData['ghostMaterial'] = lidMaterial;
       lid.userData['part'] = 'lid';
       lid.userData['restY'] = 1.23;
       parts.set('lid', lid);

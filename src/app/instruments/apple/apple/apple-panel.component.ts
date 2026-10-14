@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { TermDirective } from '../../../shared/term.directive';
 import { LabSession } from '../../../laboratory/lab-session.service';
+import { APPLE_UNITS } from '../../../content/apple-m5';
 
 interface Unit {
   id: string;
@@ -19,11 +20,5 @@ interface Unit {
 })
 export class ApplePanelComponent {
   readonly session = inject(LabSession);
-  readonly units: Unit[] = [
-    { id: 'performance', area: 'perf', label: 'CPU rendimiento', count: '4', color: '#ae8356' },
-    { id: 'efficiency', area: 'eff', label: 'CPU eficiencia', count: '6', color: '#688d73' },
-    { id: 'gpu', area: 'gpu', label: 'GPU', count: 'hasta 10', color: '#68869d' },
-    { id: 'neural', area: 'neural', label: 'Neural', count: '16', color: '#9477a1' },
-    { id: 'unified', area: 'unified', label: 'Memoria unificada', count: '153 GB/s', color: '#a9aa79' },
-  ];
+  readonly units: Unit[] = APPLE_UNITS.map(({ id, area, label, count, color }) => ({ id, area, label, count, color }));
 }

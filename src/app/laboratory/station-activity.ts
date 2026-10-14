@@ -1,4 +1,5 @@
 import type { projectLaboratory } from './laboratory.facade';
+import { BUFFER_STAGE_UNITS } from '../content/apple-m5';
 
 /** Phases of one instruction's journey, in the order a student follows them. */
 export type Phase = 'idle' | 'fetch' | 'decode' | 'execute' | 'write';
@@ -37,6 +38,18 @@ export interface StationActivity {
   /** Register and flag names that changed in the step. */
   changed: string[];
   mnemonic?: string;
+  /** Apple M5 shared-buffer dependency, when the station is the SoC. */
+  buffer?: BufferActivity;
+}
+
+export interface BufferActivity {
+  /** 0 CPU prepares, 1 GPU processes, 2 CPU receives. */
+  stage: 0 | 1 | 2;
+  /** The completion signal has been given: only then may the CPU read B1. */
+  completed: boolean;
+  /** Conceptual contrast: each unit has its own memory and the buffer is copied between them. */
+  separate: boolean;
+  version: number;
 }
 
 export const IDLE_ACTIVITY: StationActivity = {
@@ -150,4 +163,24 @@ export class ActivityChannel {
 export function bitsOf(value: number | undefined, width: number): boolean[] {
   const v = value ?? 0;
   return Array.from({ length: width }, (_, i) => ((v >>> i) & 1) === 1);
+}
+
+/** Activity of the SoC station: the shared buffer is the only thing that moves, and it never moves. */
+export function projectBufferActivity(
+  buffer: BufferActivity,
+  sessionId: string,
+  revision: number,
+): StationActivity {
+  const units = BUFFER_STAGE_UNITS[buffer.stage];
+  return {
+    ...IDLE_ACTIVITY,
+    phase: buffer.stage === 0 ? 'fetch' : buffer.stage === 1 ? 'execute' : 'write',
+    sessionId,
+    revision,
+    blocks: [...units],
+    rd: buffer.stage !== 0,
+    wr: buffer.stage !== 2,
+    changed: buffer.completed ? ['B1'] : [],
+    buffer,
+  };
 }
