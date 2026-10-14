@@ -107,7 +107,7 @@
 
       @switch (session.section()) {
         @case ('atrium') {
-          <app-atrium-portals />
+          <app-atrium-portals [thumbnailer]="stationThumbnailer" />
         }
         @case ('8086') {
           <app-transport />

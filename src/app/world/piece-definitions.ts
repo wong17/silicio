@@ -216,9 +216,9 @@ export function pieceDefinition(id: string, experience: string): PieceDefinition
   if (id.startsWith('cell-')) name = 'Byte lógico ' + id.slice(5);
   if (id.startsWith('frame-')) name = 'Estado ' + id.slice(6);
   if (id.startsWith('tool')) {
-    name = 'Herramienta ' + (id === 'tool' ? '1' : Number(id.slice(5)) + 1);
+    name = 'Destornillador ' + 'ABC'[id === 'tool' ? 0 : Number(id.slice(5))];
     description =
-      'Manipulación física del banco: activaManipular para arrastrarla, o suéltala sobre su bandeja. No modifica el procesador.';
+      'Destornillador de la bandeja. Activa Manipular para tomarlo y arrastrarlo, o suéltalo sobre la bandeja; no modifica el procesador.';
   }
   return {
     id,

@@ -64,7 +64,9 @@ export class SurfaceLibrary {
     metalness: number,
     look?: SurfaceLook,
   ): THREE.MeshStandardMaterial {
-    const cached = this.materials.get(id);
+    // The id alone is not enough: two models used `cpu-lid` for different parts and one got the other's colour.
+    const key = `${id}|${color}|${roughness}|${metalness}|${look ? JSON.stringify(look) : ''}`;
+    const cached = this.materials.get(key);
     if (cached) return cached;
     const spec = resolveSurface(id, color, roughness, metalness, look);
     const maps = surfaceCanvases(computeSurface(spec));
@@ -89,7 +91,7 @@ export class SurfaceLibrary {
       }),
     );
     mat.name = id;
-    this.materials.set(id, mat);
+    this.materials.set(key, mat);
     return mat;
   }
 

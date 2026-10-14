@@ -122,3 +122,20 @@ describe('tapa del 8086', () => {
     expect(fixed).toBeLessThan(meanLuminance(computeSurface(bare).albedo));
   });
 });
+
+describe('biblioteca de superficies', () => {
+  it('same_id_with_a_different_colour_is_a_different_material', async () => {
+    const { SurfaceLibrary } = await import('./surface-library');
+    const ctx = new Proxy({}, { get: () => () => ({ data: new Uint8ClampedArray(4) }), set: () => true });
+    const { vi } = await import('vitest');
+    vi.stubGlobal('ImageData', class { constructor(public data: Uint8ClampedArray, public width: number, public height: number) {} });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as never);
+    const library = new SurfaceLibrary((r) => r);
+    const dark = library.material('cpu-lid', '#292d2c', 0.5, 0.1, { size: 8 });
+    const silver = library.material('cpu-lid', '#9a9ea1', 0.35, 0.9, { size: 8 });
+    expect(dark).not.toBe(silver);
+    expect(library.material('cpu-lid', '#292d2c', 0.5, 0.1, { size: 8 })).toBe(dark);
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+});

@@ -108,6 +108,10 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   setCallouts(on: boolean): void {
     this.engine?.setCallouts(on);
   }
+  async stationThumbnail(section: Section, size = 160): Promise<Blob | null> {
+    if (!this.engine) await this.ready;
+    return this.engine?.stationThumbnail(section, size) ?? null;
+  }
   /** Resolves once the engine exists (or never does, on a device without WebGL: then null). */
   async thumbnail(id: string, size = 128): Promise<Blob | null> {
     if (!this.engine) await this.ready;

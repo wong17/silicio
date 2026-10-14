@@ -129,7 +129,12 @@ export class WorldEngine implements SceneInputs {
   private telemetryClock = 0;
   private lastView = { azimuth: Number.NaN, distance: Number.NaN };
   private thumbnails = new Map<string, Blob>();
-  private thumbnailQueue: { id: string; size: number; resolve: (b: Blob | null) => void }[] = [];
+  private thumbnailQueue: {
+    id: string;
+    size: number;
+    station?: Section;
+    resolve: (b: Blob | null) => void;
+  }[] = [];
   private thumbnailRig?: {
     camera: THREE.PerspectiveCamera;
     target: THREE.WebGLRenderTarget;
@@ -723,12 +728,62 @@ export class WorldEngine implements SceneInputs {
       } else this.thumbnailQueue.push({ id, size, resolve });
     });
   }
+  /**
+   * Picture of a whole station, for the atrium portals. The station is built apart, drawn once with the
+   * thumbnail lights and disposed in the same frame, so the visible bench never changes.
+   */
+  stationThumbnail(section: Section, size = 160): Promise<Blob | null> {
+    const key = 'station:' + section;
+    const hit = this.thumbnails.get(key);
+    if (hit) return Promise.resolve(hit);
+    if (!this.renderer || this.disposed) return Promise.resolve(null);
+    return new Promise((resolve) => this.thumbnailQueue.push({ id: key, size, station: section, resolve }));
+  }
+  private buildTemporaryStation(section: Section): { group: THREE.Group; dispose: () => void } {
+    const group = new THREE.Group();
+    const owned: (THREE.Material | THREE.BufferGeometry | THREE.Texture)[] = [];
+    const tools: WorkshopTools = {
+      track: (r) => {
+        owned.push(r);
+        return this.track(r);
+      },
+      material: this.tools.material,
+      label: this.tools.label,
+      relabel: this.tools.relabel,
+      animate: () => {},
+    };
+    const parts = new Map<string, THREE.Object3D>();
+    new StationBuilder(tools).build(section, 'classic', group, parts);
+    this.scene.add(group);
+    group.updateMatrixWorld(true);
+    return {
+      group,
+      dispose: () => {
+        this.scene.remove(group);
+        this.labels.release(group);
+        for (const r of owned) {
+          if (r instanceof THREE.Material && this.surfaces.owns(r)) continue;
+          this.resources.delete(r);
+          r.dispose();
+        }
+      },
+    };
+  }
   private serveThumbnail(): void {
     const job = this.thumbnailQueue.shift();
     if (!job || !this.renderer) return;
-    const object = this.parts.get(job.id) ?? this.environmentParts.get(job.id);
+    let cleanup: (() => void) | undefined;
+    let object: THREE.Object3D | undefined;
+    if (job.station) {
+      const temporary = this.buildTemporaryStation(job.station);
+      object = temporary.group;
+      cleanup = temporary.dispose;
+    } else object = this.parts.get(job.id) ?? this.environmentParts.get(job.id);
     const box = object ? selectionBounds(object, new THREE.Box3()) : undefined;
-    if (!object || !box || box.isEmpty()) return job.resolve(null);
+    if (!object || !box || box.isEmpty()) {
+      cleanup?.();
+      return job.resolve(null);
+    }
     const rig = (this.thumbnailRig ??= this.createThumbnailRig(job.size));
     const pose = framePose(
       rig.camera.fov,
@@ -759,6 +814,7 @@ export class WorldEngine implements SceneInputs {
     this.scene.background = previousBackground;
     this.scene.fog = previousFog;
     object.traverse((o) => o.layers.disable(THUMBNAIL_LAYER));
+    cleanup?.();
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = job.size;
     const context = canvas.getContext('2d');

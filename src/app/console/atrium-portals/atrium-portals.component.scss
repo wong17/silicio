@@ -67,3 +67,11 @@ svg {
 .portal:hover svg {
   transform: translateX(3px);
 }
+
+.preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #101314;
+}

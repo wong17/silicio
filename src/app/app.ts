@@ -296,7 +296,19 @@ export class App implements AfterViewInit, OnDestroy {
     this.world()?.orbitTo(azimuth);
   }
 
-  readonly thumbnailer = (id: string, size: number) => this.world()?.thumbnail(id, size) ?? Promise.resolve(null);
+  /** The scene is deferred, so a picture request waits (up to a few seconds) until it exists. */
+  private async whenWorld(): Promise<AtriumSceneComponent | undefined> {
+    for (let i = 0; i < 100; i++) {
+      const world = this.world();
+      if (world) return world;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return undefined;
+  }
+  readonly stationThumbnailer = async (section: Section) =>
+    (await this.whenWorld())?.stationThumbnail(section) ?? null;
+  readonly thumbnailer = async (id: string, size: number) =>
+    (await this.whenWorld())?.thumbnail(id, size) ?? null;
 
   /** Lights the selected piece. The lamp is switched on too, because an unlit lamp shows nothing. */
   aimSelected(): void {

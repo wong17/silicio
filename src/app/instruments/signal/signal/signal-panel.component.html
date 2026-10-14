@@ -18,11 +18,28 @@
   <div class="scope">
     <svg viewBox="0 0 320 100" role="img" [attr.aria-label]="'Canal ' + session.signalChannel() + ', pasos didácticos'">
       <path class="grid" d="M20 10v65m70-65v65m70-65v65m70-65v65m70-65v65M20 25h280M20 50h280M20 75h280" />
+      @if (captured(); as c) {
+        <path class="ghost" [attr.d]="c.path" />
+      }
       <path class="trace" [attr.d]="trace()" />
-      <line class="sweep" x1="20" x2="20" y1="8" y2="78" />
+      <line class="cursor" [attr.x1]="cursorX()" [attr.x2]="cursorX()" y1="8" y2="78" />
       <text x="40" y="94">DIRECCIÓN</text>
       <text x="180" y="94">TRANSFERENCIA</text>
     </svg>
+  </div>
+
+  <div class="cursor-row">
+    <label class="kicker" for="scope-cursor">Cursor</label>
+    <input id="scope-cursor" type="range" min="0" max="3" step="1" [value]="cursor()" (input)="setCursor($any($event.target).value)" />
+    <output for="scope-cursor">{{ states[cursor()] }}</output>
+  </div>
+  <p class="reading" aria-live="polite">{{ reading().text }}</p>
+  <div class="capture">
+    <button type="button" (click)="capture()">Capturar traza</button>
+    @if (captured(); as c) {
+      <button type="button" (click)="clearCapture()">Descartar</button>
+      <span class="kicker">Capturada: {{ c.channel }} · {{ c.label }}</span>
+    }
   </div>
 
   <p class="note">

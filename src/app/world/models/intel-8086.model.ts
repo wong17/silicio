@@ -163,7 +163,7 @@ export class Intel8086Model extends WorkshopGeometry {
     });
     geo.rotateX(-Math.PI / 2);
     geo.translate(0, -0.07, 0);
-    this.mesh(cap, geo, this.tools.material('cpu-lid', '#292d2c', 0.48, 0.5, CPU_LID_LOOK));
+    this.mesh(cap, geo, this.tools.material('cpu-lid-painted', '#292d2c', 0.6, 0.1, CPU_LID_LOOK));
     this.tools.label(cap, 'INTEL   8086', 0, 0.102, -0.2, 3.7);
     this.tools.label(cap, '16-BIT HMOS   /   DIP-40', 0, 0.103, 0.27, 3.5);
     this.cylinder(cap, 0.055, 0.012, -2.64, 0.106, 0.58, brass).name = 'pin-one-marker';

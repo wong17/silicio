@@ -15,7 +15,7 @@ const RULES: { match: RegExp; id: string; label: string; layout: PieceFamily['la
   { match: /^dimm-chip-(\d+)$/, id: 'dimm-chips', label: 'Chips DDR4', layout: 'grid', columns: 8, index: (m) => Number(m[1]) },
   { match: /^cell-(\d+)$/, id: 'cells', label: 'Bytes', layout: 'grid', columns: 16, index: (m) => Number(m[1]) },
   { match: /^frame-(\d+)$/, id: 'frames', label: 'Estados', layout: 'timeline', index: (m) => Number(m[1]) },
-  { match: /^tool(?:-(\d+))?$/, id: 'tools', label: 'Herramientas', layout: 'list', index: (m) => (m[1] ? Number(m[1]) : 0) },
+  { match: /^tool(?:-(\d+))?$/, id: 'tools', label: 'Destornilladores', layout: 'list', index: (m) => (m[1] ? Number(m[1]) : 0) },
 ];
 
 /** The family a piece id belongs to, or undefined for a piece that stands on its own. */

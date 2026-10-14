@@ -1,6 +1,9 @@
 <nav class="portals" aria-label="Estaciones del laboratorio">
   @for (e of experiences; track e.id) {
     <a class="portal" [routerLink]="'/' + e.id" [style.--accent]="e.accent">
+      @if (previews()[e.id]; as src) {
+        <img class="preview" [src]="src" [alt]="'Vista previa de ' + e.title" width="56" height="56" />
+      }
       <span class="number">{{ e.number }}</span>
       <span class="copy">
         <strong>{{ e.title }}</strong>
