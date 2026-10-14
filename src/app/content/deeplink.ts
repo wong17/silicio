@@ -31,3 +31,17 @@ export function fromQuery(params: Record<string, string | string[] | undefined>)
   }
   return out;
 }
+
+/** `?shot=8086-alu`: a fixed view for reference captures: reduced motion (frozen clock), piece framed. */
+export interface Shot {
+  station: string;
+  piece?: string;
+}
+
+export function readShot(params: Record<string, string | string[] | undefined>): Shot | undefined {
+  const raw = params['shot'];
+  if (typeof raw !== 'string') return undefined;
+  const m = /^([a-z0-9]+)(?:-([a-z0-9-]{1,40}))?$/.exec(raw);
+  if (!m) return undefined;
+  return { station: m[1], piece: m[2] };
+}

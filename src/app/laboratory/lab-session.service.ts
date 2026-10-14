@@ -1,4 +1,4 @@
-import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
+import { Injectable, NgZone, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Cpu8086, hex, physicalAddress, REGISTER_NAMES, Registers, Snapshot, Trace } from '../simulation/cpu8086';
 import { readSession } from '../simulation/session-codec';
 import { MISSIONS } from '../content/missions';
@@ -19,6 +19,8 @@ import { describePiece, type PieceOption } from './piece-descriptions';
 export type Tab = 'state' | 'program' | 'trace';
 export type Quality = 'high' | 'balanced' | 'low';
 export type Branch = { id: string; trace: Trace[]; state: Snapshot; cursor: number; source: string };
+
+const AUTOSAVE_KEY = 'silicio.autosave';
 
 export const REGISTER_LIST = [...REGISTER_NAMES, 'CS', 'DS', 'SS', 'ES', 'IP'] as const;
 export const FLAG_LIST = ['CF', 'PF', 'AF', 'ZF', 'SF', 'OF'] as const;
@@ -112,6 +114,9 @@ export class LabSession {
   private phaseTimer?: ReturnType<typeof setTimeout>;
   /** Conceptual contrast switch of the SoC station: separate memories with a copy between them. */
   readonly separateMemory = signal(false);
+  /** Information for the student that is not an error (autosave recovered or discarded). */
+  readonly notice = signal('');
+  private autosaveTimer?: ReturnType<typeof setTimeout>;
   /** Cache mission (M09). The lesson object is mutable, so a revision signal announces its changes. */
   cacheLesson = new CacheLesson();
   readonly cacheRevision = signal(0);
@@ -281,6 +286,13 @@ export class LabSession {
   constructor() {
     this.cpu.load(this.source);
     this.loadedSource.set(this.source);
+    effect(() => {
+      this.revision();
+      this.branches();
+      this.cursor();
+      this.missionIndex();
+      untracked(() => this.scheduleAutosave());
+    });
   }
 
   /** Enables the off-thread engine; without a Worker, steps run synchronously on the main thread. */
@@ -719,68 +731,115 @@ export class LabSession {
     this.error.set('');
     try {
       if (file.size > 12_000_000) throw Error('La sesión supera 12 MB.');
-      const session = readSession(await file.text());
-      this.cpu.load(session.source);
-      this.laboratoryFacade.beginSession();
-      this.cpu.restore(session.state);
-      this.cpu.trace = session.trace;
-      this.source = session.source;
-      this.loadedSource.set(session.source);
-      this.cursor.set(session.cursor);
-      this.missionIndex.set(session.missionIndex);
-      this.branches.set(
-        (session.branches ?? []).map((b) => ({
-          id: b.id,
-          source: b.session.source,
-          state: b.session.state,
-          trace: b.session.trace,
-          cursor: b.session.cursor,
-        })),
-      );
-      this.baseline.set(session.baseline);
-      this.baselineText.set(
-        session.baseline ? 'Rama A importada · AX=' + hex(session.baseline.registers.AX) : '',
-      );
-      this.revision.update((n) => n + 1);
+      this.restoreFromText(await file.text());
     } catch (e) {
       this.error.set((e as Error).message);
     }
   }
 
+  /** Applies a serialized session (file import or autosave). Throws before any change if it is invalid. */
+  private restoreFromText(text: string): void {
+    const session = readSession(text);
+    this.cpu.load(session.source);
+    this.laboratoryFacade.beginSession();
+    this.cpu.restore(session.state);
+    this.cpu.trace = session.trace;
+    this.source = session.source;
+    this.loadedSource.set(session.source);
+    this.cursor.set(session.cursor);
+    this.missionIndex.set(session.missionIndex);
+    this.branches.set(
+      (session.branches ?? []).map((b) => ({
+        id: b.id,
+        source: b.session.source,
+        state: b.session.state,
+        trace: b.session.trace,
+        cursor: b.session.cursor,
+      })),
+    );
+    this.baseline.set(session.baseline);
+    this.baselineText.set(
+      session.baseline ? 'Rama A importada · AX=' + hex(session.baseline.registers.AX) : '',
+    );
+    this.revision.update((n) => n + 1);
+  }
+
+  /** The session as the v2 codec writes it: current timeline plus archived branches. */
+  serializeSession(pretty = false): string {
+    return JSON.stringify(
+      {
+        version: 2,
+        current: {
+          version: 1,
+          source: this.loadedSource(),
+          state: this.state(),
+          trace: this.trace(),
+          cursor: this.cursor(),
+          missionIndex: this.missionIndex(),
+          baseline: this.baseline(),
+        },
+        branches: this.branches().map((b) => ({
+          id: b.id,
+          session: {
+            version: 1,
+            source: b.source,
+            state: b.state,
+            trace: b.trace,
+            cursor: b.cursor,
+            missionIndex: this.missionIndex(),
+          },
+        })),
+      },
+      null,
+      pretty ? 2 : undefined,
+    );
+  }
+
+  /** Saves the session a moment after the last change. Storage failures never reach the student. */
+  private scheduleAutosave(): void {
+    clearTimeout(this.autosaveTimer);
+    this.autosaveTimer = setTimeout(() => {
+      try {
+        if (!this.cpu.trace.length && !this.branches().length && this.source === MISSIONS[0].source) {
+          localStorage.removeItem(AUTOSAVE_KEY);
+          return;
+        }
+        const text = this.serializeSession();
+        if (text.length > 4_000_000) return;
+        localStorage.setItem(AUTOSAVE_KEY, text);
+      } catch {
+        /* storage may be blocked or full */
+      }
+    }, 600);
+  }
+
+  /** Brings back the autosaved session; a damaged one is thrown away with a visible notice. */
+  restoreAutosave(): boolean {
+    let text: string | null = null;
+    try {
+      text = localStorage.getItem(AUTOSAVE_KEY);
+    } catch {
+      return false;
+    }
+    if (!text) return false;
+    try {
+      this.restoreFromText(text);
+      this.notice.set('Se recuperó tu última sesión.');
+      return true;
+    } catch {
+      try {
+        localStorage.removeItem(AUTOSAVE_KEY);
+      } catch {
+        /* nothing to clean */
+      }
+      this.notice.set('Se descartó un autoguardado dañado y se abrió una sesión nueva.');
+      return false;
+    }
+  }
+
   exportSession(): void {
     this.pause();
-    const blob = new Blob(
-      [
-        JSON.stringify(
-          {
-            version: 2,
-            current: {
-              version: 1,
-              source: this.loadedSource(),
-              state: this.state(),
-              trace: this.trace(),
-              cursor: this.cursor(),
-              missionIndex: this.missionIndex(),
-              baseline: this.baseline(),
-            },
-            branches: this.branches().map((b) => ({
-              id: b.id,
-              session: {
-                version: 1,
-                source: b.source,
-                state: b.state,
-                trace: b.trace,
-                cursor: b.cursor,
-                missionIndex: this.missionIndex(),
-              },
-            })),
-          },
-          null,
-          2,
-        ),
-      ],
-      { type: 'application/json' },
-    );
+    const blob = new Blob([this.serializeSession(true)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

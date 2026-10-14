@@ -98,16 +98,41 @@ export class ArticulatedLampModel extends WorkshopGeometry {
     handle.name = 'lamp-handle';
     handle.userData['lampHandle'] = true;
     head.add(handle);
+    // The beam fades along its length and softens at its silhouette, so no hard triangle crosses the view.
     const beam = new T.Mesh(
       this.tools.track(new T.ConeGeometry(1, 1, 36, 1, true)),
       this.tools.track(
-        new T.MeshBasicMaterial({
-          color: '#ffe2b0',
+        new T.ShaderMaterial({
           transparent: true,
-          opacity: 0.05,
           depthWrite: false,
           side: T.DoubleSide,
           blending: T.AdditiveBlending,
+          uniforms: { uColor: { value: new T.Color('#ffe2b0') }, uStrength: { value: 0.16 } },
+          vertexShader: /* glsl */ `
+            varying float vAlong;
+            varying vec3 vNormal;
+            varying vec3 vView;
+            void main() {
+              vAlong = clamp(-position.y, 0.0, 1.0);
+              vNormal = normalize(normalMatrix * normal);
+              vec4 mv = modelViewMatrix * vec4(position, 1.0);
+              vView = normalize(-mv.xyz);
+              gl_Position = projectionMatrix * mv;
+            }
+          `,
+          fragmentShader: /* glsl */ `
+            uniform vec3 uColor;
+            uniform float uStrength;
+            varying float vAlong;
+            varying vec3 vNormal;
+            varying vec3 vView;
+            void main() {
+              float facing = abs(dot(normalize(vNormal), normalize(vView)));
+              float edge = smoothstep(0.0, 0.55, facing);
+              float fall = pow(1.0 - vAlong, 1.6) * smoothstep(0.0, 0.08, vAlong);
+              gl_FragColor = vec4(uColor, uStrength * edge * fall);
+            }
+          `,
         }),
       ),
     );

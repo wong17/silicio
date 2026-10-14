@@ -85,3 +85,10 @@ Modelo y ambiente actualizados: encapsulado alargado con cavidad, perfil extruid
 
 ## Barra de edición del visor
 La petición del usuario fija una barra inspirada en editores3D: iconos SVG de22px, herramientas44×44px, carril metálico oscuro y separadores finos. Radio del carril9px, herramienta5px y tooltip4px son ampliaciones intencionales del lenguaje anterior. Estados ámbar de malla/despiece/luz; tooltips de texto Barlow13px y nombres accesibles. Escritorio conserva separación6px; móvil8px y menú3columnas con tamaño uniforme. El último control tiene exactamente la misma área.
+
+## HUD de escena y rótulos (revisión 4)
+
+- **Mapa del banco** y **bandeja de piezas** viven sobre el visor, plegados por defecto en un botón de 44 px. Abierto, cada uno entra con `scale(0.96)` y opacidad en 180–200 ms, `cubic-bezier(0.23, 1, 0.32, 1)`, con origen en su esquina. Con movimiento reducido no hay animación.
+- **Tinta de los rótulos 3D**: se elige por contraste medido contra la superficie que los sostiene (≥ 4,5:1): tinta clara `#f1ead2` sobre superficies oscuras, oscura `#15120c` sobre claras; contorno del tono opuesto al 35 %. Los rótulos reciben luz como la superficie, así que el contraste no cambia al mover la lámpara.
+- **Rótulos flotantes** (tecla T): etiquetas HTML de 26 px de alto con línea guía, de tamaño constante en pantalla, dentro de la región libre.
+- Objetivos táctiles ≥ 44 × 44 px y separación ≥ 8 px también en el HUD.

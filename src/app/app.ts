@@ -18,7 +18,7 @@ import { gsap } from 'gsap';
 import Lenis from 'lenis';
 import { EXPERIENCES } from './content/experiences';
 import { LabSession, type Tab } from './laboratory/lab-session.service';
-import { fromQuery, toQuery } from './content/deeplink';
+import { fromQuery, readShot, toQuery } from './content/deeplink';
 import { PerfMeterComponent } from './shell/perf-meter/perf-meter.component';
 import { TourComponent } from './shell/tour/tour.component';
 import { StationMissionComponent } from './console/station-mission/station-mission.component';
@@ -189,7 +189,21 @@ export class App implements AfterViewInit, OnDestroy {
 
   /** A shared address names a piece and a view; both are applied once the station exists. */
   private applyDeepLink(): void {
-    const link = fromQuery(this.router.parseUrl(this.router.url).queryParams);
+    const params = this.router.parseUrl(this.router.url).queryParams;
+    const shot = readShot(params);
+    if (shot) {
+      // Reference capture: frozen clock, no drawers, the named piece framed.
+      this.session.reduced.set(true);
+      this.session.setHud({ map: false, tray: false });
+      this.session.callouts.set(false);
+      document.body.dataset['shot'] = shot.station + (shot.piece ? '-' + shot.piece : '');
+      if (shot.piece) {
+        this.session.activePart.set(shot.piece);
+        setTimeout(() => this.world()?.focusSelected(), 700);
+      }
+      return;
+    }
+    const link = fromQuery(params);
     if (link.piece) this.session.activePart.set(link.piece);
     if (link.azimuth !== undefined && link.distance !== undefined) {
       const { azimuth, distance } = link;
@@ -216,6 +230,7 @@ export class App implements AfterViewInit, OnDestroy {
     this.session.attachWorker();
     this.media = matchMedia('(prefers-reduced-motion: reduce)');
     this.session.loadPreferences(this.media.matches, matchMedia(NARROW).matches);
+    this.session.restoreAutosave();
     this.media.addEventListener('change', this.mediaChanged);
     this.zone.runOutsideAngular(() => {
       if (!matchMedia(NARROW).matches)

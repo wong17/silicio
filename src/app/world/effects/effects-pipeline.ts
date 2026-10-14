@@ -5,10 +5,10 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 export type QualityTier = 'high' | 'balanced' | 'low';
 export function qualitySettings(tier: QualityTier) {
   return tier === 'high'
-    ? { dpr: 1.5, shadowSize: 1024, bloom: false }
+    ? { dpr: 1.5, shadowSize: 1024, bloom: false, dust: 600 }
     : tier === 'balanced'
-      ? { dpr: 1.25, shadowSize: 512, bloom: false }
-      : { dpr: 1, shadowSize: 0, bloom: false };
+      ? { dpr: 1.25, shadowSize: 512, bloom: false, dust: 250 }
+      : { dpr: 1, shadowSize: 0, bloom: false, dust: 0 };
 }
 /** Single linear-HDR path. OutputPass owns tone mapping/output transfer; no second gamma pass. */
 export class EffectsPipeline {

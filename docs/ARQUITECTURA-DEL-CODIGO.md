@@ -50,3 +50,17 @@ La interfaz Angular recibe el estado académico y comunica intenciones. Three.js
 ## Límites de esta separación
 
 El motor gráfico sigue coordinando su propio ciclo de vida. El estado del laboratorio vive en LabSession; App solo compone. Las proyecciones académicas, modelos, física, texturas, animaciones y lámpara tienen propietarios independientes.
+
+## Piezas añadidas en la revisión 4
+
+- **`world/camera-rig.ts`**: todo movimiento de cámara programático (giro, zoom, encuadre, inicio, enlaces). Interpola hacia una meta esférica con `smoothTime` de 0,22 s (entrada) o 0,6 s (encuadre); con movimiento reducido llega en un `update`. Usa `OrbitControls` para la entrada del usuario: no se añadió `camera-controls` porque la política táctil de `scene-input.ts` ya cumple el contrato y el riesgo del plan se resolvió con la variante prevista. `camera-director.ts` ofrece `framePose` (puro) y `CAMERA_CLIP` (planos fijos 0,1–140).
+- **`world/scene-hud/`**: capa sobre el visor, común a todas las estaciones: `bench-map/` (luz, piezas y cuña de cámara), `piece-tray/` (modelo | banco, familias con selector de forma real y miniaturas del motor) y rótulos flotantes (`callout-layout.ts`). Los cajones abiertos llevan `data-occludes`; `WorldEngine.freeRegion()` los descuenta.
+- **`laboratory/station-activity.ts`**: contrato `StationActivity` (fase, bloques, bus, bytes, registros cambiados, y los campos de buffer, máquina y memoria). Los modelos que explican se suscriben con `tools.onActivity`; ninguno anima en bucle libre. `ActivityChannel` descarta actividad de una sesión anterior.
+- **`world/models/*-activity.ts`**: `CpuActivityView` (pines con la dirección real, cola con los bytes del código, mnemónico y flags), `MemoryActivityView` (regla segmento × 16 + offset, lupa fila/columna, bytes por banco, carriles del DIMM, ranuras de caché), `AppleActivityView` (núcleos, buffers B0/B1 fijos, enlaces por etapa, contraste de memoria separada).
+- **`world/effects/ambient-dust.ts`**: una sola llamada de dibujo; la deriva se calcula en el vértice y cada mota brilla solo dentro de un haz. Cantidad por perfil: 600, 250, 0.
+- **`world/textures/room-light-map.ts`**: luz horneada de paredes y techo (material sin iluminación dinámica).
+- **`world/render-governors.ts`**: `ResolutionGovernor` (pasos de 0,05, se estabiliza tras tres inversiones) e `IdleGovernor` (medio ritmo tras 3 s sin eventos).
+- **`world/selection-marker.ts`, `hover-glow.ts`, `exploded-layout.ts`, `piece-families.ts`, `timeline-layout.ts`**: funciones puras con sus pruebas.
+- **`simulation/cache-model.ts` y `cache-lesson.ts`**: caché de mapeo directo de 4 y 8 líneas, separada del 8086, y la misión M09.
+
+Reglas nuevas: (11) toda animación que explique funcionamiento deriva de `StationActivity`; (12) un material se identifica por id, color, rugosidad y metalicidad (dos modelos usaron `cpu-lid` con colores distintos); (13) el modelo de una estación nunca importa Angular; (14) `tools.relabel` repinta una etiqueta, no se recrea.

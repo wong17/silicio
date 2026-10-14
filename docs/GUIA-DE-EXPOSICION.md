@@ -15,4 +15,10 @@ npm install, npm start para desarrollo. npm run build y npm run preview para pro
 
 Fuentes, worker, WASM y contenido se empaquetan localmente; referencias externas requieren red. La prueba completamente desconectada aún está pendiente. Antes de exponer, abrir cada estación, compilar suma y comprobar recuperar una sesión.
 
-Pruebas: npm test -- --watch=false. Geometría: npm run check:geometry y node tools/check-memory.mjs. Resultados/limitaciones: [evidencia](qa/PROGRESO-REVISION-3.md).
+Pruebas: npm test -- --watch=false. Geometría: npm run check:geometry y node tools/check-memory.mjs. Estado y pendientes: [plan vigente](PLAN.md). Evidencia de la revisión 3: [archivo](archivo/qa/PROGRESO-REVISION-3.md).
+
+## Modo exposición
+
+Tecla **X** (o «Modo exposición» en la barra) recorre los ocho minutos como una secuencia: cada paso cambia de estación si hace falta, selecciona la pieza, abre o cierra el chip y encuadra la cámara; la línea de apoyo queda en pantalla. Avanzar: flecha derecha o barra espaciadora. Retroceder: flecha izquierda. Salir: Esc. Los pasos están en `src/app/content/tour.ts` y siguen los tiempos de la guía.
+
+Otras ayudas: **Mayús+D** muestra el medidor de rendimiento; **T** rotula las piezas principales; **P** abre la bandeja y **B** el mapa del banco. Una URL como `/8086?pieza=pin-25&vista=45,12.0` abre la estación ya encuadrada.

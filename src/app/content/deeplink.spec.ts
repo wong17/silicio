@@ -19,3 +19,15 @@ describe('enlace por pieza', () => {
     expect(toQuery(undefined)).toEqual({ pieza: null, vista: null });
   });
 });
+
+import { readShot } from './deeplink';
+describe('vistas fijas', () => {
+  it('shot_names_a_station_and_a_piece', () => {
+    expect(readShot({ shot: '8086-pin-25' })).toEqual({ station: '8086', piece: 'pin-25' });
+    expect(readShot({ shot: 'memory' })).toEqual({ station: 'memory', piece: undefined });
+  });
+  it('malformed_shot_is_ignored', () => {
+    expect(readShot({ shot: '../x' })).toBeUndefined();
+    expect(readShot({})).toBeUndefined();
+  });
+});

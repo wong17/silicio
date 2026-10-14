@@ -4,6 +4,7 @@ import { GpuResources } from './gpu-resources';
 import { releaseInstanceBuffers } from './instance-lifecycle';
 
 import * as THREE from 'three';
+import { AmbientDust } from './effects/ambient-dust';
 import { IdleGovernor, ResolutionGovernor } from './render-governors';
 import { HoverGlow } from './hover-glow';
 import { SelectionMarker, selectionBounds } from './selection-marker';
@@ -32,7 +33,7 @@ import { WorkbenchRoomModel } from './models/workbench-room.model';
 import { ArticulatedLampModel } from './models/articulated-lamp.model';
 import { LampController, type LampTarget } from './lamp-controller';
 import { LAMP_REACH, clampLampTarget, lampDistance } from './lamp-limits';
-import { failingTube } from './failing-light';
+import { failingLightState } from './failing-light';
 import { SurfaceLibrary, type SurfaceLook } from './textures/surface-library';
 import { SceneLabels } from './textures/scene-labels';
 import { BENCH } from './models/bench-layout';
@@ -122,6 +123,7 @@ export class WorldEngine implements SceneInputs {
   /** Scene time for animators; it advances with the frame delta and stays at zero under reduced motion. */
   private clock = 0;
   private rig?: CameraRig;
+  private dust?: AmbientDust;
   private readonly resolutionGovernor = new ResolutionGovernor();
   private readonly idleGovernor = new IdleGovernor();
   private readonly hoverGlow = new HoverGlow();
@@ -236,7 +238,8 @@ export class WorldEngine implements SceneInputs {
     // A lit room rather than a void: the walls fall off into a dim warm haze.
     // The far walls of the closed room fade into a warm grey haze, never into a black void.
     this.scene.background = new THREE.Color(HAZE);
-    this.scene.fog = new THREE.Fog(HAZE, 44, 150);
+    // The fog starts beyond the far wall of the room (76 wide), so it never greys the walls themselves.
+    this.scene.fog = new THREE.Fog(HAZE, 70, 220);
     // Far enough for the far corners of the closed room, which the camera can see from the bench.
     this.camera = new THREE.PerspectiveCamera(38, 1, CAMERA_CLIP.near, CAMERA_CLIP.far);
     this.camera.position.set(5.8, 9.2, 10.8);
@@ -268,9 +271,9 @@ export class WorldEngine implements SceneInputs {
     this.ceilingSpot(new THREE.Vector3(0, BENCH.ceiling - 1, 0.5), new THREE.Vector3(0, BENCH.top, 0.5), 0.8, spotPower);
     const failing = this.ceilingSpot(new THREE.Vector3(0, BENCH.ceiling - 1, 28), new THREE.Vector3(0, BENCH.floor, 28), 0.78, spotPower);
     this.tools.animate((seconds) => {
-      const k = failingTube(seconds);
-      failing.light.intensity = spotPower * k;
-      failing.lens.emissiveIntensity = 1.2 * (0.25 + 0.75 * k);
+      const state = failingLightState(seconds, spotPower);
+      failing.light.intensity = state.light;
+      failing.lens.emissiveIntensity = state.lens;
     }, 'room');
     const key = new THREE.DirectionalLight('#eef4f0', 0.35);
     key.position.set(-4, 8, 5);
@@ -286,6 +289,14 @@ export class WorldEngine implements SceneInputs {
     this.lampController = new LampController(lampRig, this.scene, (r) => this.track(r));
     this.lampController.setTarget(this.lamp);
     this.lampController.setPower(this.lampOn);
+
+    // Floating dust: one points draw, lit only where a light cone crosses it.
+    this.dust = new AmbientDust(
+      600,
+      new THREE.Box3(new THREE.Vector3(-12, BENCH.top + 0.3, -7), new THREE.Vector3(12, BENCH.ceiling - 0.4, 12)),
+      (r) => this.track(r),
+    );
+    this.scene.add(this.dust.points);
 
     this.selectionBox = new SelectionMarker('#d7ac6f');
     this.scene.add(this.selectionBox);
@@ -419,6 +430,31 @@ export class WorldEngine implements SceneInputs {
       this.activityChannel.begin(a.sessionId);
     }
     this.activityChannel.publish(a);
+  }
+  /** Feeds the dust with the cones of the lamp and the two ceiling spots, and the profile's mote count. */
+  private updateDust(): void {
+    const dust = this.dust;
+    const lamp = this.lampController;
+    if (!dust || !lamp) return;
+    dust.setActive(qualitySettings(this.quality).dust);
+    dust.update(this.reduced ? 0 : this.clock);
+    const light = lamp.light;
+    const direction = new THREE.Vector3().subVectors(light.target.position, light.position).normalize();
+    const beams = [
+      {
+        origin: light.position.clone(),
+        direction,
+        cosAngle: Math.cos(light.angle),
+        strength: lamp.powered ? 1.4 : 0,
+      },
+      {
+        origin: new THREE.Vector3(0, BENCH.ceiling - 1, 0.5),
+        direction: new THREE.Vector3(0, -1, 0),
+        cosAngle: Math.cos(0.8),
+        strength: 0.8,
+      },
+    ];
+    dust.setBeams(beams);
   }
   private updateParts(duration = 0.8): void {
     this.explodedMotion?.kill();
@@ -1178,6 +1214,7 @@ export class WorldEngine implements SceneInputs {
     this.physics?.step(dt);
     this.rig?.setReduced(this.reduced);
     this.rig?.update(dt);
+    this.updateDust();
     this.emitTelemetry(dt);
     if (this.thumbnailQueue.length) this.serveThumbnail();
     this.controls?.update(dt);

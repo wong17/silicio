@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { bakedShellMaterial, createRoomLightMap } from '../textures/room-light-map';
 import { WorkshopGeometry } from './workshop-geometry';
 import { BENCH } from './bench-layout';
 import { seededRandom } from '../textures/noise';
@@ -63,14 +64,18 @@ export class LabRoomModel extends WorkshopGeometry {
       size: 128,
     });
 
+    // The shell (walls and ceiling) uses baked light: it ignores the dynamic lights, so it is never black.
+    const lightMap = createRoomLightMap((r) => this.tools.track(r));
+    const wallShell = bakedShellMaterial(plaster, lightMap, (r) => this.tools.track(r));
+    const ceilingShell = bakedShellMaterial(ceilingMaterial, lightMap, (r) => this.tools.track(r));
     // The room is closed: the wall the bench faces, two side walls and a front wall beyond the camera's reach.
-    this.box(parent, 2 * SPAN + 2 * WALL, CEILING_SPAN, WALL, 0, midY, BACK_Z, plaster);
-    this.box(parent, WALL, CEILING_SPAN, depth, -(SPAN + WALL / 2), midY, centreZ, plaster);
-    this.box(parent, WALL, CEILING_SPAN, depth, SPAN + WALL / 2, midY, centreZ, plaster);
-    this.box(parent, 2 * SPAN + 2 * WALL, CEILING_SPAN, WALL, 0, midY, FAR_Z + WALL / 2, plaster);
+    this.box(parent, 2 * SPAN + 2 * WALL, CEILING_SPAN, WALL, 0, midY, BACK_Z, wallShell);
+    this.box(parent, WALL, CEILING_SPAN, depth, -(SPAN + WALL / 2), midY, centreZ, wallShell);
+    this.box(parent, WALL, CEILING_SPAN, depth, SPAN + WALL / 2, midY, centreZ, wallShell);
+    this.box(parent, 2 * SPAN + 2 * WALL, CEILING_SPAN, WALL, 0, midY, FAR_Z + WALL / 2, wallShell);
     this.box(parent, 2 * SPAN, 0.5, 0.14, 0, BENCH.floor + 0.25, BACK_Z + WALL / 2 + 0.07, rubber);
     // Ceiling slab: its underside is BENCH.ceiling, and the camera is kept below it (room-bounds.ts).
-    this.box(parent, 2 * SPAN, 0.4, depth, 0, BENCH.ceiling + 0.2, centreZ, ceilingMaterial);
+    this.box(parent, 2 * SPAN, 0.4, depth, 0, BENCH.ceiling + 0.2, centreZ, ceilingShell);
     const floor = new T.Mesh(
       this.tools.track(new T.PlaneGeometry(2 * SPAN, depth)),
       this.tools.material('lab-floor', '#7f8f88', 0.6, 0, {

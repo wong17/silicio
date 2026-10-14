@@ -17,3 +17,21 @@ describe('failingTube', () => {
     expect(Math.max(...samples)).toBeLessThanOrEqual(1);
   });
 });
+
+import { failingLightState } from './failing-light';
+describe('failing tube: lens and light', () => {
+  it('failing_tube_lens_and_light_change_together', () => {
+    for (let i = 0; i < 600; i++) {
+      const t = i / 12 + 0.01;
+      const { light, lens } = failingLightState(t, 260);
+      const k = failingTube(t);
+      expect(light).toBeCloseTo(260 * k, 9);
+      // The lens dims in the same frame and never below a quarter of its glow.
+      expect(lens).toBeCloseTo(1.2 * (0.25 + 0.75 * k), 9);
+      expect(lens).toBeGreaterThanOrEqual(0.3);
+    }
+  });
+  it('under_reduced_motion_the_pair_is_steady', () => {
+    expect(failingLightState(0, 260)).toEqual({ light: 260, lens: 1.2 });
+  });
+});

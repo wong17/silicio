@@ -42,8 +42,11 @@ export class LampController {
     this.light = new T.SpotLight('#ffd6a0', 40, 40, BEAM_ANGLE, 0.7, 2);
     this.light.target = this.lightTarget;
     this.light.shadow.mapSize.set(1024, 1024);
-    this.light.shadow.bias = -0.0002;
-    this.light.shadow.normalBias = 0.02;
+    this.light.shadow.bias = -0.0003;
+    this.light.shadow.normalBias = 0.03;
+    // A softer penumbra and a frustum that hugs the cone, so the shadow does not shimmer when the head moves.
+    this.light.shadow.radius = 3;
+    this.light.shadow.focus = 1;
     this.light.shadow.camera.near = 0.5;
     this.light.shadow.camera.far = 40;
     scene.add(this.light, this.lightTarget);
@@ -153,9 +156,10 @@ export class LampController {
 
   /** Motes drift slowly inside the cone between the head and the bench. */
   private updateDust(time: number, length: number): void {
+    // The dust now lives in effects/ambient-dust.ts (one shader, no CPU work); the rig's own points stay hidden.
     const { dust } = this.rig;
-    dust.visible = this.on && this.boost > 1;
-    if (!dust.visible) return;
+    dust.visible = false;
+    return;
     const attr = dust.geometry.getAttribute('position') as T.BufferAttribute;
     const { wrist } = this.pose;
     const axisX = this.direction.clone();

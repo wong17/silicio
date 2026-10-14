@@ -205,6 +205,10 @@
 
       <app-piece-inspector (focus)="focusSelected()" (aim)="aimSelected()" />
 
+      @if (session.notice()) {
+        <p class="notice" role="status">{{ session.notice() }}</p>
+      }
+
       @if (session.error()) {
         <p class="error" role="alert">{{ session.error() }}</p>
       }

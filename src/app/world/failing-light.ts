@@ -17,3 +17,9 @@ export function failingTube(seconds: number): number {
   if (roll < 0.035) return slot % 2 ? 0.55 : 1;
   return 0.96 + 0.04 * hash(slot + 0.5);
 }
+
+/** Intensities of the failing spot and its lens for one instant; both come from the same brightness value. */
+export function failingLightState(seconds: number, spotPower: number, lensBase = 1.2): { light: number; lens: number } {
+  const k = failingTube(seconds);
+  return { light: spotPower * k, lens: lensBase * (0.25 + 0.75 * k) };
+}
