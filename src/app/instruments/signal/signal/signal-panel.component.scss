@@ -26,7 +26,7 @@
     font: 500 12px kit.$mono;
     &.on {
       border-color: kit.$amber;
-      background: #3a3224;
+      background: kit.$amber-deep;
       color: kit.$amber-soft;
     }
   }

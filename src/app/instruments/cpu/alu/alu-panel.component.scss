@@ -43,7 +43,7 @@ svg {
 }
 
 .operand {
-  fill: #101516;
+  fill: kit.$well;
   stroke: #3f4a46;
   stroke-width: 1.2;
 }
@@ -111,7 +111,7 @@ svg {
   padding: 8px 2px;
   border: 1px solid #2d3533;
   border-radius: 6px;
-  background: #101516;
+  background: kit.$well;
   color: kit.$dim;
   cursor: help;
   b {

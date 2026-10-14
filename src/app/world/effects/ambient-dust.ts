@@ -61,7 +61,7 @@ const FRAGMENT = /* glsl */ `
     float d = dot(c, c);
     if (d > 0.25 || vLight < 0.01) discard;
     float edge = smoothstep(0.25, 0.0, d);
-    gl_FragColor = vec4(1.0, 0.92, 0.78, edge * vLight * 0.55);
+    gl_FragColor = vec4(1.0, 0.92, 0.78, edge * vLight * 0.4);
   }
 `;
 
@@ -112,7 +112,7 @@ export class AmbientDust {
         blending: T.AdditiveBlending,
         uniforms: {
           uTime: { value: 0 },
-          uSize: { value: 5 },
+          uSize: { value: 3.2 },
           uOrigin: { value: this.origin },
           uDirection: { value: this.direction },
         },

@@ -23,7 +23,7 @@ import { bindCancellation, applyInputPolicy } from './scene-input';
 import { classifySubject, pieceDefinition } from './piece-catalog';
 import { instanceContacts } from './static-instancing';
 import { CAMERA_CLIP, framePose, ViewportRegion } from './camera-director';
-import { EffectsPipeline, qualitySettings, QualityTier } from './effects/effects-pipeline';
+import { EffectsPipeline, parseFx, qualitySettings, QualityTier } from './effects/effects-pipeline';
 import { GpuProfile } from './gpu-profile';
 import { FrameProfile } from './frame-profile';
 import { historyPieces } from './history-pieces';
@@ -248,6 +248,8 @@ export class WorldEngine implements SceneInputs {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       antialias: true,
+      // `?depth=reversed` turns on the reversed depth buffer to compare it with the default (plan C7).
+      reversedDepthBuffer: new URLSearchParams(location.search).get('depth') === 'reversed',
     });
     this.gpuResources = new GpuResources(this.renderer.getContext() as WebGL2RenderingContext);
     this.renderer.info.autoReset = false;
@@ -1152,7 +1154,7 @@ export class WorldEngine implements SceneInputs {
     this.effects?.dispose();
     this.effects = undefined;
     if (this.quality === 'high' && this.renderer.extensions.has('EXT_color_buffer_float')) {
-      this.effects = new EffectsPipeline(this.renderer, this.scene, this.camera);
+      this.effects = new EffectsPipeline(this.renderer, this.scene, this.camera, parseFx(location.search));
       const s = this.renderer.getSize(new THREE.Vector2());
       this.effects.resize(Math.max(1, s.x), Math.max(1, s.y));
     }

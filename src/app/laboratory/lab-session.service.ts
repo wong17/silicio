@@ -682,7 +682,15 @@ export class LabSession {
   }
 
   setHud(patch: Partial<{ map: boolean; tray: boolean }>): void {
-    this.hud.update((h) => ({ ...h, ...patch }));
+    this.hud.update((h) => {
+      const next = { ...h, ...patch };
+      // On a phone the scene is short: one drawer at a time.
+      if (typeof matchMedia === 'function' && matchMedia('(max-width: 899px)').matches) {
+        if (patch.map) next.tray = false;
+        else if (patch.tray) next.map = false;
+      }
+      return next;
+    });
     this.savePreferences();
   }
 

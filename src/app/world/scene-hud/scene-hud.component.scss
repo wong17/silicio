@@ -153,3 +153,20 @@
     width: 100%;
   }
 }
+
+@media (max-width: 899px) {
+  // The dock spans the whole scene height; the drawers share what is left above the toggles and scroll.
+  .dock {
+    top: 12px;
+    justify-content: flex-end;
+  }
+  .drawers {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow: auto;
+    align-items: flex-end;
+  }
+  .drawer.map {
+    max-height: none;
+  }
+}

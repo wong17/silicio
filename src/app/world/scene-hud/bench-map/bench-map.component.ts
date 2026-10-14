@@ -3,6 +3,7 @@ import { DecimalPipe } from '@angular/common';
 import { LabSession } from '../../../laboratory/lab-session.service';
 import { clampLampTarget, LAMP_LIMITS, LAMP_REACH } from '../../lamp-limits';
 import { BENCH } from '../../models/bench-layout';
+import { familyOf } from '../../piece-families';
 
 /** The pad shows the whole worktop with a margin, centred on the bench: x from -18 to 18 and z from -13 to 13. */
 const WINDOW = { x: [-18, 18], z: [-13, 13] } as const;
@@ -41,7 +42,8 @@ export class BenchMapComponent {
   readonly markers = computed(() =>
     this.session
       .anchors()
-      .filter((a) => a.scope === 'model')
+      // Repeated pieces (40 pins, 32 bytes…) stay in the tray: on the map they would sit on top of each other.
+      .filter((a) => a.scope === 'model' && !familyOf(a.id))
       .map((a) => ({ ...a, cx: this.toPx(a.x), cy: this.toPy(a.z), selected: a.id === this.session.activePart() })),
   );
   /** Wedge on the border of the map: where the camera stands, looking at the bench centre. */

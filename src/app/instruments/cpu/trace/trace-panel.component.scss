@@ -55,7 +55,7 @@
   &.selected {
     transform: scale(1.12);
     border-color: kit.$amber;
-    background: #3a3224;
+    background: kit.$amber-deep;
     color: kit.$amber-soft;
     box-shadow: 0 0 14px rgba(215, 172, 111, 0.35);
   }

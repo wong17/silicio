@@ -28,7 +28,7 @@
     padding: 8px 14px;
     &[aria-pressed='true'] {
       border-color: kit.$amber;
-      background: #3a3224;
+      background: kit.$amber-deep;
       color: kit.$amber-soft;
     }
   }
@@ -109,7 +109,7 @@
     font: 500 12px kit.$mono;
     &.on {
       border-color: kit.$amber;
-      background: #3a3224;
+      background: kit.$amber-deep;
       color: kit.$amber-soft;
     }
   }
@@ -152,5 +152,29 @@
   .tray,
   .selector {
     animation: none;
+  }
+}
+
+// Phones: the scene is short, so the tray gives it back as much height as it can.
+@media (max-width: 899px) {
+  .tray {
+    gap: 6px;
+    padding: 8px;
+  }
+  .card {
+    width: 84px;
+    min-height: 84px;
+    padding: 6px;
+    img,
+    .glyph {
+      width: 44px;
+      height: 44px;
+    }
+    .name {
+      font-size: 11px;
+    }
+  }
+  .count {
+    display: none;
   }
 }

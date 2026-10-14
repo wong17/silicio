@@ -27,7 +27,7 @@
   font: 500 12px kit.$mono;
   &[aria-pressed='true'] {
     border-color: kit.$amber;
-    background: #3a3224;
+    background: kit.$amber-deep;
     color: kit.$amber-soft;
   }
   @include kit.tooltip;
@@ -172,5 +172,18 @@
   }
   .grip {
     fill: transparent;
+  }
+}
+
+@media (max-width: 899px) {
+  // The inspector already offers "Iluminar", so the sheet keeps only the map and the height slider.
+  .pad {
+    max-height: 17vh;
+    margin-inline: auto;
+  }
+  .actions,
+  .coords,
+  .head .kicker {
+    display: none;
   }
 }

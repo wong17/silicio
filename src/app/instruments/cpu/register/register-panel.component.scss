@@ -79,7 +79,7 @@ select {
   padding: 6px 0;
   border: 1px solid #2d3533;
   border-radius: 6px;
-  background: #101516;
+  background: kit.$well;
   color: kit.$dim;
   cursor: pointer;
   transition:
@@ -174,7 +174,7 @@ select {
   padding: 6px 8px;
   border: 1px solid #2d3533;
   border-radius: 6px;
-  background: #101516;
+  background: kit.$well;
   color: kit.$ink;
   .sig {
     font: 600 12px kit.$mono;
