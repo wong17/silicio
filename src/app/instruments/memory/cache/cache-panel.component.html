@@ -1,0 +1,90 @@
+<section class="cache" aria-label="Caché comparable de cuatro y ocho líneas">
+  <header class="head">
+    <p class="kicker">Misión M09 · Caché comparable</p>
+    <div class="source" role="group" aria-label="Origen de las lecturas">
+      <button type="button" [attr.aria-pressed]="session.cacheSource() === 'mission'" (click)="setSource('mission')">
+        Traza de la misión
+      </button>
+      <button type="button" [attr.aria-pressed]="session.cacheSource() === 'last'" (click)="setSource('last')">
+        Última ejecución
+      </button>
+    </div>
+  </header>
+
+  <p class="note">
+    Mapeo directo, bloques de 16 bytes. Un acierto cuesta {{ hitCost }} y un fallo {{ missCost }}: son costes del
+    modelo, no latencias de un producto.
+  </p>
+
+  @if (lesson().total === 0) {
+    <p class="empty">La última ejecución no leyó memoria de datos. Ejecuta un programa que lea, como la misión 01.</p>
+  } @else {
+    <table>
+      <caption class="sr-only">Lecturas y su resultado en cada caché</caption>
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Dirección</th>
+          <th scope="col">Bloque</th>
+          <th scope="col">4 líneas</th>
+          <th scope="col">8 líneas</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of rows(); track r.n) {
+          <tr [class.pending]="!r.revealed">
+            <td>{{ r.n }}</td>
+            <td>{{ r.address }}</td>
+            <td>{{ r.block }}</td>
+            <td>
+              @if (r.four; as f) {
+                <span [class.hit]="f.hit" [class.miss]="!f.hit">
+                  línea {{ f.index }} · etq {{ f.tag }} · {{ f.hit ? 'acierto' : 'fallo' }}
+                </span>
+                @if (r.guess; as g) {
+                  <small [class.right]="g.predicted === g.actual">{{ g.predicted === g.actual ? '✓ acertaste' : '✗ predijiste ' + (g.predicted ? 'acierto' : 'fallo') }}</small>
+                }
+              } @else {
+                <span class="hidden">por predecir</span>
+              }
+            </td>
+            <td>
+              @if (r.eight; as e) {
+                <span [class.hit]="e.hit" [class.miss]="!e.hit">
+                  línea {{ e.index }} · etq {{ e.tag }} · {{ e.hit ? 'acierto' : 'fallo' }}
+                </span>
+              } @else {
+                <span class="hidden">—</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row" colspan="3">Coste acumulado</th>
+          <td>{{ costFour() }}</td>
+          <td>{{ costEight() }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    @if (!lesson().complete) {
+      <div class="predict" role="group" [attr.aria-label]="'Predice la lectura ' + (lesson().revealed + 1)">
+        <p class="kicker">Lectura {{ lesson().revealed + 1 }} de {{ lesson().total }}: ¿acierto o fallo en 4 líneas?</p>
+        <button type="button" (click)="predict(true)">Acierto</button>
+        <button type="button" (click)="predict(false)">Fallo</button>
+      </div>
+    } @else {
+      <p class="verdict" role="status" [class.solved]="lesson().solved">
+        @if (lesson().solved) {
+          Resuelta: acertaste las {{ lesson().total }} lecturas. Con 8 líneas el coste baja de {{ lesson().four.cost }} a
+          {{ lesson().eight.cost }}.
+        } @else {
+          Comparación completa con {{ lesson().correct }} de {{ lesson().total }} aciertos. Reinicia para intentarlo otra vez.
+        }
+      </p>
+    }
+    <button type="button" class="reset" (click)="reset()">Reiniciar predicciones</button>
+  }
+</section>

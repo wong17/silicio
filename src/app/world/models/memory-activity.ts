@@ -16,6 +16,7 @@ export function classicChipPosition(bank: number, n: number): { x: number; z: nu
  */
 export class MemoryActivityView {
   private lamps: T.Mesh[][] = [[], []];
+  private cacheSlots: T.Mesh[] = [];
   private lupa?: T.Group;
   private rowBar?: T.Mesh;
   private colBar?: T.Mesh;
@@ -64,6 +65,25 @@ export class MemoryActivityView {
     this.labels['sum'] = this.tools.label?.(plate, 'segmento × 16 + offset', 0, 0.026, -0.42, 6.0) as T.Object3D;
     this.labels['bus'] = this.tools.label?.(plate, 'A0 · BHE#', 0, 0.026, 0, 6.0) as T.Object3D;
     this.labels['sp'] = this.tools.label?.(plate, 'SP', 0, 0.026, 0.42, 6.0) as T.Object3D;
+
+    // Cache lines as a row of slots floating over the board: the last read lights its line.
+    const slotMaterial = this.tools.track(new T.MeshStandardMaterial({ color: '#2b3634', roughness: 0.5 }));
+    const bar = new T.Group();
+    bar.position.set(0, 1.0, -2.55);
+    bar.name = 'cache-lines';
+    bar.userData['noBounds'] = true;
+    for (let i = 0; i < 8; i++) {
+      const slot = new T.Mesh(
+        this.tools.track(new T.BoxGeometry(0.6, 0.06, 0.34)),
+        this.tools.track(slotMaterial.clone()),
+      );
+      slot.position.x = -3.15 + i * 0.9;
+      slot.name = 'cache-line-' + i;
+      bar.add(slot);
+      this.cacheSlots.push(slot);
+    }
+    this.tools.label?.(this.cacheSlots[0], 'L0', 0, 0.036, 0, 0.4);
+    root.add(bar);
 
     // Magnifier: a ring with a 16 x 16 grid of cells above the active chip.
     const lupa = new T.Group();
@@ -154,6 +174,13 @@ export class MemoryActivityView {
       `A0=${+mem.a0} BHE#=${+!mem.bhe}  ·  ${mem.cycles} ciclo${mem.cycles > 1 ? 's' : ''}  ·  también ${hex(mem.alias.segment)}:${hex(mem.alias.offset)}`,
     );
     relabel('sp', `SP = ${hex(mem.stack.segment)}:${hex(mem.stack.pointer)}  →  ${hex(mem.stack.physical, 5)}h  (cima de la pila)`);
+    this.cacheSlots.forEach((slot, i) => {
+      const material = slot.material as T.MeshStandardMaterial;
+      const last = mem.cache?.last;
+      const lit = !!last && last.index === i;
+      material.emissive.set(lit ? (last!.hit ? '#2f9e5a' : '#d9922b') : '#000000');
+      material.emissiveIntensity = lit ? 0.9 : 0;
+    });
     this.applyProgress();
   }
 

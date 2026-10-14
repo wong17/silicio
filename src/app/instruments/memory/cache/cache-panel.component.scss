@@ -1,0 +1,113 @@
+@use '../../../shared/console-kit' as kit;
+
+.cache {
+  @include kit.module;
+}
+
+.head {
+  display: grid;
+  gap: 8px;
+}
+
+.kicker {
+  @include kit.kicker;
+}
+
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  button {
+    min-height: 44px;
+    padding: 8px 12px;
+    &[aria-pressed='true'] {
+      border-color: kit.$amber;
+      background: #3a3224;
+      color: kit.$amber-soft;
+    }
+  }
+}
+
+.note,
+.empty {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: kit.$dim;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 500 13px kit.$mono;
+  th,
+  td {
+    padding: 6px 4px;
+    text-align: left;
+    border-bottom: 1px solid kit.$edge;
+    vertical-align: top;
+  }
+  th {
+    color: kit.$dim;
+    font-weight: 500;
+  }
+  tfoot td,
+  tfoot th {
+    color: kit.$amber-soft;
+  }
+  small {
+    display: block;
+    color: kit.$red;
+    &.right {
+      color: kit.$green;
+    }
+  }
+}
+
+.hit {
+  color: kit.$green;
+}
+
+.miss {
+  color: kit.$amber;
+}
+
+.hidden {
+  color: kit.$dim;
+}
+
+.predict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  .kicker {
+    flex: 1 1 100%;
+  }
+  button {
+    min-height: 44px;
+    min-width: 96px;
+  }
+}
+
+.verdict {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  &.solved {
+    color: kit.$green;
+  }
+}
+
+.reset {
+  min-height: 44px;
+  align-self: flex-start;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

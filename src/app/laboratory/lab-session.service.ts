@@ -12,6 +12,7 @@ import type { SceneCommand } from '../world/scene-toolbar/scene-toolbar.componen
 import { BufferExperiment, LaboratoryFacade } from './laboratory.facade';
 import type { CameraView, PieceAnchor, ScreenAnchor } from '../world/scene-inputs';
 import { IDLE_ACTIVITY, PHASES, projectActivity, projectBufferActivity, projectMemory, type Phase, type StationActivity } from './station-activity';
+import { CacheLesson } from '../simulation/cache-lesson';
 import { MachineExperiment, machineActivity } from '../instruments/machine-experiment';
 import { describePiece, type PieceOption } from './piece-descriptions';
 
@@ -111,6 +112,10 @@ export class LabSession {
   private phaseTimer?: ReturnType<typeof setTimeout>;
   /** Conceptual contrast switch of the SoC station: separate memories with a copy between them. */
   readonly separateMemory = signal(false);
+  /** Cache mission (M09). The lesson object is mutable, so a revision signal announces its changes. */
+  cacheLesson = new CacheLesson();
+  readonly cacheRevision = signal(0);
+  readonly cacheSource = signal<'mission' | 'last'>('mission');
   /** Exhibition mode: index of the step on screen, or null when it is off. */
   readonly tourIndex = signal<number | null>(null);
   /** Snapshot of the real state for the per-station missions. */
@@ -169,10 +174,13 @@ export class LabSession {
         sessionId: this.laboratory().sessionId,
         revision: this.revision(),
         phase: 'execute',
-        memory: projectMemory(this.segment(), this.offset(), (a) => this.cpu.memory[a] ?? 0, {
-          segment: this.cpu.registers.SS,
-          pointer: this.cpu.registers.SP,
-        }),
+        memory: {
+          ...projectMemory(this.segment(), this.offset(), (a) => this.cpu.memory[a] ?? 0, {
+            segment: this.cpu.registers.SS,
+            pointer: this.cpu.registers.SP,
+          }),
+          cache: { lines: 8, last: this.cacheLessonLast() },
+        },
       };
     }
     return projectActivity(this.laboratory() as never, this.phase(), this.revision());
@@ -607,6 +615,37 @@ export class LabSession {
     this.bufferStage.set(next);
     this.activePart.set(next === 1 ? 'gpu' : next === 2 ? 'unified' : 'performance');
     this.tick.update((n) => n + 1);
+  }
+
+  private cacheLessonLast(): { index: number; hit: boolean } | undefined {
+    this.cacheRevision();
+    const last = this.cacheLesson.lastLookup;
+    // The scene shows the eight-line cache, so the line index comes from that configuration.
+    const n = this.cacheLesson.revealed - 1;
+    const access = this.cacheLesson.eight.accesses[n];
+    return last && access ? { index: access.index, hit: access.hit } : undefined;
+  }
+
+  predictCache(hit: boolean): void {
+    this.cacheLesson = this.cacheLesson.clone();
+    this.cacheLesson.predict(hit);
+    this.cacheRevision.update((n) => n + 1);
+  }
+
+  resetCache(): void {
+    this.cacheLesson = this.cacheLesson.clone();
+    this.cacheLesson.reset();
+    this.cacheRevision.update((n) => n + 1);
+  }
+
+  /** `last` replays the reads of the latest 8086 run; `mission` is the fixed four-read trace. */
+  setCacheSource(source: 'mission' | 'last'): void {
+    this.cacheSource.set(source);
+    this.cacheLesson =
+      source === 'mission'
+        ? new CacheLesson()
+        : new CacheLesson(this.cpu.trace.flatMap((t) => t.reads).slice(0, 24));
+    this.cacheRevision.update((n) => n + 1);
   }
 
   advanceMachine(): void {

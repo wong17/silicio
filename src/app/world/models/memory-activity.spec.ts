@@ -39,12 +39,22 @@ function harness(variant: 'classic' | 'dimm') {
     listener!({ ...IDLE_ACTIVITY, sessionId: 's', revision: stack.pointer, phase: 'execute', memory: projectMemory(segment, offset, () => 0, stack) });
     animators.forEach((fn) => fn(0));
   };
+  const sendWithCache = (last?: { index: number; hit: boolean }) => {
+    listener!({
+      ...IDLE_ACTIVITY,
+      sessionId: 's',
+      revision: 1,
+      phase: 'execute',
+      memory: { ...projectMemory(0x2000, 0x000a, () => 0), cache: { lines: 8, last } },
+    });
+    animators.forEach((fn) => fn(0));
+  };
   const count = () => {
     let n = 0;
     root.traverse(() => n++);
     return n;
   };
-  return { root, parts, texts, send, sendWithStack, count };
+  return { root, parts, texts, send, sendWithStack, sendWithCache, count };
 }
 
 describe('memoria: animación de la placa y el módulo', () => {
@@ -116,5 +126,23 @@ describe('memoria: marca de la pila', () => {
     expect([...texts.values()].some((t) => t.includes('3000:FFFE') && t.includes('3FFFEh'))).toBe(true);
     listenerSend(0xfffc);
     expect([...texts.values()].some((t) => t.includes('3000:FFFC') && t.includes('3FFFCh'))).toBe(true);
+  });
+});
+
+describe('memoria: ranuras de la caché', () => {
+  it('last_read_lights_its_line_green_or_amber', () => {
+    const h = harness('classic');
+    const slot = (i: number) => h.root.getObjectByName('cache-line-' + i) as T.Mesh;
+    const color = (i: number) => (slot(i).material as T.MeshStandardMaterial).emissive.getHexString();
+    const send = (last?: { index: number; hit: boolean }) => {
+      h.sendWithCache(last);
+    };
+    send({ index: 4, hit: false });
+    expect(color(4)).toBe('d9922b');
+    send({ index: 4, hit: true });
+    expect(color(4)).toBe('2f9e5a');
+    expect(color(3)).toBe('000000');
+    send(undefined);
+    expect(color(4)).toBe('000000');
   });
 });

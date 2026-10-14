@@ -38,6 +38,7 @@ import { AluPanelComponent } from './instruments/cpu/alu/alu-panel.component';
 import { ProgramPanelComponent } from './instruments/cpu/program/program-panel.component';
 import { TracePanelComponent } from './instruments/cpu/trace/trace-panel.component';
 import { MemoryPanelComponent } from './instruments/memory/memory/memory-panel.component';
+import { CachePanelComponent } from './instruments/memory/cache/cache-panel.component';
 import { DimmPanelComponent } from './instruments/memory/dimm/dimm-panel.component';
 import { ApplePanelComponent } from './instruments/apple/apple/apple-panel.component';
 import { SignalPanelComponent } from './instruments/signal/signal/signal-panel.component';
@@ -80,6 +81,7 @@ const NARROW = '(max-width: 899px)';
     ProgramPanelComponent,
     TracePanelComponent,
     MemoryPanelComponent,
+    CachePanelComponent,
     DimmPanelComponent,
     ApplePanelComponent,
     SignalPanelComponent,

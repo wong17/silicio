@@ -75,6 +75,8 @@ export interface MemoryActivity {
   /** Eight bytes of the aligned 64-bit burst that the DIMM serves for this address. */
   burstBase: number;
   burst: number[];
+  /** The cache mission: the line the last revealed read used and whether it hit. */
+  cache?: { lines: number; last?: { index: number; hit: boolean } };
   /** Top of the stack, SS:SP, for the SP marker on the board. */
   stack: { segment: number; pointer: number; physical: number };
 }
