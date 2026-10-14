@@ -114,6 +114,8 @@ export class LabSession {
   private phaseTimer?: ReturnType<typeof setTimeout>;
   /** Conceptual contrast switch of the SoC station: separate memories with a copy between them. */
   readonly separateMemory = signal(false);
+  /** True once the student (or a saved preference) picked a graphics profile; automatic hints stay out then. */
+  qualityChosen = false;
   /** Information for the student that is not an error (autosave recovered or discarded). */
   readonly notice = signal('');
   private autosaveTimer?: ReturnType<typeof setTimeout>;
@@ -330,8 +332,10 @@ export class LabSession {
   loadPreferences(prefersReduced: boolean, narrow: boolean): void {
     try {
       const saved = JSON.parse(localStorage.getItem('silicio.preferences') ?? '{}');
-      if (saved.quality === 'low' || saved.quality === 'high' || saved.quality === 'balanced')
+      if (saved.quality === 'low' || saved.quality === 'high' || saved.quality === 'balanced') {
         this.quality.set(saved.quality);
+        this.qualityChosen = true;
+      }
       if (!saved.quality && narrow) this.quality.set('balanced');
       this.reduced.set(saved.reduced ?? prefersReduced);
       if (saved.hud) this.hud.set({ map: !!saved.hud.map, tray: !!saved.hud.tray });
@@ -695,6 +699,7 @@ export class LabSession {
   }
 
   setQuality(value: Quality): void {
+    this.qualityChosen = true;
     this.quality.set(value);
     this.savePreferences();
   }

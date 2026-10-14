@@ -19,6 +19,7 @@ import Lenis from 'lenis';
 import { EXPERIENCES } from './content/experiences';
 import { LabSession, type Tab } from './laboratory/lab-session.service';
 import { fromQuery, readShot, toQuery } from './content/deeplink';
+import { isWeakGpu } from './content/gpu-hint';
 import { PerfMeterComponent } from './shell/perf-meter/perf-meter.component';
 import { TourComponent } from './shell/tour/tour.component';
 import { StationMissionComponent } from './console/station-mission/station-mission.component';
@@ -231,6 +232,11 @@ export class App implements AfterViewInit, OnDestroy {
     this.media = matchMedia('(prefers-reduced-motion: reduce)');
     this.session.loadPreferences(this.media.matches, matchMedia(NARROW).matches);
     this.session.restoreAutosave();
+    // First visit on an old GPU: start with the light profile instead of waiting for the resolution to fall.
+    setTimeout(() => {
+      const gpu = document.querySelector('canvas[data-gpu]')?.getAttribute('data-gpu') ?? undefined;
+      if (!this.session.qualityChosen && isWeakGpu(gpu)) this.session.quality.set('low');
+    }, 1500);
     this.media.addEventListener('change', this.mediaChanged);
     this.zone.runOutsideAngular(() => {
       if (!matchMedia(NARROW).matches)

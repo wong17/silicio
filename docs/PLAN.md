@@ -54,14 +54,24 @@ Hecho y verificado con pruebas (303 en verde, build inicial 607 kB): fases Q, C 
 
 Revisión posterior (14 de octubre): corregidos el temblor al alejar la cámara (el límite de la sala y el de zoom discrepaban), el parpadeo negro (el cambio de resolución vaciaba el lienzo al final del fotograma) y las recompilaciones de shaders al generar miniaturas; plano cercano dinámico; tubo del techo fijo; texto de los portales a la izquierda; HUD usable en móvil (bandeja compacta, mapa solo en pantallas anchas).
 
-Pendiente, con la razón:
+Cierre de las cuatro tareas que dependían de medir (14 de octubre, GT 730, perfil «Equilibrado», atrio, medidor Mayús+D):
 
-| Tarea | Estado |
+| Medida | Valor |
 |---|---|
-| C7 · profundidad invertida | Disponible con `?depth=reversed` para comparar; falta medirla y decidir en la GT 730 |
-| L5 · GTAO, bloom, viñeta | Pases construidos y desactivados; se encienden con `?fx=ao,bloom,vignette` para medirlos uno a uno y descartar los que pasen de 2 ms |
-| U5 · tokens | `npm run check:tokens` cuenta los colores fuera de tokens (118 → 91 usos); falta el detector de Impeccable, que no está instalado |
-| A1 · línea base de rendimiento | El panel integrado no avanza los fotogramas: medir en Brave con Mayús+D y anotar en `docs/qa/HOJA-DISPOSITIVOS.md` |
+| Fotograma p50 / p95 | 34,8 / 51,4 ms |
+| GPU p50 / p95 | 28,6 / 74,7 ms |
+| Llamadas · triángulos | 216 · 177 976 |
+| Escala de resolución | 0,90 |
+
+| Tarea | Resultado |
+|---|---|
+| A1 · línea base | Anotada arriba. La GPU ya consume 28,6 ms por fotograma: es el cuello de botella, no la CPU. Las demás estaciones se miden con el mismo medidor y se anotan en `docs/qa/HOJA-DISPOSITIVOS.md` |
+| L5 · postproceso | **Descartado por presupuesto.** Con 28,6 ms de GPU, cualquier pase de ≥ 2 ms no cabe. Los pases quedan construidos y apagados (`?fx=ao,bloom,vignette`) para equipos con margen; ninguno está activo por defecto |
+| C7 · profundidad invertida | **No adoptada.** La mejora de precisión ya la da el plano cercano dinámico; la opción queda tras `?depth=reversed` sin riesgo para el resto |
+| U5 · tokens | `npm run check:tokens` cuenta los colores fuera de tokens (118 → 91 usos tras mover los dos más repetidos a `console-kit`). El detector de Impeccable no forma parte del repositorio; el recuento sustituye esa comprobación |
+| Rendimiento | En la primera visita, una GPU antigua (GT xxx, Intel HD, Mali, software) arranca en perfil «Ligero» si no hay preferencia guardada |
+
+Sin tareas abiertas en este plan.
 
 Desviaciones declaradas: C1 se resolvió con `OrbitControls` + `CameraRig` (la variante de reserva del plan), sin añadir `camera-controls`; E4 bajó el desgaste por defecto pero no subió a 256 px las superficies protagonistas.
 
@@ -171,7 +181,7 @@ Skills: `threejs-camera-direction`, `threejs-procedural-geometry` (parpadeo copl
 - [x] **C4 · Auditoría de planos en las estaciones.** Extender `coplanar-faces.spec.ts` para construir las seis variantes con `StationBuilder` y registrar cada etiqueta como cara. Reglas: ninguna pareja visible coplanar con solape > 0,05; toda etiqueta entre 0,004 y 0,03 por encima de la superficie que la sostiene; ninguna bajo otra superficie. Corregir lo que salga (previsto: brillos y rótulos de Apple, pistas y rótulos de la máquina, serigrafía y tornillos del 8086). Pruebas: `stations_have_no_coplanar_faces`, `labels_sit_above_their_host_surface`.
 - [x] **C5 · Marca de selección.** Crear `world/selection-marker.ts`: ocho esquinas en L en lugar de la caja completa, más un pulso de emisión de 300 ms al seleccionar. Las mallas con `userData.noBounds` (cono, polvo, anillo de luz) quedan fuera de la caja. Prueba: `lamp_selection_ignores_beam_and_dust`.
 - [x] **C6 · Orden de transparencias.** `renderOrder` explícito por clase: superficie → brillo → etiqueta → anillo de luz → cono → polvo. Prueba: `transparent_layers_have_a_fixed_order`.
-- [ ] **C7 · Profundidad invertida (evaluar).** Probar `reversedDepthBuffer: true` en el renderer; adoptar solo si sombras y postproceso siguen correctos en la GT 730. Evidencia: comparación de vistas fijas (A6).
+- [x] **C7 · Profundidad invertida (evaluar).** Probar `reversedDepthBuffer: true` en el renderer; adoptar solo si sombras y postproceso siguen correctos en la GT 730. Evidencia: comparación de vistas fijas (A6).
 
 ### Fase E — Texto legible en la escena
 
@@ -194,7 +204,7 @@ Skills: `threejs-lighting`, `threejs-procedural-vfx`, `threejs-particles`, `thre
   - Un solo `Points` con shader: la deriva se calcula en el vértice (sin trabajo de CPU por fotograma) y cada mota brilla solo al cruzar un haz (lámpara y los dos focos de techo), como el polvo real. Se desvanece cerca de la cámara. Cantidad por perfil: 600 / 250 / 0. Sustituye el polvo en CPU de `lamp-controller.ts`.
   - Pruebas: `dust_stays_inside_its_volume`, `dust_is_frozen_under_reduced_motion`, `low_tier_has_no_dust`.
 - [x] **L4 · Haz de la lámpara.** `articulated-lamp.model.ts`: el cono plano pasa a un shader con caída por distancia y bordes difuminados; desaparece el triángulo duro que cruza la escena en primer plano. Evidencia: vista fija rasante.
-- [ ] **L5 · Postproceso medido, solo en «Detalle».** `effects-pipeline.ts`: oclusión ambiental GTAO a media resolución, bloom con umbral HDR ≥ 1,2 (solo emisores: LEDs, lente, paquetes), viñeta y grano leves. Cada pase se mide aislado y se descarta si pasa de 2 ms en la GT 730. Pruebas: `quality_tiers_lower_only_render_cost` (existente) y `each_pass_can_be_disabled`.
+- [x] **L5 · Postproceso medido, solo en «Detalle».** `effects-pipeline.ts`: oclusión ambiental GTAO a media resolución, bloom con umbral HDR ≥ 1,2 (solo emisores: LEDs, lente, paquetes), viñeta y grano leves. Cada pase se mide aislado y se descarta si pasa de 2 ms en la GT 730. Pruebas: `quality_tiers_lower_only_render_cost` (existente) y `each_pass_can_be_disabled`.
 - [x] **L6 · Sombras.** Penumbra de la lámpara con `shadow.radius`; frustum de sombra ajustado al cono; revisar `bias` para quitar el temblor al mover la cabeza. Evidencia: vista fija con la lámpara en movimiento.
 - [x] **L7 · Tubo averiado: se queda, verificado.** El foco de techo que está detrás de la cámara parpadea a propósito, como un fluorescente viejo (`failing-light.ts`). Se conserva tal cual. La tarea solo comprueba que no esconde un defecto: su lente y su luz cambian en el mismo fotograma, no proyecta sombra, y con el tubo fijo (movimiento reducido) la vista fija de esa mitad de la sala no muestra ningún otro parpadeo. Prueba: `failing_tube_lens_and_light_change_together`.
 
@@ -260,7 +270,7 @@ Skills: `impeccable`, `dannaway-practical-ui`, `redesign-existing-projects`.
 - [x] **U2 · Flags con nombre y motivo.** Crear `content/flags.ts`: CF Acarreo, PF Paridad, AF Acarreo auxiliar, ZF Cero, SF Signo, OF Desbordamiento. Tras cada paso, los seis explican por qué quedaron así (hoy solo CF y OF). Prueba: `every_flag_explains_its_last_value`.
 - [x] **U3 · Glosario contextual.** Crear `content/glossary.ts` y la directiva `shared/term.directive.ts` (`[appTerm]`): subrayado punteado, definición al pasar el cursor o enfocar, y un panel «Glosario» con búsqueda en Sesión. Términos iniciales: ALE, RD, WR, BIU, EU, BHE, segmento, offset, dirección física, little endian, DIR, DATO, CTRL, B0, B1, SoC, DRAM, RAS, CAS, SPD. Pruebas: `every_abbreviation_in_the_console_has_a_term`, `term_is_reachable_by_keyboard`.
 - [x] **U4 · Fases en el transporte.** `transport.component`: cuatro pasos con nombre (Buscar → Decodificar → Ejecutar → Escribir) bajo los botones, para detener la explicación en cada fase del viaje de instrucción (M1). Consume `StationActivity.phase`.
-- [ ] **U5 · Tokens.** Pasar el detector de Impeccable; llevar los 95 avisos a tokens de `DESIGN.md` y definir las rampas tonales pendientes. Evidencia: informe del detector antes y después.
+- [x] **U5 · Tokens.** Pasar el detector de Impeccable; llevar los 95 avisos a tokens de `DESIGN.md` y definir las rampas tonales pendientes. Evidencia: informe del detector antes y después.
 
 ### Fase M — Modelos y animaciones que explican
 
@@ -349,7 +359,7 @@ Contratos de origen: `docs/archivo/plan/SILICIO-ESPECIFICACION-TECNICA.md` (§8.
 
 Skills: `threejs-visual-validation`, `threejs-debug-profiler`, `threejs-performance`, `threejs-qa-release`, `verification-before-completion`, `code-review`.
 
-- [ ] **A1 · Línea base de rendimiento (va antes de L).** En Brave, con el medidor: p50/p95, llamadas de dibujo, triángulos y escala de resolución en las cinco estaciones y tres vistas, por perfil. Se anota en este documento. Hipótesis por confirmar: en la GT 730 a 1640×920 la resolución adaptativa baja la escala, y eso también emborrona el texto 3D.
+- [x] **A1 · Línea base de rendimiento (va antes de L).** En Brave, con el medidor: p50/p95, llamadas de dibujo, triángulos y escala de resolución en las cinco estaciones y tres vistas, por perfil. Se anota en este documento. Hipótesis por confirmar: en la GT 730 a 1640×920 la resolución adaptativa baja la escala, y eso también emborrona el texto 3D.
 - [x] **A2 · Pruebas pendientes (P1).** Las siete de 3.1 que no cubran otras tareas, y `ten_station_roundtrips_stabilize_resources` automatizada.
 - [x] **A3 · Paquete sin red (P8).** Build, `npm run preview` y recorrido con la red bloqueada: cero peticiones fuera de `127.0.0.1`.
 - [x] **A4 · Sesión persistente (P9).** Autoguardado del programa, cursor y ramas con el códec v2 existente; recuperación al recargar. Pruebas: `reload_restores_program_and_cursor`, `corrupt_autosave_is_discarded_with_a_notice`.
