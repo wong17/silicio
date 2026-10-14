@@ -6,6 +6,8 @@ import { releaseInstanceBuffers } from './instance-lifecycle';
 import * as THREE from 'three';
 import { SelectionMarker, selectionBounds } from './selection-marker';
 import { ActivityChannel, IDLE_ACTIVITY, type StationActivity } from '../laboratory/station-activity';
+import { EMPTY_TIMELINE, type TimelineState } from './timeline-layout';
+import type { ChronoscopeRig } from './models/chronoscope.model';
 import { explodedOffset } from './exploded-layout';
 import { familyOf } from './piece-families';
 import { CameraRig } from './camera-rig';
@@ -61,7 +63,9 @@ export class WorldEngine implements SceneInputs {
   activePart = '';
   tick = 0;
   memoryCells: { address: number; value: number }[] = [];
-  history: { address: number; text: string; ax: number }[] = [];
+  history: { address: number; text: string; ax: number; changed: string }[] = [];
+  timeline: TimelineState = EMPTY_TIMELINE;
+  private timelineRig?: ChronoscopeRig;
   memoryBase = 0;
   viewMode: 'material' | 'wireframe' = 'material';
   manipulate = false;
@@ -349,6 +353,7 @@ export class WorldEngine implements SceneInputs {
     this.root.clear();
     this.animators = this.animators.filter((a) => a.scope !== 'subject');
     this.historySlots = [];
+    this.timelineRig = undefined;
     this.parts.clear();
     this.packet = undefined;
   }
@@ -367,6 +372,7 @@ export class WorldEngine implements SceneInputs {
     );
     this.packet = subject.packet;
     this.historySlots = subject.historySlots;
+    this.timelineRig = subject.timeline;
     this.scene.traverse((o) => {
       if (o.userData['detail']) o.visible = this.quality === 'high';
     });
@@ -795,18 +801,27 @@ export class WorldEngine implements SceneInputs {
     if (this.section === 'time') {
       for (const key of [...this.parts.keys()])
         if (key === 'initial' || key.startsWith('frame-')) this.parts.delete(key);
-      for (const o of this.historySlots) o.visible = false;
+      for (const o of this.historySlots) {
+        o.visible = false;
+        o.userData['filled'] = false;
+      }
       for (const p of historyPieces(this.history.length)) {
         const o = this.historySlots[p.slot];
         if (!o) continue;
         o.visible = true;
+        o.userData['filled'] = true;
         o.userData['part'] = p.id;
         this.parts.set(p.id, o);
-        this.rewriteLabel(
-          o,
-          this.history[p.index]?.ax.toString(16).toUpperCase().padStart(4, '0') ?? 'INICIO',
-        );
+        const entry = this.history[p.index];
+        const text = o.userData['textLabel'] as THREE.Object3D | undefined;
+        const change = o.userData['changeLabel'] as THREE.Object3D | undefined;
+        if (text) this.rewriteLabel(text, entry ? entry.text.slice(0, 11) : 'INICIO');
+        if (change) this.rewriteLabel(change, entry ? entry.changed : '');
       }
+      this.timelineRig?.setTimeline(
+        this.timeline,
+        this.history.map((h) => h.text),
+      );
       this.registerParts();
     }
   }

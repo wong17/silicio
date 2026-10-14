@@ -1,6 +1,7 @@
 import type { QualityTier } from './effects/effects-pipeline';
 import type { PieceDefinition } from './interaction-registry';
 import type { LampTarget } from './lamp-limits';
+import type { TimelineState } from './timeline-layout';
 import type { StationActivity } from '../laboratory/station-activity';
 export type { QualityTier };
 
@@ -14,7 +15,9 @@ export interface SceneInputs {
   activePart: string;
   tick: number;
   memoryCells: { address: number; value: number }[];
-  history: { address: number; text: string; ax: number }[];
+  history: { address: number; text: string; ax: number; changed: string }[];
+  /** Cursor, total and the archived alternative, for the chronoscope tape. */
+  timeline: TimelineState;
   memoryBase: number;
   viewMode: 'material' | 'wireframe';
   manipulate: boolean;
@@ -78,6 +81,7 @@ export function readSceneInputs(source: SceneInputs): SceneInputs {
     tick: source.tick,
     memoryCells: source.memoryCells,
     history: source.history,
+    timeline: source.timeline,
     memoryBase: source.memoryBase,
     viewMode: source.viewMode,
     manipulate: source.manipulate,

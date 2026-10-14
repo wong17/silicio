@@ -5,7 +5,7 @@ import { BENCH } from './bench-layout';
 import { CLASSIC_BOARD_BASE } from './intel-2164a-memory.model';
 import { KINGSTON_BOARD_BASE } from './kingston-dimm.model';
 import { MachineBoardModel, MACHINE_BOARD_BASE } from './machine-board.model';
-import { ChronoscopeModel, CHRONOSCOPE_BASE } from './chronoscope.model';
+import { ChronoscopeModel, CHRONOSCOPE_BASE, type ChronoscopeRig } from './chronoscope.model';
 import { ElectronicsWorkshop } from '../electronics-workshop';
 import { MemoryModels } from './memory-models';
 import { CpuActivityView } from './cpu-activity';
@@ -79,10 +79,16 @@ export class StationBuilder extends WorkshopGeometry {
     variant: 'classic' | 'dimm',
     root: THREE.Group,
     parts: Map<string, THREE.Object3D>,
-  ): { historySlots: THREE.Mesh[]; packet: THREE.Mesh; datum: number } {
+  ): {
+    historySlots: THREE.Mesh[];
+    packet: THREE.Mesh;
+    datum: number;
+    timeline?: ChronoscopeRig;
+  } {
     // Height of the station's bearing surface, the underside of its board: the engine lowers it onto the mat.
     let datum: number = BENCH.boardBase;
     const historySlots: THREE.Mesh[] = [];
+    let timeline: ChronoscopeRig | undefined;
     const green = this.tools.material('pcb', '#314d40', 0.7, 0.19);
     const ceramic = this.tools.material('ceramic', '#b9ad83', 0.58, 0.03);
     const dark = this.tools.material('package', '#202426', 0.6, 0.25);
@@ -149,8 +155,9 @@ export class StationBuilder extends WorkshopGeometry {
       }
     } else if (section === 'time') {
       // Chronoscope: a rig of its own. Its frames are the history slots the page writes into.
-      const rig = new ChronoscopeModel(this.tools).build(root, (fn) => this.tools.animate(fn, 'subject'));
+      const rig = new ChronoscopeModel(this.tools).build(root, parts, (fn) => this.tools.animate(fn, 'subject'));
       historySlots.push(...rig.historySlots);
+      timeline = rig;
       datum = CHRONOSCOPE_BASE;
     } else {
       // La máquina: a board with three chips, copper buses, and the status lamps that run with the bus.
@@ -163,6 +170,6 @@ export class StationBuilder extends WorkshopGeometry {
     );
     packet.visible = false;
     root.add(packet);
-    return { historySlots, packet, datum };
+    return { historySlots, packet, datum, timeline };
   }
 }

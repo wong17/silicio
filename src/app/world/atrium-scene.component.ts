@@ -16,6 +16,7 @@ import { WorldEngine } from './world-engine';
 import { readSceneInputs, type SceneInputs, type Section, type QualityTier } from './scene-inputs';
 import type { PieceDefinition } from './interaction-registry';
 import type { LampTarget } from './lamp-limits';
+import { EMPTY_TIMELINE, type TimelineState } from './timeline-layout';
 import { IDLE_ACTIVITY, type StationActivity } from '../laboratory/station-activity';
 import type { CameraView, PieceAnchor, ScreenAnchor } from './scene-inputs';
 export type { Section } from './scene-inputs';
@@ -34,7 +35,8 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   @Input() activePart = '';
   @Input() tick = 0;
   @Input() memoryCells: { address: number; value: number }[] = [];
-  @Input() history: { address: number; text: string; ax: number }[] = [];
+  @Input() history: { address: number; text: string; ax: number; changed: string }[] = [];
+  @Input() timeline: TimelineState = EMPTY_TIMELINE;
   @Input() memoryBase = 0;
   @Input() viewMode: 'material' | 'wireframe' = 'material';
   @Input() manipulate = false;

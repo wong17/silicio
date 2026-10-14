@@ -147,6 +147,12 @@ const names: Record<string, [string, string]> = {
     'Chip SPD',
     'Memoria pequeña que describe al controlador las características del módulo al arrancar.',
   ],
+  'chrono-base': ['Base del cronoscopio', 'Placa que sostiene la cinta, los carretes y el dial. No guarda estado: lo muestran los cuadros.'],
+  'chrono-reel': ['Carrete de la cinta', 'Los carretes tensan la cinta de pasos. La cinta se desliza para poner bajo la ventanilla el cuadro del cursor.'],
+  'chrono-tape': ['Cinta de pasos', 'Cada cuadro es una instrucción ejecutada, con su mnemónico y el registro que cambió. Pulsa un cuadro para volver a ese estado.'],
+  'chrono-window': ['Ventanilla del cursor', 'Marca el paso real en que está la sesión. Retroceder desliza la cinta hasta que ese cuadro queda en la ventanilla.'],
+  'chrono-dial': ['Dial de progreso', 'La aguja marca el paso actual sobre el total de pasos ejecutados; no mide tiempo.'],
+  'chrono-branch': ['Rama alternativa', 'Segundo carril con la ejecución archivada al editar o retroceder. Parte del cuadro donde se separó; los cuadros que difieren llevan marca.'],
   alu: [
     'Unidad aritmético-lógica',
     'Realiza las sumas, restas y operaciones lógicas de la ejecución y actualiza los indicadores.',
@@ -314,11 +320,19 @@ export function accessibleCatalog(
     ];
   else if (experience === 'machine') ids = ['cpu', 'ram', 'io'];
   else
-    ids = historyLength
-      ? Array.from(
-          { length: Math.min(16, historyLength) },
-          (_, i) => 'frame-' + (Math.max(0, historyLength - 16) + i),
-        )
-      : ['initial'];
+    ids = [
+      'chrono-base',
+      'chrono-reel',
+      'chrono-tape',
+      'chrono-window',
+      'chrono-dial',
+      'chrono-branch',
+      ...(historyLength
+        ? Array.from(
+            { length: Math.min(16, historyLength) },
+            (_, i) => 'frame-' + (Math.max(0, historyLength - 16) + i),
+          )
+        : ['initial']),
+    ];
   return [...environment, ...ids].map((id) => pieceDefinition(id, experience));
 }

@@ -5,6 +5,7 @@ import { MISSIONS } from '../content/missions';
 import { accessibleCatalog } from '../world/piece-definitions';
 import type { Section } from '../world/scene-inputs';
 import type { LampTarget } from '../world/lamp-limits';
+import { forkOrigin, type TimelineState } from '../world/timeline-layout';
 import type { SceneCommand } from '../world/scene-toolbar/scene-toolbar.component';
 import { BufferExperiment, LaboratoryFacade } from './laboratory.facade';
 import type { CameraView, PieceAnchor, ScreenAnchor } from '../world/scene-inputs';
@@ -165,8 +166,23 @@ export class LabSession {
       address: t.instruction.address,
       text: t.instruction.text,
       ax: t.after.registers.AX,
+      changed: (Object.keys(t.after.registers) as (keyof Registers)[])
+        .filter((r) => t.before.registers[r] !== t.after.registers[r] && r !== 'IP')
+        .join(' '),
     })),
   );
+  /** Cursor, step count and the latest archived alternative, for the chronoscope tape. */
+  readonly timeline = computed<TimelineState>(() => {
+    const trace = this.trace();
+    const texts = trace.map((t) => t.instruction.text);
+    const archived = this.branches().at(-1);
+    const other = archived?.trace.map((t) => t.instruction.text) ?? [];
+    return {
+      cursor: this.cursor(),
+      total: trace.length,
+      branch: archived ? { origin: forkOrigin(texts, other), texts: other.slice(forkOrigin(texts, other)) } : undefined,
+    };
+  });
   readonly missionComplete = computed(() => {
     this.revision();
     const mission = this.missions[this.missionIndex()];
