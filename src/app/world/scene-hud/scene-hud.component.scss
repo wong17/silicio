@@ -220,10 +220,25 @@
   }
 }
 
-// Phones: the scene is too short for a map beside the tray, so only the tray is offered there.
+// Compact stages: the toggles live in the toolbar menu, so the drawers only need to clear the dock.
+.toggles {
+  display: none;
+}
+@container stage (min-width: 1060px) {
+  .toggles {
+    display: flex;
+  }
+}
+@container stage (max-width: 1059px) {
+  .dock {
+    bottom: 104px;
+  }
+  .drawers {
+    margin-bottom: 0;
+  }
+}
 @media (max-width: 899px) {
-  .map-toggle,
-  .drawer.map {
-    display: none;
+  .dock {
+    bottom: 72px;
   }
 }

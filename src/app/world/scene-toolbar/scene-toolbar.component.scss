@@ -224,6 +224,36 @@ $lift: 44px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
+.more-grid .quality {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid $line;
+  .kicker {
+    grid-column: 1 / -1;
+    color: #b7b6ae;
+    font: 500 11px 'IBM Plex Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  button {
+    min-height: 44px;
+    padding: 4px 6px;
+    border: 1px solid $line;
+    border-radius: 6px;
+    background: #1a2120;
+    color: $ink;
+    font: 500 12px 'Barlow', sans-serif;
+    &[aria-checked='true'] {
+      border-color: $accent;
+      background: #3a3224;
+      color: #f0d29c;
+    }
+  }
+}
+
 .dock .more-grid .labelled {
   display: flex;
   flex-direction: column;
@@ -250,18 +280,13 @@ $lift: 44px;
 }
 
 // Stages wide enough for all fourteen commands use the bar; narrower ones keep the dock.
-@container stage (min-width: 660px) {
+// With room for the bar and the HUD toggles side by side, the bar drops to the toggles' level.
+@container stage (min-width: 1060px) {
   .bar {
     display: flex;
+    bottom: 12px;
   }
   .dock {
     display: none;
-  }
-}
-
-// With room for the bar and the three HUD toggles side by side, the bar drops to the toggles' level.
-@container stage (min-width: 1060px) {
-  .bar {
-    bottom: 12px;
   }
 }

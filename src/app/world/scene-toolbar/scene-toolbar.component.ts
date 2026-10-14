@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import { LabSession, type Quality } from '../../laboratory/lab-session.service';
 
 export type SceneCommand =
   | 'rotate-left'
@@ -104,6 +105,12 @@ export class SceneToolbarComponent {
   /** True while a tool is in hand; the release command has nothing to do otherwise. */
   @Input() holding = false;
   @Output() command = new EventEmitter<SceneCommand>();
+  readonly session = inject(LabSession);
+  readonly qualities: { value: Quality; label: string }[] = [
+    { value: 'high', label: 'Detalle' },
+    { value: 'balanced', label: 'Equilibrado' },
+    { value: 'low', label: 'Ligero' },
+  ];
   readonly groups = SCENE_TOOL_GROUPS;
   /** The narrow dock shows these in the order of PRIMARY_COMMANDS. */
   readonly primaryTools = PRIMARY_COMMANDS.map((command) =>
@@ -150,6 +157,10 @@ export class SceneToolbarComponent {
   label(tool: SceneTool): string {
     if (tool.command === 'drop' && !this.holding) return 'Sin herramienta en la mano';
     return tool.label;
+  }
+
+  chooseQuality(value: Quality): void {
+    this.session.setQuality(value);
   }
 
   /** The mobile disclosure closes before a command runs, so the view is never framed behind the menu. */

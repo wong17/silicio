@@ -123,6 +123,28 @@
           }
         }
       }
+      <!-- The HUD panels live here on compact stages, so nothing floats over the scene. -->
+      <button type="button" class="tool labelled" [attr.aria-pressed]="session.hud().tray" (click)="run('tray', $event)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-tray" /></svg>
+        <span>Piezas</span>
+      </button>
+      <button type="button" class="tool labelled" [attr.aria-pressed]="session.hud().map" (click)="run('map', $event)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-frame" /></svg>
+        <span>Mapa</span>
+      </button>
+      <div class="quality" role="radiogroup" aria-label="Gráficos">
+        <span class="kicker">Gráficos</span>
+        @for (o of qualities; track o.value) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="session.quality() === o.value"
+            (click)="chooseQuality(o.value)"
+          >
+            {{ o.label }}
+          </button>
+        }
+      </div>
     </div>
   </details>
 </div>
