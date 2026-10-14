@@ -52,7 +52,8 @@ export class ChronoscopeModel extends WorkshopGeometry {
 
     const plate = named('chrono-base');
     this.box(plate, 8.0, 0.2, 5.2, 0, 0.1, 0, base);
-    this.tools.label(plate, 'CRONOSCOPIO · CINTA DE PASOS', 0, 0.206, 2.3, 4.6);
+    // Right of the dial (x -3.35..-1.45 at the same z), so the two never share the plate surface.
+    this.tools.label(plate, 'CRONOSCOPIO · CINTA DE PASOS', 1.1, 0.206, 2.3, 4.2);
 
     const reels = named('chrono-reel');
     for (const x of [-3.9, 3.9]) {
