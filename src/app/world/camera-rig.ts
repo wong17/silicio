@@ -93,6 +93,13 @@ export class CameraRig {
     g.azimuth = azimuth;
   }
 
+  /** Moves to an absolute azimuth and distance around the current target (used by shared links). */
+  setView(azimuth: number, distance: number): void {
+    const g = this.begin(RIG_SMOOTH.frame);
+    g.azimuth = azimuth;
+    g.distance = T.MathUtils.clamp(distance, this.controls.minDistance, this.controls.maxDistance);
+  }
+
   dollyBy(factor: number): void {
     const g = this.begin(RIG_SMOOTH.input);
     g.distance = T.MathUtils.clamp(g.distance * factor, this.controls.minDistance, this.controls.maxDistance);

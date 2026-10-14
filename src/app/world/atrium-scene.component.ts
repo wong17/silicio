@@ -105,6 +105,9 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   orbitTo(azimuth: number): void {
     this.engine?.orbitTo(azimuth);
   }
+  setView(azimuth: number, distance: number): void {
+    this.engine?.setView(azimuth, distance);
+  }
   setCallouts(on: boolean): void {
     this.engine?.setCallouts(on);
   }

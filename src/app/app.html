@@ -95,6 +95,10 @@
       />
     }
 
+    @if (meter()) {
+      <app-perf-meter />
+    }
+
     <p class="scene-caption"><span aria-hidden="true"></span>{{ caption() }}</p>
     <div class="hover-tip" #tip [class.visible]="!!hoveredId()" aria-hidden="true">
       {{ hoverName() }}

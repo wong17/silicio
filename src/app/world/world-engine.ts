@@ -4,6 +4,8 @@ import { GpuResources } from './gpu-resources';
 import { releaseInstanceBuffers } from './instance-lifecycle';
 
 import * as THREE from 'three';
+import { IdleGovernor, ResolutionGovernor } from './render-governors';
+import { HoverGlow } from './hover-glow';
 import { SelectionMarker, selectionBounds } from './selection-marker';
 import { ActivityChannel, IDLE_ACTIVITY, type StationActivity } from '../laboratory/station-activity';
 import { EMPTY_TIMELINE, type TimelineState } from './timeline-layout';
@@ -120,6 +122,9 @@ export class WorldEngine implements SceneInputs {
   /** Scene time for animators; it advances with the frame delta and stays at zero under reduced motion. */
   private clock = 0;
   private rig?: CameraRig;
+  private readonly resolutionGovernor = new ResolutionGovernor();
+  private readonly idleGovernor = new IdleGovernor();
+  private readonly hoverGlow = new HoverGlow();
   private readonly activityChannel = new ActivityChannel();
   private activityUnsubscribers: (() => void)[] = [];
   private activitySession = '';
@@ -162,7 +167,6 @@ export class WorldEngine implements SceneInputs {
   private shadowsOn = true;
   /** Adaptive resolution: 1 keeps the tier’s pixel ratio; the frame-time guard lowers it when the frame runs long. */
   private resolutionScale = 1;
-  private resolutionHold = 0;
   constructor(
     private readonly canvas: HTMLCanvasElement,
     inputs: SceneInputs,
@@ -172,6 +176,7 @@ export class WorldEngine implements SceneInputs {
   }
   update(inputs: SceneInputs, changed: ReadonlySet<keyof SceneInputs>): void {
     Object.assign(this, inputs);
+    this.idleGovernor.touch(performance.now());
     if (!this.renderer) return;
     if (this.root.userData['section'] !== this.section || changed.has('memoryModel'))
       this.buildSubject();
@@ -598,6 +603,7 @@ export class WorldEngine implements SceneInputs {
     this.rig?.dollyBy(direction);
   }
   private onWheel = (event: WheelEvent) => {
+    this.idleGovernor.touch(performance.now());
     if (!this.rig || !this.controls?.enabled) return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -670,6 +676,10 @@ export class WorldEngine implements SceneInputs {
     this.telemetryClock = 1;
     this.calloutsDirty = true;
     if (!on) this.callbacks.callouts([]);
+  }
+  setView(azimuth: number, distance: number): void {
+    this.rig?.setReduced(this.reduced);
+    this.rig?.setView(azimuth, distance);
   }
   orbitTo(azimuth: number): void {
     this.rig?.setReduced(this.reduced);
@@ -965,6 +975,7 @@ export class WorldEngine implements SceneInputs {
     return ray;
   }
   private onDown = (event: PointerEvent) => {
+    this.idleGovernor.touch(performance.now());
     this.pointerStart.set(event.clientX, event.clientY);
     const hit = this.rayAt(event).intersectObjects([...this.environmentParts.values()], true)[0];
     if (hit?.object.userData['lampHandle']) {
@@ -1036,6 +1047,7 @@ export class WorldEngine implements SceneInputs {
     if (id !== this.hoverId) {
       this.hoverId = id;
       this.updateLidGhost();
+      this.hoverGlow.show(id ? (this.parts.get(id) ?? this.environmentParts.get(id)) : undefined);
       this.callbacks.hovered(id);
     }
   };
@@ -1044,6 +1056,7 @@ export class WorldEngine implements SceneInputs {
     if (this.hoverId !== null) {
       this.hoverId = null;
       this.updateLidGhost();
+      this.hoverGlow.clear();
       this.callbacks.hovered(null);
     }
   };
@@ -1135,25 +1148,31 @@ export class WorldEngine implements SceneInputs {
     const tier = qualitySettings(this.quality).dpr;
     this.renderer.setPixelRatio(Math.max(0.5, Math.min(devicePixelRatio, tier) * this.resolutionScale));
   }
-  /** Frame-time guard: when the median frame is over 18 ms the resolution steps down; with headroom it steps back up. */
+  /** Frame-time guard: steps of 0.05 inside a dead band, and it stops after three reversals so it settles. */
   private adaptResolution(): void {
     const profile = this.profiler.result;
-    if (this.resolutionHold > 0) {
-      this.resolutionHold--;
-      return;
-    }
     if (profile.samples < 60) return;
-    let next = this.resolutionScale;
-    if (profile.p50 > 18) next = Math.max(0.5, next - 0.1);
-    else if (profile.p50 < 13.5) next = Math.min(1, next + 0.05);
+    const next = this.resolutionGovernor.update(profile.p50);
     if (next === this.resolutionScale) return;
     this.resolutionScale = next;
-    this.resolutionHold = 120;
     this.profiler.reset();
     this.applyPixelRatio();
   }
   private animate = () => {
     if (this.disposed || !this.renderer || document.hidden) return;
+    const now = performance.now();
+    const busy =
+      !!this.rig?.moving ||
+      (this.physics?.awakeCount ?? 0) > 0 ||
+      this.thumbnailQueue.length > 0 ||
+      !!this.explodedMotion?.isActive() ||
+      !!this.pulseMotion?.isActive() ||
+      this.dragPointer !== undefined;
+    // After a few quiet seconds the bench is drawn at half rate; the first event brings the full rate back.
+    if (!this.idleGovernor.frameAllowed(now, busy)) {
+      this.frame = requestAnimationFrame(this.animate);
+      return;
+    }
     const dt = Math.min(this.frameDelta(), 0.1);
     this.profiler.sample(dt);
     this.physics?.step(dt);
@@ -1168,6 +1187,7 @@ export class WorldEngine implements SceneInputs {
     for (const a of this.animators) a.update(seconds);
     if (this.selectionBox?.visible) this.updateSelection();
     this.selectionBox?.update(dt, this.reduced);
+    this.hoverGlow.update(dt, this.reduced);
     this.renderer.info.reset();
     if (this.statsFrame % 30 === 0) this.gpuProfiler?.begin();
     if (this.effects && this.viewMode === 'material') this.effects.render();
@@ -1190,6 +1210,7 @@ export class WorldEngine implements SceneInputs {
         frameP95: profile.p95.toFixed(2),
         awakeBodies: String(this.physics?.awakeCount ?? 0),
       });
+      this.canvas.dataset['resolutionScale'] = this.resolutionScale.toFixed(2);
       this.canvas.dataset['drawCalls'] = String(this.renderer.info.render.calls);
       this.canvas.dataset['triangles'] = String(this.renderer.info.render.triangles);
       this.canvas.dataset['geometries'] = String(this.renderer.info.memory.geometries);
@@ -1204,6 +1225,7 @@ export class WorldEngine implements SceneInputs {
     this.effects?.dispose();
     this.gpuProfiler?.dispose();
     this.releaseThumbnails();
+    this.hoverGlow.dispose();
     this.thumbnailRig?.target.dispose();
     cancelAnimationFrame(this.frame);
     this.observer?.disconnect();

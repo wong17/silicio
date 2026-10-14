@@ -9,6 +9,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
@@ -17,6 +18,8 @@ import { gsap } from 'gsap';
 import Lenis from 'lenis';
 import { EXPERIENCES } from './content/experiences';
 import { LabSession, type Tab } from './laboratory/lab-session.service';
+import { fromQuery, toQuery } from './content/deeplink';
+import { PerfMeterComponent } from './shell/perf-meter/perf-meter.component';
 import type { Section } from './world/scene-inputs';
 import { AtriumSceneComponent } from './world/atrium-scene.component';
 import { SceneToolbarComponent, type SceneCommand } from './world/scene-toolbar/scene-toolbar.component';
@@ -63,6 +66,7 @@ const NARROW = '(max-width: 899px)';
     ConsoleHeaderComponent,
     AtriumPortalsComponent,
     SceneHudComponent,
+    PerfMeterComponent,
     PieceInspectorComponent,
     SessionPanelComponent,
     TransportComponent,
@@ -133,12 +137,26 @@ export class App implements AfterViewInit, OnDestroy {
     // Motion follows the preference whichever control changed it: the system setting or the panel.
     effect(() => this.applyMotion(this.session.reduced()));
     effect(() => this.world()?.setCallouts(this.session.callouts()));
+    effect(() => {
+      this.session.section();
+      this.session.activePart();
+      this.session.cameraView();
+      untracked(() => this.syncUrl());
+    });
   }
 
+  /** Frame-time meter, toggled with Shift+D. */
+  readonly meter = signal(false);
+  private lastSection?: Section;
+  private urlTimer?: ReturnType<typeof setTimeout>;
+
   private route(): void {
-    this.session.pause();
     const id = this.router.url.split('?')[0].split('/')[1] as Section;
     const section: Section = EXPERIENCES.some((e) => e.id === id) ? id : 'atrium';
+    // Writing the piece into the address re-enters here; the station itself must not be reset by that.
+    if (section === this.lastSection) return;
+    this.lastSection = section;
+    this.session.pause();
     this.session.section.set(section);
     this.session.activePart.set(
       section === 'apple'
@@ -159,6 +177,32 @@ export class App implements AfterViewInit, OnDestroy {
     this.session.exploded.set(section === '8086' || section === 'apple');
     this.session.tab.set('state' as Tab);
     this.consoleEl().nativeElement.scrollTo(0, 0);
+    this.applyDeepLink();
+  }
+
+  /** A shared address names a piece and a view; both are applied once the station exists. */
+  private applyDeepLink(): void {
+    const link = fromQuery(this.router.parseUrl(this.router.url).queryParams);
+    if (link.piece) this.session.activePart.set(link.piece);
+    if (link.azimuth !== undefined && link.distance !== undefined) {
+      const { azimuth, distance } = link;
+      setTimeout(() => this.world()?.setView(azimuth, distance), 600);
+    }
+  }
+
+  /** Keeps the address in step with the selection and the view, without adding history entries. */
+  private syncUrl(): void {
+    clearTimeout(this.urlTimer);
+    this.urlTimer = setTimeout(() => {
+      const section = this.session.section();
+      if (section === 'atrium') return;
+      const piece = this.session.activePart();
+      void this.router.navigate([], {
+        queryParams: toQuery(piece, this.session.cameraView()),
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }, 500);
   }
 
   ngAfterViewInit(): void {
@@ -262,6 +306,11 @@ export class App implements AfterViewInit, OnDestroy {
       p: 'tray',
       b: 'map',
     };
+    if (event.shiftKey && event.key.toLowerCase() === 'd') {
+      event.preventDefault();
+      this.meter.set(!this.meter());
+      return;
+    }
     // Escape lets go of a tool in hand first; a second press leaves manipulation.
     if (event.key === 'Escape' && this.holding()) {
       this.world()?.releaseTool();
