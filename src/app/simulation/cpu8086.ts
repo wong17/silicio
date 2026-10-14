@@ -116,6 +116,16 @@ function encode(op: string, operands: Operand[]): number[] {
       throw Error('Se esperaba un registro');
     return [(op === 'INC' ? 0x40 : 0x48) + REGISTER_NAMES.indexOf(operands[0].name)];
   }
+  if (op === 'RET') {
+    if (operands.length) throw Error('RET no lleva operandos: solo se admite el retorno cercano sin desplazamiento');
+    return [0xc3];
+  }
+  if (['PUSH', 'POP'].includes(op)) {
+    // Only 16-bit registers: segment registers, memory and immediates are outside the subset.
+    if (operands.length !== 1 || operands[0].kind !== 'register')
+      throw Error(op + ' admite solo un registro de 16 bits');
+    return [(op === 'PUSH' ? 0x50 : 0x58) + REGISTER_NAMES.indexOf(operands[0].name)];
+  }
   if (!['MOV', 'ADD', 'SUB', 'CMP'].includes(op) || operands.length !== 2)
     throw Error('Instrucción no admitida: ' + op);
   const [dst, src] = operands;
@@ -151,12 +161,13 @@ export function assemble(source: string): Instruction[] {
       const op =
         ({ JE: 'JZ', JNE: 'JNZ' } as Record<string, string>)[match[1].toUpperCase()] ??
         match[1].toUpperCase();
-      const isJump = ['JMP', 'JZ', 'JNZ', 'LOOP'].includes(op);
-      if (isJump && !/^[A-Za-z_]\w*$/.test(match[2])) throw Error('El salto requiere una etiqueta');
+      const isJump = ['JMP', 'JZ', 'JNZ', 'LOOP', 'CALL'].includes(op);
+      if (isJump && !/^[A-Za-z_]\w*$/.test(match[2]))
+        throw Error(op === 'CALL' ? 'CALL admite solo una etiqueta cercana, no CALL lejano ni indirecto' : 'El salto requiere una etiqueta');
       const operands = isJump ? [] : match[2] ? match[2].split(',').map(operand) : [];
       const bytes = isJump
-        ? op === 'JMP'
-          ? [0xe9, 0, 0]
+        ? op === 'JMP' || op === 'CALL'
+          ? [op === 'JMP' ? 0xe9 : 0xe8, 0, 0]
           : [{ JZ: 0x74, JNZ: 0x75, LOOP: 0xe2 }[op as 'JZ'], 0]
         : encode(op, operands);
       instructions.push({ address, line: index + 1, text, op, operands, bytes });
@@ -167,19 +178,19 @@ export function assemble(source: string): Instruction[] {
     }
   });
   for (const i of instructions) {
-    if (!['JMP', 'JZ', 'JNZ', 'LOOP'].includes(i.op)) continue;
+    if (!['JMP', 'JZ', 'JNZ', 'LOOP', 'CALL'].includes(i.op)) continue;
     const label = i.text.split(/\s+/)[1].toUpperCase();
     const target = labels.get(label);
     if (target === undefined || !instructions.some((x) => x.address === target))
       throw Error('Destino inválido: ' + label);
     const relative = target - (i.address + i.bytes.length);
-    const bound = i.op === 'JMP' ? 32768 : 128;
+    const bound = i.op === 'JMP' || i.op === 'CALL' ? 32768 : 128;
     if (relative < -bound || relative >= bound) throw Error('Salto fuera de rango: ' + label);
     i.target = target;
     i.bytes.splice(
       1,
       i.bytes.length - 1,
-      ...(i.op === 'JMP' ? bytePair(relative) : [relative & 255]),
+      ...(i.op === 'JMP' || i.op === 'CALL' ? bytePair(relative) : [relative & 255]),
     );
   }
   if (!instructions.length) throw Error('Escribe al menos una instrucción');
@@ -242,11 +253,16 @@ export function decode(
   } else if (opcode >= 0x40 && opcode <= 0x4f) {
     op = opcode < 0x48 ? 'INC' : 'DEC';
     operands = [register(opcode & 7)];
-  } else if (opcode === 0x90 || opcode === 0xf4) op = opcode === 0xf4 ? 'HLT' : 'NOP';
-  else if ([0xe9, 0x74, 0x75, 0xe2].includes(opcode)) {
-    op = ({ 233: 'JMP', 116: 'JZ', 117: 'JNZ', 226: 'LOOP' } as Record<number, string>)[opcode];
-    const raw = opcode === 0xe9 ? u16() : next();
-    const relative = opcode === 0xe9 ? (raw & 32768 ? raw - 65536 : raw) : s8(raw);
+  } else if (opcode >= 0x50 && opcode <= 0x5f) {
+    op = opcode < 0x58 ? 'PUSH' : 'POP';
+    operands = [register(opcode & 7)];
+  } else if (opcode === 0xc3) op = 'RET';
+  else if (opcode === 0x90 || opcode === 0xf4) op = opcode === 0xf4 ? 'HLT' : 'NOP';
+  else if ([0xe9, 0xe8, 0x74, 0x75, 0xe2].includes(opcode)) {
+    op = ({ 233: 'JMP', 232: 'CALL', 116: 'JZ', 117: 'JNZ', 226: 'LOOP' } as Record<number, string>)[opcode];
+    const wide = opcode === 0xe9 || opcode === 0xe8;
+    const raw = wide ? u16() : next();
+    const relative = wide ? (raw & 32768 ? raw - 65536 : raw) : s8(raw);
     target = word(ip + relative);
   } else if (opcode === 0x81) {
     const value = mod();
@@ -408,8 +424,39 @@ export class Cpu8086 {
       } else throw Error('Destino inválido');
     };
     this.registers.IP = word(i.address + i.bytes.length);
+    // Stack word at SS:SP. PUSH and CALL write below SP, POP and RET read from it; none touches the flags.
+    const push = (value: number) => {
+      this.registers.SP = word(this.registers.SP - 2);
+      const address = physicalAddress(this.registers.SS, this.registers.SP);
+      writes.push(address);
+      operation.accesses.push({ kind: 'write', address, value: word(value) });
+      this.writeWord(this.registers.SS, this.registers.SP, value);
+    };
+    const pop = (): number => {
+      const address = physicalAddress(this.registers.SS, this.registers.SP);
+      const value = this.readWord(this.registers.SS, this.registers.SP);
+      reads.push(address);
+      operation.accesses.push({ kind: 'read', address, value });
+      this.registers.SP = word(this.registers.SP + 2);
+      return value;
+    };
     if (i.op === 'HLT') this.halted = true;
-    else if (['JMP', 'JZ', 'JNZ', 'LOOP'].includes(i.op)) {
+    else if (i.op === 'PUSH') {
+      const value = read(i.operands[0]);
+      operation.operands = [value];
+      push(value);
+    } else if (i.op === 'POP') {
+      const value = pop();
+      operation.operands = [value];
+      if (i.operands[0].kind === 'register') this.registers[i.operands[0].name] = value;
+    } else if (i.op === 'CALL') {
+      operation.operands = [this.registers.IP];
+      push(this.registers.IP);
+      this.registers.IP = i.target!;
+    } else if (i.op === 'RET') {
+      this.registers.IP = pop();
+      operation.operands = [this.registers.IP];
+    } else if (['JMP', 'JZ', 'JNZ', 'LOOP'].includes(i.op)) {
       if (i.op === 'LOOP') this.registers.CX = word(this.registers.CX - 1);
       if (
         i.op === 'JMP' ||

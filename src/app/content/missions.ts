@@ -47,4 +47,10 @@ export const MISSIONS = [
     goal: 'La suma activa CF. INC y DEC modifican otros flags pero conservan ese acarreo. AX termina en 0000h.',
     answer: 0,
   },
+  {
+    title: '09 / Ida y vuelta',
+    source: 'MOV AX, 5\nCALL doble\nMOV BX, AX\nHLT\ndoble:\nADD AX, AX\nRET',
+    goal: 'CALL en 0103h apila la dirección de retorno 0106h y salta a doble, en 0109h. RET la recupera: IP vuelve a 0106h y SP a FFFEh. AX y BX terminan en 000Ah.',
+    answer: 10,
+  },
 ];

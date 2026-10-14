@@ -169,7 +169,10 @@ export class LabSession {
         sessionId: this.laboratory().sessionId,
         revision: this.revision(),
         phase: 'execute',
-        memory: projectMemory(this.segment(), this.offset(), (a) => this.cpu.memory[a] ?? 0),
+        memory: projectMemory(this.segment(), this.offset(), (a) => this.cpu.memory[a] ?? 0, {
+          segment: this.cpu.registers.SS,
+          pointer: this.cpu.registers.SP,
+        }),
       };
     }
     return projectActivity(this.laboratory() as never, this.phase(), this.revision());
@@ -248,7 +251,8 @@ export class LabSession {
       (this.missionIndex() !== 4 || registers.BX === 1) &&
       (this.missionIndex() !== 5 || registers.BX === 0x1234) &&
       (this.missionIndex() !== 6 || registers.BX === 9) &&
-      (this.missionIndex() !== 7 || this.state().flags.CF)
+      (this.missionIndex() !== 7 || this.state().flags.CF) &&
+      (this.missionIndex() !== 8 || (registers.BX === 10 && registers.SP === 0xfffe))
     );
   });
   readonly aliasAddress = computed(() =>

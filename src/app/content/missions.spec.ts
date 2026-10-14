@@ -19,3 +19,18 @@ for (const [index, mission] of MISSIONS.entries())
     if (index === 6) expect(cpu.readWord(cpu.registers.SS, 10)).toBe(9);
     if (index === 7) expect(cpu.flags.CF).toBe(true);
   });
+
+import { assemble } from '../simulation/cpu8086';
+it('academic_mission_9_names_the_real_addresses', () => {
+  const mission = MISSIONS[8];
+  const program = assemble(mission.source);
+  const call = program.find((i) => i.op === 'CALL')!;
+  expect(call.address).toBe(0x103);
+  expect(call.address + call.bytes.length).toBe(0x106);
+  expect(call.target).toBe(0x109);
+  for (const text of ['0103h', '0106h', '0109h']) expect(mission.goal).toContain(text);
+  const cpu = new Cpu8086();
+  cpu.load(mission.source);
+  while (!cpu.halted) cpu.step();
+  expect([cpu.registers.AX, cpu.registers.BX, cpu.registers.SP]).toEqual([10, 10, 0xfffe]);
+});

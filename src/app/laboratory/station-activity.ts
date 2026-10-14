@@ -75,6 +75,8 @@ export interface MemoryActivity {
   /** Eight bytes of the aligned 64-bit burst that the DIMM serves for this address. */
   burstBase: number;
   burst: number[];
+  /** Top of the stack, SS:SP, for the SP marker on the board. */
+  stack: { segment: number; pointer: number; physical: number };
 }
 
 export interface MachineActivity {
@@ -245,7 +247,12 @@ function memoryByte(address: number, read: (a: number) => number): MemoryByte {
 }
 
 /** Pure projection of the selected segment:offset onto the banks, rows and columns of the board. */
-export function projectMemory(segment: number, offset: number, read: (address: number) => number): MemoryActivity {
+export function projectMemory(
+  segment: number,
+  offset: number,
+  read: (address: number) => number,
+  stack = { segment: 0x3000, pointer: 0xfffe },
+): MemoryActivity {
   const seg = segment & 0xffff,
     off = offset & 0xffff;
   const physical = (seg * 16 + off) & MASK20;
@@ -267,5 +274,10 @@ export function projectMemory(segment: number, offset: number, read: (address: n
     alias: { segment: aliasSegment, offset: aliasOffset },
     burstBase,
     burst: Array.from({ length: 8 }, (_, i) => read(burstBase + i) & 0xff),
+    stack: {
+      segment: stack.segment & 0xffff,
+      pointer: stack.pointer & 0xffff,
+      physical: ((stack.segment & 0xffff) * 16 + (stack.pointer & 0xffff)) & MASK20,
+    },
   };
 }

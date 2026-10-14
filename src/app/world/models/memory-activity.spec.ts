@@ -35,12 +35,16 @@ function harness(variant: 'classic' | 'dimm') {
     animators.forEach((fn) => fn(0));
     root.updateMatrixWorld(true);
   };
+  const sendWithStack = (segment: number, offset: number, stack: { segment: number; pointer: number }) => {
+    listener!({ ...IDLE_ACTIVITY, sessionId: 's', revision: stack.pointer, phase: 'execute', memory: projectMemory(segment, offset, () => 0, stack) });
+    animators.forEach((fn) => fn(0));
+  };
   const count = () => {
     let n = 0;
     root.traverse(() => n++);
     return n;
   };
-  return { root, parts, texts, send, count };
+  return { root, parts, texts, send, sendWithStack, count };
 }
 
 describe('memoria: animación de la placa y el módulo', () => {
@@ -97,5 +101,20 @@ describe('memoria: animación de la placa y el módulo', () => {
     expect(chips).toBeGreaterThan(0);
     expect(spd).toBeGreaterThan(chips);
     expect(explodedOffset('spd', 'memory', 0).z).toBe(0);
+  });
+});
+
+describe('memoria: marca de la pila', () => {
+  it('sp_marker_follows_the_stack_pointer', () => {
+    const h = harness('classic');
+    const { texts } = h;
+    const listenerSend = (sp: number) => {
+      // The harness helper reads the default stack; build the activity with the pointer under test.
+      h.sendWithStack(0x2000, 0x000a, { segment: 0x3000, pointer: sp });
+    };
+    listenerSend(0xfffe);
+    expect([...texts.values()].some((t) => t.includes('3000:FFFE') && t.includes('3FFFEh'))).toBe(true);
+    listenerSend(0xfffc);
+    expect([...texts.values()].some((t) => t.includes('3000:FFFC') && t.includes('3FFFCh'))).toBe(true);
   });
 });

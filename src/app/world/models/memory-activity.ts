@@ -55,14 +55,15 @@ export class MemoryActivityView {
 
     // Adder ruler behind the board: segment × 16 + offset, written out with the real numbers.
     const plate = new T.Mesh(
-      this.tools.track(new T.BoxGeometry(6.4, 0.04, 0.9)),
+      this.tools.track(new T.BoxGeometry(6.4, 0.04, 1.3)),
       this.tools.track(new T.MeshStandardMaterial({ color: '#1c2322', roughness: 0.6 })),
     );
-    plate.position.set(0, baseY + 0.02, -3.4);
+    plate.position.set(0, baseY + 0.02, -3.6);
     plate.name = 'address-ruler';
     root.add(plate);
-    this.labels['sum'] = this.tools.label?.(plate, 'segmento × 16 + offset', 0, 0.026, -0.18, 6.0) as T.Object3D;
-    this.labels['bus'] = this.tools.label?.(plate, 'A0 · BHE#', 0, 0.026, 0.2, 6.0) as T.Object3D;
+    this.labels['sum'] = this.tools.label?.(plate, 'segmento × 16 + offset', 0, 0.026, -0.42, 6.0) as T.Object3D;
+    this.labels['bus'] = this.tools.label?.(plate, 'A0 · BHE#', 0, 0.026, 0, 6.0) as T.Object3D;
+    this.labels['sp'] = this.tools.label?.(plate, 'SP', 0, 0.026, 0.42, 6.0) as T.Object3D;
 
     // Magnifier: a ring with a 16 x 16 grid of cells above the active chip.
     const lupa = new T.Group();
@@ -152,6 +153,7 @@ export class MemoryActivityView {
       'bus',
       `A0=${+mem.a0} BHE#=${+!mem.bhe}  ·  ${mem.cycles} ciclo${mem.cycles > 1 ? 's' : ''}  ·  también ${hex(mem.alias.segment)}:${hex(mem.alias.offset)}`,
     );
+    relabel('sp', `SP = ${hex(mem.stack.segment)}:${hex(mem.stack.pointer)}  →  ${hex(mem.stack.physical, 5)}h  (cima de la pila)`);
     this.applyProgress();
   }
 
