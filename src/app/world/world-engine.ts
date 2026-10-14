@@ -15,6 +15,7 @@ import { INSTRUMENT_PARTS } from './internal-parts';
 import { explodedOffset } from './exploded-layout';
 import { familyOf } from './piece-families';
 import { CameraRig } from './camera-rig';
+import { nearForDistance } from './room-bounds';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { gsap } from 'gsap';
@@ -33,7 +34,6 @@ import { WorkbenchRoomModel } from './models/workbench-room.model';
 import { ArticulatedLampModel } from './models/articulated-lamp.model';
 import { LampController, type LampTarget } from './lamp-controller';
 import { LAMP_REACH, clampLampTarget, lampDistance } from './lamp-limits';
-import { failingLightState } from './failing-light';
 import { SurfaceLibrary, type SurfaceLook } from './textures/surface-library';
 import { SceneLabels } from './textures/scene-labels';
 import { BENCH } from './models/bench-layout';
@@ -123,6 +123,7 @@ export class WorldEngine implements SceneInputs {
   /** Scene time for animators; it advances with the frame delta and stays at zero under reduced motion. */
   private clock = 0;
   private rig?: CameraRig;
+  private pixelRatioDirty = false;
   private dust?: AmbientDust;
   private readonly resolutionGovernor = new ResolutionGovernor();
   private readonly idleGovernor = new IdleGovernor();
@@ -270,11 +271,10 @@ export class WorldEngine implements SceneInputs {
     const spotPower = 260;
     this.ceilingSpot(new THREE.Vector3(0, BENCH.ceiling - 1, 0.5), new THREE.Vector3(0, BENCH.top, 0.5), 0.8, spotPower);
     const failing = this.ceilingSpot(new THREE.Vector3(0, BENCH.ceiling - 1, 28), new THREE.Vector3(0, BENCH.floor, 28), 0.78, spotPower);
-    this.tools.animate((seconds) => {
-      const state = failingLightState(seconds, spotPower);
-      failing.light.intensity = state.light;
-      failing.lens.emissiveIntensity = state.lens;
-    }, 'room');
+    // The old tube no longer drops out: a flicker in the room was read as a rendering fault. Its housing and
+    // lens stay as a prop; light and lens burn steady.
+    failing.light.intensity = spotPower;
+    failing.lens.emissiveIntensity = 1.2;
     const key = new THREE.DirectionalLight('#eef4f0', 0.35);
     key.position.set(-4, 8, 5);
     this.scene.add(key);
@@ -842,13 +842,13 @@ export class WorldEngine implements SceneInputs {
     rig.camera.lookAt(pose.target);
     rig.camera.updateMatrixWorld();
     object.traverse((o) => o.layers.enable(THUMBNAIL_LAYER));
+    // Nothing here changes a shader program (shadows and fog stay as they are): toggling them recompiled
+    // every material twice per picture and stalled the page.
     const previousTarget = this.renderer.getRenderTarget();
-    const previousShadow = this.renderer.shadowMap.enabled;
     const previousBackground = this.scene.background;
-    const previousFog = this.scene.fog;
+    const previousClear = this.renderer.getClearColor(new THREE.Color());
+    const previousAlpha = this.renderer.getClearAlpha();
     this.scene.background = null;
-    this.scene.fog = null;
-    this.renderer.shadowMap.enabled = false;
     this.renderer.setRenderTarget(rig.target);
     this.renderer.setClearColor('#14161a', 1);
     this.renderer.clear();
@@ -856,9 +856,8 @@ export class WorldEngine implements SceneInputs {
     const pixels = new Uint8Array(job.size * job.size * 4);
     this.renderer.readRenderTargetPixels(rig.target, 0, 0, job.size, job.size, pixels);
     this.renderer.setRenderTarget(previousTarget);
-    this.renderer.shadowMap.enabled = previousShadow;
+    this.renderer.setClearColor(previousClear, previousAlpha);
     this.scene.background = previousBackground;
-    this.scene.fog = previousFog;
     object.traverse((o) => o.layers.disable(THUMBNAIL_LAYER));
     cleanup?.();
     const canvas = document.createElement('canvas');
@@ -1192,7 +1191,9 @@ export class WorldEngine implements SceneInputs {
     if (next === this.resolutionScale) return;
     this.resolutionScale = next;
     this.profiler.reset();
-    this.applyPixelRatio();
+    // Changing the pixel ratio clears the canvas. It is applied at the start of the next frame, right before
+    // that frame is drawn, so the cleared buffer is never presented (it showed as a black flash).
+    this.pixelRatioDirty = true;
   }
   private animate = () => {
     if (this.disposed || !this.renderer || document.hidden) return;
@@ -1209,11 +1210,25 @@ export class WorldEngine implements SceneInputs {
       this.frame = requestAnimationFrame(this.animate);
       return;
     }
+    if (this.pixelRatioDirty) {
+      this.pixelRatioDirty = false;
+      this.applyPixelRatio();
+      const size = this.renderer.getSize(new THREE.Vector2());
+      this.effects?.resize(Math.max(1, size.x), Math.max(1, size.y));
+    }
     const dt = Math.min(this.frameDelta(), 0.1);
     this.profiler.sample(dt);
     this.physics?.step(dt);
     this.rig?.setReduced(this.reduced);
     this.rig?.update(dt);
+    if (this.rig && !this.camera.view?.enabled) {
+      // A near plane that grows with the distance keeps depth precision when the whole room is in view.
+      const near = nearForDistance(this.rig.distance);
+      if (Math.abs(near - this.camera.near) > 0.02) {
+        this.camera.near = near;
+        this.camera.updateProjectionMatrix();
+      }
+    }
     this.updateDust();
     this.emitTelemetry(dt);
     if (this.thumbnailQueue.length) this.serveThumbnail();

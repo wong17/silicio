@@ -1,5 +1,5 @@
 import * as T from 'three';
-import { keepInsideRoom, type Point3 } from './room-bounds';
+import { keepInsideRoom, maxDistanceWithin, type Point3 } from './room-bounds';
 
 /** What the rig needs from the orbit controls: the look-at point and the zoom limits. */
 export interface RigControls {
@@ -50,13 +50,16 @@ export class CameraRig {
   private goal?: Goal;
   private reduced = false;
   private boundary = true;
+  private readonly baseMaxDistance: number;
   private readonly spherical = new T.Spherical();
   private readonly offset = new T.Vector3();
 
   constructor(
     private readonly camera: T.PerspectiveCamera,
     private readonly controls: RigControls,
-  ) {}
+  ) {
+    this.baseMaxDistance = controls.maxDistance;
+  }
 
   get azimuth(): number {
     return this.read().theta;
@@ -201,13 +204,22 @@ export class CameraRig {
     this.camera.updateProjectionMatrix();
   }
 
-  /** Eases the lens back inside the room instead of cutting; the target is untouched, so the view cannot flip. */
-  private keepInside(dt: number): boolean {
+  /**
+   * The zoom-out limit follows the room: the orbit controls may never take the lens beyond the box, so the
+   * box and the controls agree and nothing pulls the camera back and forth. A direct clamp stays as a net.
+   */
+  private keepInside(_dt: number): boolean {
     if (!this.boundary) return false;
+    const center = this.controls.target;
+    const offset = this.offset.copy(this.camera.position).sub(center);
+    const length = offset.length();
+    if (length > 1e-6) {
+      const limit = maxDistanceWithin(center, { x: offset.x / length, y: offset.y / length, z: offset.z / length });
+      this.controls.maxDistance = Math.max(this.controls.minDistance, Math.min(this.baseMaxDistance, limit));
+    }
     const p: Point3 = { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z };
     if (!keepInsideRoom(p)) return false;
-    const k = this.reduced ? 1 : Math.max(0.25, 1 - Math.exp(-12 * Math.max(0, dt)));
-    this.camera.position.lerp(new T.Vector3(p.x, p.y, p.z), k);
+    this.camera.position.set(p.x, p.y, p.z);
     return true;
   }
 }

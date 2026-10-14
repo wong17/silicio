@@ -10,6 +10,10 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
+  text-align: left;
+  &.with-preview {
+    grid-template-columns: auto auto 1fr auto;
+  }
   gap: 14px;
   min-height: 64px;
   padding: 12px 14px 12px 18px;
@@ -44,6 +48,8 @@
   display: grid;
   gap: 2px;
   min-width: 0;
+  justify-items: start;
+  text-align: left;
   strong {
     font: 600 22px/1.05 kit.$display;
   }
