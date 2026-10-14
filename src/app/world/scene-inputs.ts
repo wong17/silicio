@@ -1,6 +1,7 @@
 import type { QualityTier } from './effects/effects-pipeline';
 import type { PieceDefinition } from './interaction-registry';
 import type { LampTarget } from './lamp-limits';
+import type { StationActivity } from '../laboratory/station-activity';
 export type { QualityTier };
 
 export type Section = 'atrium' | '8086' | 'memory' | 'time' | 'apple' | 'machine';
@@ -27,6 +28,8 @@ export interface SceneInputs {
   /** Aim point and head height of the articulated lamp. */
   lamp: LampTarget;
   lampOn: boolean;
+  /** What the academic state is doing now; models that explain behaviour subscribe to it. */
+  activity: StationActivity;
 }
 
 /** Where a piece stands on the worktop (map) and, when callouts are on, on the canvas (CSS pixels). */
@@ -87,5 +90,6 @@ export function readSceneInputs(source: SceneInputs): SceneInputs {
     writeAccess: source.writeAccess,
     lamp: source.lamp,
     lampOn: source.lampOn,
+    activity: source.activity,
   };
 }

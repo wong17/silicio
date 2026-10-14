@@ -5,6 +5,7 @@ import { releaseInstanceBuffers } from './instance-lifecycle';
 
 import * as THREE from 'three';
 import { SelectionMarker, selectionBounds } from './selection-marker';
+import { ActivityChannel, IDLE_ACTIVITY, type StationActivity } from '../laboratory/station-activity';
 import { explodedOffset } from './exploded-layout';
 import { familyOf } from './piece-families';
 import { CameraRig } from './camera-rig';
@@ -56,6 +57,7 @@ export class WorldEngine implements SceneInputs {
   exploded = false;
   /** How far the chip is open, 0 to 1; only meaningful while `exploded` is true. */
   explodedAmount = 1;
+  activity: StationActivity = IDLE_ACTIVITY;
   activePart = '';
   tick = 0;
   memoryCells: { address: number; value: number }[] = [];
@@ -105,12 +107,17 @@ export class WorldEngine implements SceneInputs {
     track: (r) => this.track(r),
     material: (id, c, r, m, look?: SurfaceLook) => this.surfaces.material(id, c, r, m, look),
     label: (p, t, x, y, z, w, o) => this.labels.create(p, t, x, y, z, w, o),
+    relabel: (l, t) => this.labels.rewrite(l, t),
+    onActivity: (fn) => this.activityUnsubscribers.push(this.activityChannel.subscribe(fn)),
     animate: (update, scope = 'room') => this.animators.push({ update, scope }),
   };
   private animators: { update: Animator; scope: 'room' | 'subject' }[] = [];
   /** Scene time for animators; it advances with the frame delta and stays at zero under reduced motion. */
   private clock = 0;
   private rig?: CameraRig;
+  private readonly activityChannel = new ActivityChannel();
+  private activityUnsubscribers: (() => void)[] = [];
+  private activitySession = '';
   /** Floating legends over the main pieces; switched from the toolbar. */
   private calloutsOn = false;
   private calloutsDirty = true;
@@ -173,14 +180,11 @@ export class WorldEngine implements SceneInputs {
       if (o instanceof THREE.Mesh && o.material instanceof THREE.MeshStandardMaterial)
         o.material.wireframe = this.viewMode === 'wireframe';
     });
+    if (this.activity && (changed.has('activity') || changed.size === 0)) this.publishActivity();
     if (changed.has('exploded') || changed.has('explodedAmount'))
       this.updateParts(changed.has('exploded') ? 0.8 : 0.15);
     this.updateSelection();
     this.updateQuality();
-    if (this.tick !== this.lastTick) {
-      this.lastTick = this.tick;
-      if (this.tick) this.transfer();
-    }
   }
   /**
    * A ceiling spot with a visible housing and a lens. It casts no shadows, so the lamp stays the only shadow caster.
@@ -336,6 +340,8 @@ export class WorldEngine implements SceneInputs {
       }
     });
     this.focusedObject = undefined;
+    for (const stop of this.activityUnsubscribers) stop();
+    this.activityUnsubscribers = [];
     this.releaseThumbnails();
     this.profiler.reset();
     this.gpuProfiler?.reset();
@@ -389,6 +395,14 @@ export class WorldEngine implements SceneInputs {
     root.position.y = BENCH.matTop - datum;
     root.updateMatrixWorld(true);
   }
+  private publishActivity(): void {
+    const a = this.activity;
+    if (a.sessionId !== this.activitySession) {
+      this.activitySession = a.sessionId;
+      this.activityChannel.begin(a.sessionId);
+    }
+    this.activityChannel.publish(a);
+  }
   private updateParts(duration = 0.8): void {
     this.explodedMotion?.kill();
     this.explodedMotion = gsap.timeline({
@@ -413,30 +427,6 @@ export class WorldEngine implements SceneInputs {
           ['8086', 'apple'].includes(this.section)
         ) || amount > 0;
     }
-  }
-  transfer(): void {
-    if (!this.packet) return;
-    this.pulseMotion?.kill();
-    this.packet.visible = true;
-    this.packet.position.set(-2.2, 1.1, 0);
-    this.pulseMotion = gsap.timeline({
-      onComplete: () => {
-        if (this.packet) this.packet.visible = false;
-      },
-    });
-    this.pulseMotion
-      .to(this.packet.position, {
-        x: 0,
-        z: -0.55,
-        duration: this.reduced ? 0 : 0.45,
-        ease: 'power1.inOut',
-      })
-      .to(this.packet.position, {
-        x: 1.7,
-        z: 0.5,
-        duration: this.reduced ? 0 : 0.45,
-        ease: 'power1.inOut',
-      });
   }
   /** Area of the viewport that the overlays leave free: below the title, above the toolbar. */
   private freeRegion(): ViewportRegion {

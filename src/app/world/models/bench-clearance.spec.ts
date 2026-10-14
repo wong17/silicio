@@ -92,7 +92,9 @@ it('logical_window_rests_on_the_mat', async () => {
   const labels: { text: string; y: number }[] = [];
   const spy = {
     ...tools,
-    label: (_p: T.Object3D, text: string, _x: number, y: number) => labels.push({ text, y }),
+    label: (_p: T.Object3D, text: string, _x: number, y: number) => {
+      labels.push({ text, y });
+    },
   };
   const root = new T.Group();
   new StationBuilder(spy).build('memory', 'classic', root, new Map());

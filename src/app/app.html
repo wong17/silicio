@@ -42,6 +42,7 @@
         [writeAccess]="session.lastWrites()"
         [lamp]="session.lampTarget()"
         [lampOn]="session.lampOn()"
+        [activity]="session.activity()"
         (pieces)="session.selectablePieces.set($event)"
         (anchors)="session.anchors.set($event)"
         (view)="session.cameraView.set($event)"

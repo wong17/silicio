@@ -49,8 +49,8 @@ export abstract class WorkshopGeometry {
   ): T.Mesh {
     return this.mesh(parent, new T.CylinderGeometry(r, r, h, 20), m, x, y, z);
   }
-  protected wire(parent: T.Object3D, points: number[][], radius: number, m: T.Material): void {
-    this.mesh(
+  protected wire(parent: T.Object3D, points: number[][], radius: number, m: T.Material): T.Mesh {
+    return this.mesh(
       parent,
       new T.TubeGeometry(
         new T.CatmullRomCurve3(

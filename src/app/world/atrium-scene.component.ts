@@ -16,6 +16,7 @@ import { WorldEngine } from './world-engine';
 import { readSceneInputs, type SceneInputs, type Section, type QualityTier } from './scene-inputs';
 import type { PieceDefinition } from './interaction-registry';
 import type { LampTarget } from './lamp-limits';
+import { IDLE_ACTIVITY, type StationActivity } from '../laboratory/station-activity';
 import type { CameraView, PieceAnchor, ScreenAnchor } from './scene-inputs';
 export type { Section } from './scene-inputs';
 
@@ -46,6 +47,7 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   @Input() writeAccess = false;
   @Input() lamp: LampTarget = { x: -0.8, z: 0.6, height: 5 };
   @Input() lampOn = true;
+  @Input() activity: StationActivity = IDLE_ACTIVITY;
   @Output() pieces = new EventEmitter<PieceDefinition[]>();
   @Output() picked = new EventEmitter<string>();
   @Output() hovered = new EventEmitter<string | null>();

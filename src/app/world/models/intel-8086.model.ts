@@ -105,17 +105,23 @@ export class Intel8086Model extends WorkshopGeometry {
       0,
       this.tools.material('die-silicon', '#4e505c', 0.28, 0.6),
     );
-    for (let n = 0; n < 18; n++)
-      this.wire(
-        parent,
-        [
-          [-1.08 + n * 0.127, 0.785, -0.45],
-          [-1.08 + n * 0.127, 0.85, -0.6],
-          [-1.08 + n * 0.127, 0.855, -0.81],
-        ],
-        0.004,
-        brass,
-      );
+    // Forty bond wires, twenty along each long edge of the die, one for every terminal of the package.
+    for (const side of [1, -1])
+      for (let n = 0; n < 20; n++) {
+        const x = -1.0925 + n * 0.115;
+        const number = side === 1 ? n + 1 : 40 - n;
+        const wire = this.wire(
+          parent,
+          [
+            [x, 0.785, side * 0.45],
+            [x, 0.85, side * 0.6],
+            [x, 0.855, side * 0.81],
+          ],
+          0.004,
+          brass,
+        );
+        wire.name = 'bond-wire-' + number;
+      }
     // Moulded shoulders and a thin sealing seam, each with its own surface.
     for (const side of [-1, 1])
       this.box(
@@ -243,7 +249,7 @@ export class Intel8086Model extends WorkshopGeometry {
         );
       }
     // Silkscreen datum and board fasteners.
-    this.tools.label(parent, 'U1 / 8086', -2.7, 0.389, 1.86, 1.6);
+    this.tools.label(parent, 'U1 / 8086 · marcado ilustrativo', -2.2, 0.389, 1.86, 2.6);
     this.tools.label(parent, 'CPU  ·  MEMORIA  ·  ENTRADA / SALIDA', 0, 0.389, 2.39, 5.5);
     const supports = new T.Group();
     supports.userData['part'] = 'supports';
@@ -284,7 +290,7 @@ export class Intel8086Model extends WorkshopGeometry {
       for (let i = 0; i < 6; i++)
         for (const side of [-1, 1])
           this.box(parent, 0.07, 0.04, 0.17, px - 0.5 + i * 0.2, 0.414, -2.04 + side * 0.33, brass);
-      this.tools.label(parent, px === 0 ? 'LATCH' : 'LOGIC', px, 0.574, -2.04, 1.05);
+      this.tools.label(parent, px === 0 ? '8282 · LATCH' : px < 0 ? '8284 · RELOJ' : '8286 · BUS', px, 0.574, -2.04, 1.05);
     }
     const passives = new T.Group();
     passives.userData['part'] = 'passives';

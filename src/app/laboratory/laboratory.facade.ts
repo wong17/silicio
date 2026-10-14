@@ -12,6 +12,9 @@ export function projectLaboratory(s: Snapshot, e?: Trace) {
       changedMask: e ? e.before.registers[name] ^ s.registers[name] : 0,
     })),
     flags: s.flags,
+    flagsChanged: e
+      ? (Object.keys(s.flags) as (keyof Snapshot['flags'])[]).filter((f) => e.before.flags[f] !== s.flags[f])
+      : [],
     operation: e?.operation,
     instruction: e?.instruction,
     accesses: e?.operation?.accesses ?? [],

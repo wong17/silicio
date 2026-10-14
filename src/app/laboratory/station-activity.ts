@@ -72,6 +72,7 @@ export function projectActivity(view: LaboratoryView, phase: Phase, revision = 0
     return { ...IDLE_ACTIVITY, sessionId: view.sessionId, revision, phase: instruction ? phase : 'idle' };
   const changed = [
     ...view.registers.filter((r) => r.changedMask !== 0).map((r) => r.name as string),
+    ...view.flagsChanged.map((f) => f as string),
   ];
   const write = view.accesses.find((a) => a.kind === 'write');
   const read = view.accesses.find((a) => a.kind === 'read');

@@ -8,6 +8,7 @@ import { MachineBoardModel, MACHINE_BOARD_BASE } from './machine-board.model';
 import { ChronoscopeModel, CHRONOSCOPE_BASE } from './chronoscope.model';
 import { ElectronicsWorkshop } from '../electronics-workshop';
 import { MemoryModels } from './memory-models';
+import { CpuActivityView } from './cpu-activity';
 import { APPLE_PARTS, type Part } from './station-layouts';
 import type { Section } from '../scene-inputs';
 export class StationBuilder extends WorkshopGeometry {
@@ -111,6 +112,7 @@ export class StationBuilder extends WorkshopGeometry {
             d: 0.26,
           },
         ]);
+      if (section === '8086') new CpuActivityView(this.tools).build(root, parts);
     } else if (section === 'apple') {
       new ElectronicsWorkshop(this.tools).soc(root);
       this.tiles(root, parts, APPLE_PARTS);

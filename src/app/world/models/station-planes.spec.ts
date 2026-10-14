@@ -14,7 +14,9 @@ function build(section: Section, variant: 'classic' | 'dimm') {
   const tools = {
     track: <G>(resource: G): G => resource,
     material: (_id: string, color: string) => new T.MeshStandardMaterial({ color }),
-    label: (parent: T.Object3D, text: string, _x: number, y: number) => labels.push({ parent, text, y }),
+    label: (parent: T.Object3D, text: string, _x: number, y: number) => {
+      labels.push({ parent, text, y });
+    },
     animate: () => {},
   };
   const root = new T.Group();
