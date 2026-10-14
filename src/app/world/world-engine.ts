@@ -545,7 +545,8 @@ export class WorldEngine implements SceneInputs {
     }
     this.controls.minDistance = Math.max(0.3, b.getBoundingSphere(new THREE.Sphere()).radius * 0.7);
     this.rig.setReduced(this.reduced);
-    this.rig.moveTo(pose);
+    // Authored views glide a little slower, so a step of the talk reads as one camera move.
+    this.rig.moveTo(pose, view ? 0.9 : undefined);
   }
   focusSelected(view?: FocusView): void {
     const o = this.parts.get(this.activePart) || this.environmentParts.get(this.activePart);

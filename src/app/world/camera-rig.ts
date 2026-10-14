@@ -33,7 +33,12 @@ interface Goal {
   distance: number;
   view?: ViewWindow;
   smooth: number;
+  /** Seconds since the goal was set. */
+  age: number;
 }
+
+/** Same limits the engine gives the orbit controls; goals are clamped to them. */
+const POLAR_LIMITS = [0.2, Math.PI * 0.48] as const;
 
 const EPS = { angle: 0.0005, length: 0.001, pixels: 0.05 };
 
@@ -100,7 +105,21 @@ export class CameraRig {
   setView(azimuth: number, distance: number): void {
     const g = this.begin(RIG_SMOOTH.frame);
     g.azimuth = azimuth;
-    g.distance = T.MathUtils.clamp(distance, this.controls.minDistance, this.controls.maxDistance);
+    g.distance = this.reachable(
+      g.target,
+      new T.Spherical(T.MathUtils.clamp(distance, this.controls.minDistance, this.baseMaxDistance), g.polar, azimuth),
+    );
+  }
+
+  /**
+   * A goal outside the room box could never be reached: the safety clamp pulled the lens back each frame
+   * and the rig pushed it out again, which showed as a shake. The goal distance is cut to what fits.
+   */
+  private reachable(target: T.Vector3, s: T.Spherical): number {
+    if (!this.boundary) return s.radius;
+    const direction = new T.Vector3().setFromSpherical(new T.Spherical(1, s.phi, s.theta));
+    const limit = maxDistanceWithin(target, { x: direction.x, y: direction.y, z: direction.z });
+    return Math.max(this.controls.minDistance, Math.min(s.radius, this.baseMaxDistance, limit));
   }
 
   dollyBy(factor: number): void {
@@ -115,9 +134,10 @@ export class CameraRig {
       target: pose.target.clone(),
       azimuth: s.theta,
       polar: s.phi,
-      distance: s.radius,
+      distance: this.reachable(pose.target, s),
       view: pose.view,
       smooth,
+      age: 0,
     };
   }
 
@@ -125,6 +145,10 @@ export class CameraRig {
   update(dt: number): boolean {
     const g = this.goal;
     if (g) {
+      // Keep the goal inside what the controls allow, or it could never be reached and would shake forever.
+      g.distance = T.MathUtils.clamp(g.distance, this.controls.minDistance, Math.max(this.controls.minDistance, this.controls.maxDistance));
+      g.polar = T.MathUtils.clamp(g.polar, POLAR_LIMITS[0], POLAR_LIMITS[1]);
+      g.age += Math.max(0, dt);
       const k = this.reduced || g.smooth <= 0 ? 1 : 1 - Math.exp((-3 * Math.max(0, dt)) / g.smooth);
       const cur = this.read();
       const center = this.controls.target;
@@ -139,7 +163,8 @@ export class CameraRig {
         Math.abs(g.polar - phi) < EPS.angle &&
         Math.abs(g.distance - radius) < EPS.length &&
         center.distanceTo(g.target) < EPS.length;
-      if (done || k === 1) {
+      // A transition that has not settled after a few of its own durations is landed, not left to fight.
+      if (done || k === 1 || g.age > g.smooth * 5) {
         // Land exactly on the goal so repeated commands do not accumulate drift.
         center.copy(g.target);
         this.place(center, g.distance, g.polar, g.azimuth);
@@ -170,6 +195,7 @@ export class CameraRig {
       distance: cur.radius,
       view: this.currentView(),
       smooth,
+      age: 0,
     };
     g.smooth = smooth;
     this.goal = g;

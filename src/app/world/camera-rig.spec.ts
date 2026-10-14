@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as T from 'three';
 import { CameraRig } from './camera-rig';
 import { framePose } from './camera-director';
+import { CAMERA_LIMITS } from './room-bounds';
 
 function rig() {
   const camera = new T.PerspectiveCamera(38, 1.5, 0.1, 140);
@@ -77,4 +78,21 @@ it('framing_pose_is_pure', () => {
   const b = framePose(38, box, { x: 0, y: 0, width: 400, height: 300 }, { width: 400, height: 300 });
   expect(a.position.equals(b.position)).toBe(true);
   expect(a.target.x).toBe(0);
+});
+
+describe('metas fuera de la sala', () => {
+  it('a_goal_beyond_the_ceiling_settles_without_shaking', () => {
+    const { camera, controls, rig: r } = rig();
+    // 14 units out at a steep angle would be above the ceiling: the goal must be cut, then the rig must rest.
+    r.moveTo({ position: new T.Vector3(3, 15, 6), target: new T.Vector3(0, 0.7, -1) });
+    const positions: T.Vector3[] = [];
+    for (let i = 0; i < 400; i++) {
+      r.update(1 / 60);
+      if (i > 300) positions.push(camera.position.clone());
+    }
+    expect(r.moving).toBe(false);
+    for (const p of positions) expect(p.distanceTo(positions[0])).toBeLessThan(1e-6);
+    expect(camera.position.y).toBeLessThanOrEqual(CAMERA_LIMITS.y[1] + 1e-6);
+    expect(controls.target.z).toBeCloseTo(-1, 3);
+  });
 });

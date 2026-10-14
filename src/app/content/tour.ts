@@ -83,8 +83,8 @@ export const TOUR: readonly TourStep[] = [
     station: 'time',
     title: 'La cinta de pasos',
     line: 'Cada instrucción es un cuadro. Retrocede, edita y compara la rama alternativa.',
-    piece: 'chrono-tape',
-    view: { distance: 11, azimuth: 16, polar: 52 },
+    piece: 'chrono-window',
+    view: { distance: 9, azimuth: 14, polar: 55 },
   },
   {
     id: 'apple',

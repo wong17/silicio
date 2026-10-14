@@ -38,3 +38,19 @@ it('transparent_layers_have_a_fixed_order', () => {
   expect(o.ring).toBeLessThan(o.beam);
   expect(o.beam).toBeLessThan(o.dust);
 });
+
+it('batched_contacts_still_count_for_bounds', () => {
+  const group = new T.Group();
+  const pin = new T.Mesh(new T.BoxGeometry(0.2, 0.2, 0.2));
+  pin.position.set(3, 0.4, 1.45);
+  pin.visible = false;
+  pin.layers.set(31);
+  group.add(pin);
+  const hidden = new T.Mesh(new T.BoxGeometry(5, 5, 5));
+  hidden.visible = false;
+  group.add(hidden);
+  const box = selectionBounds(group);
+  expect(box.isEmpty()).toBe(false);
+  expect(box.getCenter(new T.Vector3()).x).toBeCloseTo(3, 5);
+  expect(box.getSize(new T.Vector3()).x).toBeCloseTo(0.2, 5);
+});

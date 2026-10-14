@@ -6,7 +6,9 @@ export function selectionBounds(object: T.Object3D, out = new T.Box3()): T.Box3 
   object.updateWorldMatrix(true, true);
   const box = new T.Box3();
   object.traverse((o) => {
-    if (o.userData['noBounds'] || !o.visible) return;
+    // Batched contacts (pins, pads) are hidden on layer 31 but still stand where they were: they count.
+    const batched = o.layers.isEnabled(31);
+    if (o.userData['noBounds'] || (!o.visible && !batched)) return;
     const mesh = o as T.Mesh;
     if (!mesh.geometry) return;
     if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
