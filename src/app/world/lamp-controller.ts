@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { RENDER_ORDER } from './render-order';
 import { createLampPose, solveLamp, type LampPose } from './lamp-rig';
 import type { LampRig } from './models/articulated-lamp.model';
 import { BENCH } from './models/bench-layout';
@@ -52,6 +53,8 @@ export class LampController {
       track(new T.MeshBasicMaterial({ color: '#ffd6a0', transparent: true, opacity: 0.32, depthWrite: false })),
     );
     this.marker.rotation.x = -Math.PI / 2;
+    this.marker.renderOrder = RENDER_ORDER.ring;
+    this.marker.userData['noBounds'] = true;
     this.marker.visible = false;
     scene.add(this.marker);
     const random = seededRandom(31);

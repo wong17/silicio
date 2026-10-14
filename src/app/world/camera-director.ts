@@ -41,3 +41,37 @@ export function frameBounds(
   camera.updateMatrixWorld(true);
   return position;
 }
+
+/** A camera pose plus the off-axis window that places the subject in the free region. */
+export interface FramedPose {
+  position: T.Vector3;
+  target: T.Vector3;
+  view: { fullWidth: number; fullHeight: number; x: number; y: number };
+}
+
+/** Pure counterpart of `frameBounds`: computes the pose without touching a camera. */
+export function framePose(
+  fov: number,
+  bounds: T.Box3,
+  region: ViewportRegion,
+  viewport: { width: number; height: number },
+  direction = new T.Vector3(1, 1.5, 2),
+): FramedPose {
+  const sphere = bounds.getBoundingSphere(new T.Sphere()),
+    w = Math.max(1, viewport.width),
+    h = Math.max(1, viewport.height),
+    aspect = w / h;
+  const coverage = Math.max(0.05, Math.min(region.height / h, (region.width / w) * aspect));
+  const angle = Math.atan(Math.tan(T.MathUtils.degToRad(fov / 2)) * coverage);
+  const distance = Math.max(0.3, (sphere.radius / Math.sin(angle)) * 1.06);
+  return {
+    position: sphere.center.clone().add(direction.clone().normalize().multiplyScalar(distance)),
+    target: sphere.center.clone(),
+    view: {
+      fullWidth: w,
+      fullHeight: h,
+      x: w / 2 - region.x - region.width / 2,
+      y: h / 2 - region.y - region.height / 2,
+    },
+  };
+}

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RENDER_ORDER } from '../render-order';
 import { LABEL_HEIGHT, LABEL_WIDTH, paintLabel } from './label-canvas';
 
 interface LabelRecord {
@@ -42,6 +43,7 @@ export class SceneLabels {
       material,
     );
     label.userData['labelRecord'] = record;
+    label.renderOrder = RENDER_ORDER.label;
     label.rotation.x = -Math.PI / 2;
     label.position.set(x, y, z);
     parent.add(label);

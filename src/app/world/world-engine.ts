@@ -2,16 +2,17 @@ import { StationBuilder } from './models/station-builder';
 import { firstInspectableHit } from './scene-picking';
 import { GpuResources } from './gpu-resources';
 import { releaseInstanceBuffers } from './instance-lifecycle';
-import { keepInsideRoom } from './room-bounds';
 
 import * as THREE from 'three';
+import { SelectionMarker } from './selection-marker';
+import { CameraRig } from './camera-rig';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { gsap } from 'gsap';
 import { bindCancellation, applyInputPolicy } from './scene-input';
 import { classifySubject, pieceDefinition } from './piece-catalog';
 import { instanceContacts } from './static-instancing';
-import { CAMERA_CLIP, frameBounds, ViewportRegion } from './camera-director';
+import { CAMERA_CLIP, framePose, ViewportRegion } from './camera-director';
 import { EffectsPipeline, qualitySettings, QualityTier } from './effects/effects-pipeline';
 import { GpuProfile } from './gpu-profile';
 import { FrameProfile } from './frame-profile';
@@ -67,7 +68,8 @@ export class WorldEngine implements SceneInputs {
   private registry = new InteractionRegistry();
   private environmentParts = new Map<string, THREE.Object3D>();
   private physics?: WorkbenchPhysics;
-  private selectionBox?: THREE.BoxHelper;
+  private selectionBox?: SelectionMarker;
+  private selectedId = '';
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private renderer?: THREE.WebGLRenderer;
@@ -101,7 +103,7 @@ export class WorldEngine implements SceneInputs {
   private animators: { update: Animator; scope: 'room' | 'subject' }[] = [];
   /** Scene time for animators; it advances with the frame delta and stays at zero under reduced motion. */
   private clock = 0;
-  private cameraMotion?: gsap.core.Timeline;
+  private rig?: CameraRig;
   private explodedMotion?: gsap.core.Timeline;
   private pulseMotion?: gsap.core.Timeline;
   private packet?: THREE.Mesh;
@@ -246,7 +248,7 @@ export class WorldEngine implements SceneInputs {
     this.lampController.setTarget(this.lamp);
     this.lampController.setPower(this.lampOn);
 
-    this.selectionBox = new THREE.BoxHelper(this.root, '#d7ac6f');
+    this.selectionBox = new SelectionMarker('#d7ac6f');
     this.scene.add(this.selectionBox);
     this.track(this.selectionBox.geometry);
     this.track(this.selectionBox.material as THREE.Material);
@@ -259,6 +261,9 @@ export class WorldEngine implements SceneInputs {
     this.controls.minPolarAngle = 0.2;
     this.controls.maxPolarAngle = Math.PI * 0.48;
     this.controls.addEventListener('start', this.cancelCamera);
+    this.rig = new CameraRig(this.camera, this.controls);
+    // The wheel dollies through the rig, so it eases like the buttons instead of stepping.
+    this.canvas.addEventListener('wheel', this.onWheel, { capture: true, passive: false });
     this.canvas.addEventListener('pointerdown', this.onDown, true);
     this.canvas.addEventListener('pointermove', this.onMove);
     this.canvas.addEventListener('pointermove', this.onHover);
@@ -286,7 +291,7 @@ export class WorldEngine implements SceneInputs {
     return resource;
   }
   private clearSubject(): void {
-    this.cameraMotion?.kill();
+    this.rig?.cancel();
     this.explodedMotion?.kill();
     this.pulseMotion?.kill();
     this.physics?.clearMechanisms();
@@ -440,25 +445,35 @@ export class WorldEngine implements SceneInputs {
       .map((selector) => host?.querySelector<HTMLElement>(selector))
       .find((element) => element && element.offsetParent !== null)
       ?.getBoundingClientRect();
-    const top = Math.min(r.height * 0.32, Math.max(12, (title?.bottom ?? r.top) - r.top + 12)),
-      bottom = Math.max(top + 64, (toolbar?.top ?? r.bottom) - r.top - 14);
+    let top = Math.min(r.height * 0.32, Math.max(12, (title?.bottom ?? r.top) - r.top + 12));
+    let bottomEdge = (toolbar?.top ?? r.bottom) - r.top - 14;
+    // Any overlay marked data-occludes (HUD map, tray) takes the band it covers: top half pushes down, bottom half up.
+    host?.querySelectorAll<HTMLElement>('[data-occludes]').forEach((element) => {
+      if (element.offsetParent === null) return;
+      const box = element.getBoundingClientRect();
+      if (box.width === 0 || box.height === 0) return;
+      const middle = (box.top + box.bottom) / 2 - r.top;
+      if (middle < r.height / 2) top = Math.max(top, Math.min(r.height * 0.4, box.bottom - r.top + 8));
+      else bottomEdge = Math.min(bottomEdge, box.top - r.top - 8);
+    });
+    const bottom = Math.max(top + 64, bottomEdge);
     return { x: 16, y: top, width: Math.max(64, r.width - 32), height: Math.max(64, bottom - top) };
   }
   private fitObject(o: THREE.Object3D): void {
-    if (!this.controls || !this.camera) return;
-    this.cancelCamera();
+    if (!this.controls || !this.camera || !this.rig) return;
     const b = new THREE.Box3().setFromObject(o);
     if (b.isEmpty()) return;
     const canvas = this.canvas;
-    frameBounds(
-      this.camera,
+    const pose = framePose(
+      this.camera.fov,
       b,
       this.freeRegion(),
       { width: canvas.clientWidth, height: canvas.clientHeight },
       this.camera.position.clone().sub(this.controls.target),
     );
-    this.controls.target.copy(b.getCenter(new THREE.Vector3()));
     this.controls.minDistance = Math.max(0.3, b.getBoundingSphere(new THREE.Sphere()).radius * 0.7);
+    this.rig.setReduced(this.reduced);
+    this.rig.moveTo(pose);
   }
   focusSelected(): void {
     const o = this.parts.get(this.activePart) || this.environmentParts.get(this.activePart);
@@ -555,51 +570,35 @@ export class WorldEngine implements SceneInputs {
     return w > 0 && h > 0 ? w / h : this.camera?.aspect || 1;
   }
   resetView(): void {
-    if (!this.camera || !this.controls) return;
-    this.cameraMotion?.kill();
+    if (!this.camera || !this.controls || !this.rig) return;
     this.focusedObject = undefined;
-    this.camera.clearViewOffset();
-    this.camera.near = CAMERA_CLIP.near;
-    this.camera.far = CAMERA_CLIP.far;
-    this.camera.updateProjectionMatrix();
     this.controls.minDistance = 1.6;
-    this.controls.enabled = false;
     const mobile = matchMedia('(max-width:899px)').matches;
     const framing = Math.min(4, Math.max(1, 0.95 / this.viewAspect()));
-    this.cameraMotion = gsap.timeline({
-      defaults: { duration: this.reduced ? 0 : 1.25, ease: 'power3.inOut', overwrite: 'auto' },
-      onComplete: () => {
-        if (this.controls) this.controls.enabled = true;
-      },
+    this.rig.setReduced(this.reduced);
+    this.rig.moveTo({
+      position: new THREE.Vector3(5.8 * framing, 9.2 * framing, (mobile ? 13 : 10.8) * framing),
+      target: new THREE.Vector3(mobile ? 0 : -0.45, mobile ? 2.2 : 0.7, 0),
     });
-    this.cameraMotion
-      .to(
-        this.camera.position,
-        { x: 5.8 * framing, y: 9.2 * framing, z: (mobile ? 13 : 10.8) * framing },
-        0,
-      )
-      .to(this.controls.target, { x: mobile ? 0 : -0.45, y: mobile ? 2.2 : 0.7, z: 0 }, 0);
   }
   rotate(direction: number): void {
-    if (!this.camera || !this.controls) return;
-    this.cameraMotion?.kill();
-    this.controls.enabled = true;
-    const relative = this.camera.position.clone().sub(this.controls.target);
-    relative.applyAxisAngle(new THREE.Vector3(0, 1, 0), (direction * Math.PI) / 8);
-    this.camera.position.copy(relative.add(this.controls.target));
+    this.rig?.setReduced(this.reduced);
+    this.rig?.orbitBy((direction * Math.PI) / 8);
   }
   zoom(direction: number): void {
-    if (!this.camera || !this.controls) return;
-    this.cameraMotion?.kill();
-    this.controls.enabled = true;
-    const relative = this.camera.position.clone().sub(this.controls.target);
-    if (relative.lengthSq() === 0) return;
-    relative.setLength(THREE.MathUtils.clamp(relative.length() * direction, 5, 32));
-    this.camera.position.copy(relative.add(this.controls.target));
+    this.rig?.setReduced(this.reduced);
+    this.rig?.dollyBy(direction);
   }
+  private onWheel = (event: WheelEvent) => {
+    if (!this.rig || !this.controls?.enabled) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const unit = event.deltaMode === 1 ? 16 : 1;
+    this.rig.setReduced(this.reduced);
+    this.rig.dollyBy(Math.exp(event.deltaY * unit * 0.0012));
+  };
   private cancelCamera = () => {
-    this.cameraMotion?.kill();
-    if (this.controls) this.controls.enabled = true;
+    this.rig?.cancel();
   };
   private onCancel = () => {
     this.pointerStart.set(Infinity, Infinity);
@@ -613,8 +612,9 @@ export class WorldEngine implements SceneInputs {
   private updateSelection(): void {
     const o = this.parts.get(this.activePart) || this.environmentParts.get(this.activePart);
     if (this.selectionBox) {
-      this.selectionBox.visible = !!o;
-      if (o) this.selectionBox.setFromObject(o);
+      this.selectionBox.fit(o);
+      if (o && this.selectedId !== this.activePart) this.selectionBox.flash();
+      this.selectedId = o ? this.activePart : '';
     }
   }
   private rewriteLabel(object: THREE.Object3D, text: string): void {
@@ -898,10 +898,6 @@ export class WorldEngine implements SceneInputs {
     this.lastFrame = now;
     return seconds;
   }
-  /** The lens never leaves the room: zooming out stops under the ceiling and in front of the back wall. */
-  private keepCameraInRoom(): void {
-    if (this.camera && this.controls && keepInsideRoom(this.camera.position)) this.camera.lookAt(this.controls.target);
-  }
   /** Pixel ratio of the quality tier, scaled by the adaptive resolution and never above the device’s own. */
   private applyPixelRatio(): void {
     if (!this.renderer) return;
@@ -930,13 +926,15 @@ export class WorldEngine implements SceneInputs {
     const dt = Math.min(this.frameDelta(), 0.1);
     this.profiler.sample(dt);
     this.physics?.step(dt);
+    this.rig?.setReduced(this.reduced);
+    this.rig?.update(dt);
     this.controls?.update(dt);
-    this.keepCameraInRoom();
     this.lampController?.update(dt, this.reduced, this.shadowsOn);
     this.clock += dt;
     const seconds = this.reduced ? 0 : this.clock;
     for (const a of this.animators) a.update(seconds);
     if (this.selectionBox?.visible) this.updateSelection();
+    this.selectionBox?.update(dt, this.reduced);
     this.renderer.info.reset();
     if (this.statsFrame % 30 === 0) this.gpuProfiler?.begin();
     if (this.effects && this.viewMode === 'material') this.effects.render();
@@ -974,10 +972,12 @@ export class WorldEngine implements SceneInputs {
     this.gpuProfiler?.dispose();
     cancelAnimationFrame(this.frame);
     this.observer?.disconnect();
-    this.cameraMotion?.kill();
+    this.rig?.cancel();
     this.explodedMotion?.kill();
     this.pulseMotion?.kill();
     this.controls?.removeEventListener('start', this.cancelCamera);
+    this.canvas.removeEventListener('wheel', this.onWheel, true);
+    this.rig?.dispose();
     this.controls?.dispose();
     document.removeEventListener('visibilitychange', this.visibility);
     const canvas = this.canvas;

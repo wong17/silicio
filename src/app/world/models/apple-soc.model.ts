@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RENDER_ORDER } from '../render-order';
 import { APPLE_PARTS } from './station-layouts';
 import { WorkshopGeometry } from './workshop-geometry';
 export class AppleSocModel extends WorkshopGeometry {
@@ -96,6 +97,7 @@ export class AppleSocModel extends WorkshopGeometry {
       const glow = this.mesh(parent, this.tools.track(new T.PlaneGeometry(part.w - 0.18, part.d - 0.18)), material, part.x, top + 0.0135, part.z);
       glow.rotation.x = -Math.PI / 2;
       glow.userData['dynamic'] = true;
+      glow.renderOrder = RENDER_ORDER.glow;
       glows.push({ material, order });
     });
     // Each block lights in turn, as the cores and the GPU take their share of the work.

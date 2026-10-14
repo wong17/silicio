@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { RENDER_ORDER } from '../render-order';
 import { WorkshopGeometry } from './workshop-geometry';
 import { BENCH } from './bench-layout';
 import { LAMP_LINKS } from '../lamp-rig';
@@ -112,6 +113,8 @@ export class ArticulatedLampModel extends WorkshopGeometry {
     );
     beam.geometry.translate(0, -0.5, 0);
     beam.visible = false;
+    beam.renderOrder = RENDER_ORDER.beam;
+    beam.userData['noBounds'] = true;
     group.add(beam);
     const dustGeometry = this.tools.track(new T.BufferGeometry());
     dustGeometry.setAttribute('position', new T.Float32BufferAttribute(new Float32Array(DUST * 3), 3));
@@ -129,6 +132,8 @@ export class ArticulatedLampModel extends WorkshopGeometry {
       ),
     );
     dust.frustumCulled = false;
+    dust.renderOrder = RENDER_ORDER.dust;
+    dust.userData['noBounds'] = true;
     group.add(dust);
     // Moving parts are excluded from static batching; their poses are rewritten every frame.
     for (const m of [shoulder, elbow, wrist, upper, fore, handle, beam]) m.userData['dynamic'] = true;
