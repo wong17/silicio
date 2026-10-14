@@ -39,29 +39,27 @@
   }
 
   <div class="flags" role="group" aria-label="Flags de estado">
-    @for (f of flags; track f) {
+    @for (f of flags; track f.name) {
       <span
         class="flag"
         tabindex="0"
-        [class.on]="session.state().flags[f]"
-        [attr.data-tip]="meaning[f]"
-        [attr.aria-label]="f + ': ' + (session.state().flags[f] ? '1' : '0') + '. ' + meaning[f]"
+        [class.on]="session.state().flags[f.name]"
+        [attr.data-tip]="reasons()[f.name]"
+        [attr.aria-label]="f.name + ', ' + f.title + ': ' + (session.state().flags[f.name] ? '1' : '0') + '. ' + reasons()[f.name]"
       >
-        <span class="led" [class.on]="session.state().flags[f]" aria-hidden="true"></span>
-        <b>{{ f }}</b>
-        <small>{{ session.state().flags[f] ? '1' : '0' }}</small>
+        <span class="led" [class.on]="session.state().flags[f.name]" aria-hidden="true"></span>
+        <b>{{ f.name }}</b>
+        <small>{{ session.state().flags[f.name] ? '1' : '0' }}</small>
       </span>
     }
   </div>
 
-  <div class="verdicts">
-    <p [class.active]="carry()">
-      <b>CF</b>
-      {{ carry() ? 'acarreo o préstamo sin signo' : 'sin acarreo sin signo' }}
-    </p>
-    <p [class.active]="overflow()">
-      <b>OF</b>
-      {{ overflow() ? 'desbordamiento con signo' : 'sin desbordamiento con signo' }}
-    </p>
-  </div>
+  <ul class="reasons">
+    @for (f of flags; track f.name) {
+      <li [class.on]="session.state().flags[f.name]">
+        <b>{{ f.name }} · {{ f.title }}</b> {{ reasons()[f.name] }}
+      </li>
+    }
+  </ul>
+
 </section>

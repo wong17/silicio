@@ -13,7 +13,7 @@ describe('rótulos flotantes', () => {
     for (const box of layoutCallouts(anchors, free)) {
       expect(box.x).toBeGreaterThanOrEqual(free.x);
       expect(box.y).toBeGreaterThanOrEqual(free.y);
-      expect(box.x + 132).toBeLessThanOrEqual(free.x + free.width);
+      expect(box.x + 168).toBeLessThanOrEqual(free.x + free.width);
       expect(box.y + 26).toBeLessThanOrEqual(free.y + free.height);
     }
   });
@@ -24,7 +24,7 @@ describe('rótulos flotantes', () => {
       for (let j = i + 1; j < boxes.length; j++) {
         const a = boxes[i],
           b = boxes[j];
-        const overlap = a.x < b.x + 132 && b.x < a.x + 132 && a.y < b.y + 26 && b.y < a.y + 26;
+        const overlap = a.x < b.x + 168 && b.x < a.x + 168 && a.y < b.y + 26 && b.y < a.y + 26;
         expect(overlap, a.id + ' ' + b.id).toBe(false);
       }
   });

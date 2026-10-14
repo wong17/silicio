@@ -8,6 +8,7 @@ import type { LampTarget } from '../world/lamp-limits';
 import type { SceneCommand } from '../world/scene-toolbar/scene-toolbar.component';
 import { BufferExperiment, LaboratoryFacade } from './laboratory.facade';
 import type { CameraView, PieceAnchor, ScreenAnchor } from '../world/scene-inputs';
+import { PHASES, projectActivity, type Phase, type StationActivity } from './station-activity';
 import { describePiece, type PieceOption } from './piece-descriptions';
 
 export type Tab = 'state' | 'program' | 'trace';
@@ -86,6 +87,8 @@ export class LabSession {
   readonly calloutAnchors = signal<ScreenAnchor[]>([]);
   /** Which HUD drawers are open; kept across stations and saved with the preferences. */
   readonly hud = signal<{ map: boolean; tray: boolean }>({ map: false, tray: false });
+  /** Phase of the instruction journey being shown; the scene and the transport read it. */
+  readonly phase = signal<Phase>('idle');
   /** How far the chip is opened, 0 to 100 percent. */
   readonly explodeAmount = signal(100);
   readonly bufferExperiment = new BufferExperiment();
@@ -110,6 +113,12 @@ export class LabSession {
     experience: () => this.section(),
   });
   readonly laboratory = this.laboratoryFacade.view;
+  /** Revision of the executed step the activity belongs to. */
+  private stepSerial = 0;
+  private phaseTimer?: ReturnType<typeof setTimeout>;
+  readonly activity = computed<StationActivity>(() =>
+    projectActivity(this.laboratory() as never, this.phase(), this.revision()),
+  );
   readonly lastReads = computed(() => this.laboratory().accesses.some((a) => a.kind === 'read'));
   readonly lastWrites = computed(() => this.laboratory().accesses.some((a) => a.kind === 'write'));
   readonly bufferView = computed(() => {
@@ -357,7 +366,37 @@ export class LabSession {
     this.tick.update((n) => n + 1);
     this.activePart.set(event.reads.length || event.writes.length ? 'biu' : 'alu');
     this.revision.update((n) => n + 1);
+    this.playPhases();
     if (this.cpu.halted) this.pause();
+  }
+
+  /**
+   * Walks the instruction through fetch, decode, execute and write so each can be watched. Under reduced
+   * motion, and when a run is going fast, it lands on the final phase instead of replaying the journey.
+   */
+  playPhases(): void {
+    clearTimeout(this.phaseTimer);
+    this.stepSerial++;
+    if (this.reduced() || this.cursor() < 0) {
+      this.phase.set(this.cursor() < 0 ? 'idle' : 'write');
+      return;
+    }
+    const serial = this.stepSerial;
+    const unit = this.running() ? 70 : 260;
+    let index = 0;
+    const next = () => {
+      if (serial !== this.stepSerial) return;
+      this.phase.set(PHASES[index++]);
+      if (index < PHASES.length) this.phaseTimer = setTimeout(next, unit);
+    };
+    next();
+  }
+
+  /** Stops the journey on a chosen phase so it can be explained; the transport buttons call this. */
+  showPhase(phase: Phase): void {
+    clearTimeout(this.phaseTimer);
+    this.stepSerial++;
+    this.phase.set(phase);
   }
 
   run(): void {
@@ -392,6 +431,9 @@ export class LabSession {
     } else if (this.cpu.trace[index]) this.cpu.restore(this.cpu.trace[index].after);
     this.cursor.set(index);
     this.revision.update((n) => n + 1);
+    clearTimeout(this.phaseTimer);
+    this.stepSerial++;
+    this.phase.set(index < 0 ? 'idle' : 'write');
     this.activePart.set('frame-' + Math.max(0, index));
   }
 

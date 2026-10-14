@@ -1,6 +1,6 @@
 import { signal, computed } from '@angular/core';
 import type { LaboratorySources } from './laboratory.types';
-import { Snapshot, Trace, hex, Registers } from '../simulation/cpu8086';
+import { Snapshot, Trace, hex, Registers, physicalAddress } from '../simulation/cpu8086';
 export function projectLaboratory(s: Snapshot, e?: Trace) {
   return {
     registers: (Object.keys(s.registers) as (keyof Registers)[]).map((name) => ({
@@ -52,6 +52,9 @@ export class LaboratoryFacade {
     this.view = computed(() => ({
       ...projectLaboratory(sources.snapshot(), sources.event()),
       sessionId: '8086-' + this.session(),
+      fetchAddress: ((e) => (e ? physicalAddress(e.before.registers.CS, e.before.registers.IP) : undefined))(
+        sources.event(),
+      ),
       experience: sources.experience(),
       selectedPiece: sources.selection(),
     }));

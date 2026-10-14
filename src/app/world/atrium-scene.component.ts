@@ -56,6 +56,8 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   @Output() callouts = new EventEmitter<ScreenAnchor[]>();
   readonly supported = signal(true);
   private engine?: WorldEngine;
+  private markReady!: () => void;
+  private readonly ready = new Promise<void>((resolve) => (this.markReady = resolve));
   constructor(private zone: NgZone) {}
   ngAfterViewInit(): void {
     try {
@@ -74,10 +76,12 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
         this.engine.initialize();
         this.engine.update(readSceneInputs(this), new Set());
       });
+      this.markReady();
     } catch {
       this.engine?.dispose();
       this.engine = undefined;
       this.supported.set(false);
+      this.markReady();
     }
   }
   ngOnChanges(changes: SimpleChanges): void {
@@ -100,8 +104,10 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   setCallouts(on: boolean): void {
     this.engine?.setCallouts(on);
   }
-  thumbnail(id: string, size = 128): Promise<Blob | null> {
-    return this.engine?.thumbnail(id, size) ?? Promise.resolve(null);
+  /** Resolves once the engine exists (or never does, on a device without WebGL: then null). */
+  async thumbnail(id: string, size = 128): Promise<Blob | null> {
+    if (!this.engine) await this.ready;
+    return this.engine?.thumbnail(id, size) ?? null;
   }
   resetView(): void {
     this.engine?.resetView();

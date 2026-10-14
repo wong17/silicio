@@ -1,16 +1,30 @@
 <section class="register" aria-label="Registro de dieciséis bits">
-  <header class="head">
-    <label class="kicker" for="register">Registro</label>
-    <select id="register" [ngModel]="selected()" (ngModelChange)="selected.set($event)">
-      @for (g of groups; track g.label) {
-        <optgroup [label]="g.label">
-          @for (r of g.names; track r) {
-            <option [value]="r">{{ r }} · {{ titles[r] }}</option>
+  <div class="bank" role="group" aria-label="Registros del procesador">
+    @for (g of groups; track g.label) {
+      <div class="group" role="group" [attr.aria-label]="g.label">
+        <p class="kicker">{{ g.label }}</p>
+        <div class="cells">
+          @for (r of g.registers; track r.name) {
+            <button
+              type="button"
+              class="cell"
+              [class.changed]="changedRegister(r.name)"
+              [attr.aria-pressed]="selected() === r.name"
+              [attr.aria-label]="r.name + ', ' + r.title + ', valor ' + valueOf(r.name) + ' hexadecimal'"
+              (click)="selected.set(r.name)"
+            >
+              <span class="sig">{{ r.name }}</span>
+              <span class="val">{{ valueOf(r.name) }}</span>
+            </button>
           }
-        </optgroup>
-      }
-    </select>
-  </header>
+        </div>
+      </div>
+    }
+  </div>
+
+  <p class="role" aria-live="polite">
+    <strong>{{ info().name }} · {{ info().title }}.</strong> {{ info().role }}.
+  </p>
 
   <div class="readout">
     <strong>{{ view().hex }}<small>h</small></strong>
@@ -23,6 +37,13 @@
       }
     </div>
   </div>
+
+  @if (bytes(); as b) {
+    <div class="halves" aria-label="Mitades del registro">
+      <span><em>{{ selected()[0] }}H</em> {{ hex2(b.high) }}h</span>
+      <span><em>{{ selected()[0] }}L</em> {{ hex2(b.low) }}h</span>
+    </div>
+  }
 
   <div class="bits" role="group" aria-label="Bits del registro">
     @for (p of positions; track p) {
@@ -48,8 +69,6 @@
     <div class="meter" aria-hidden="true">
       <span [style.width.%]="bitOn(selectedBit()) ? 100 : 0"></span>
     </div>
-    <span class="readout-small">
-      peso {{ 2 ** selectedBit() }} · {{ bitOn(selectedBit()) ? 'suma ' + 2 ** selectedBit() : 'sin aportación' }}
-    </span>
+    <span class="readout-small">{{ bitDetail().text }}</span>
   </div>
 </section>

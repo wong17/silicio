@@ -55,3 +55,29 @@ body {
   animation: none !important;
   scroll-behavior: auto !important;
 }
+
+// Glossary terms: a dotted underline and a definition on hover or keyboard focus.
+.term {
+  position: relative;
+  cursor: help;
+  text-decoration: underline dotted rgba(240, 210, 156, 0.7);
+  text-underline-offset: 3px;
+}
+.term[data-term]:is(:hover, :focus-visible)::after {
+  content: attr(data-term);
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  width: max-content;
+  max-width: min(280px, 70vw);
+  padding: 8px 10px;
+  border: 1px solid #46514d;
+  border-radius: 8px;
+  background: #101314;
+  color: #e3ded2;
+  font: 400 13px/1.45 Barlow, sans-serif;
+  text-decoration: none;
+  white-space: normal;
+  pointer-events: none;
+}

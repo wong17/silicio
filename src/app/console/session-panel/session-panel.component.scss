@@ -105,3 +105,31 @@
   font-size: 13px;
   line-height: 1.55;
 }
+
+.glossary {
+  display: grid;
+  gap: 8px;
+  input {
+    min-height: 44px;
+  }
+  dl {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    max-height: 280px;
+    overflow: auto;
+  }
+  dt {
+    font-weight: 600;
+    color: kit.$amber-soft;
+    small {
+      font-weight: 400;
+      color: kit.$dim;
+    }
+  }
+  dd {
+    margin: 2px 0 0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+}

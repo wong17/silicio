@@ -25,7 +25,7 @@ export interface Bounds {
 export function layoutCallouts(
   anchors: ScreenAnchor[],
   free: Bounds,
-  size = { width: 132, height: 26 },
+  size = { width: 168, height: 26 },
   gap = 4,
 ): CalloutBox[] {
   const placed: CalloutBox[] = [];

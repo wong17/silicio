@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { TermDirective } from '../../../shared/term.directive';
 import { LabSession } from '../../../laboratory/lab-session.service';
 
 interface Unit {
@@ -11,6 +12,7 @@ interface Unit {
 
 /** Published M5 base units as a floor plan, plus the CPU → GPU → CPU buffer dependency. */
 @Component({
+  imports: [TermDirective],
   selector: 'app-apple-panel',
   templateUrl: './apple-panel.component.html',
   styleUrl: './apple-panel.component.scss',

@@ -3,7 +3,7 @@
     @for (l of legends(); track l.id) {
       <li [style.left.px]="l.x" [style.top.px]="l.y">
         <svg class="lead" aria-hidden="true">
-          <line [attr.x1]="l.ax - l.x" [attr.y1]="l.ay - l.y + 13" [attr.x2]="l.x < l.ax ? 132 : 0" [attr.y2]="13" />
+          <line [attr.x1]="l.ax - l.x" [attr.y1]="l.ay - l.y + 13" [attr.x2]="l.x < l.ax ? 168 : 0" [attr.y2]="13" />
         </svg>
         <button type="button" [class.on]="session.activePart() === l.id" (click)="picked.emit(l.id)">{{ l.name }}</button>
       </li>
@@ -12,6 +12,7 @@
 }
 
 <div class="dock">
+  <div class="drawers">
   @if (hud().tray) {
     <div class="drawer tray" data-occludes id="hud-tray">
       <app-piece-tray [thumbnailer]="thumbnailer()" (picked)="picked.emit($event)" (focused)="focused.emit($event)" />
@@ -27,6 +28,7 @@
       />
     </div>
   }
+  </div>
   <div class="toggles">
     <button
       type="button"

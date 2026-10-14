@@ -2,20 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LabSession } from '../../../laboratory/lab-session.service';
 import type { Registers } from '../../../simulation/cpu8086';
+import { bitWeight, halves, hasHalves, REGISTER_GROUP_ORDER, REGISTER_INFO, type RegisterInfo } from '../../../content/registers';
 
-/** Register groups for the selector; labels follow the 8086 programmer's model. */
-export const REGISTER_GROUPS: { label: string; names: (keyof Registers)[] }[] = [
-  { label: 'Datos', names: ['AX', 'BX', 'CX', 'DX'] },
-  { label: 'Punteros e índices', names: ['SP', 'BP', 'SI', 'DI'] },
-  { label: 'Segmentos', names: ['CS', 'DS', 'SS', 'ES'] },
-  { label: 'Control', names: ['IP'] },
-];
-export const REGISTER_TITLES: Record<string, string> = {
-  AX: 'Acumulador', BX: 'Base', CX: 'Contador', DX: 'Datos',
-  SP: 'Puntero de pila', BP: 'Puntero base', SI: 'Índice fuente', DI: 'Índice destino',
-  CS: 'Segmento de código', DS: 'Segmento de datos', SS: 'Segmento de pila', ES: 'Segmento extra',
-  IP: 'Puntero de instrucción',
-};
 /** Sixteen-bit register as a row of switchable LEDs; changed bits flash when a step moves them. */
 @Component({
   selector: 'app-register-panel',
@@ -24,8 +12,10 @@ export const REGISTER_TITLES: Record<string, string> = {
   styleUrl: './register-panel.component.scss',
 })
 export class RegisterPanelComponent {
-  readonly groups = REGISTER_GROUPS;
-  readonly titles = REGISTER_TITLES;
+  readonly groups = REGISTER_GROUP_ORDER.map((label) => ({
+    label,
+    registers: REGISTER_INFO.filter((r) => r.group === label),
+  }));
   readonly session = inject(LabSession);
   readonly selected = signal<keyof Registers>('AX');
   readonly selectedBit = signal(0);
@@ -43,6 +33,26 @@ export class RegisterPanelComponent {
     if (before === undefined) return undefined;
     return view.value - before;
   });
+
+  readonly info = computed<RegisterInfo>(() => REGISTER_INFO.find((r) => r.name === this.selected())!);
+  readonly bytes = computed(() => (hasHalves(this.selected()) ? halves(this.view().value) : undefined));
+  /** Weight and contribution of the focused bit, as spoken and shown in the detail row. */
+  readonly bitDetail = computed(() => bitWeight(this.selectedBit(), this.bitOn(this.selectedBit())));
+
+  /** Live value of any register for its cell in the bank. */
+  valueOf(name: keyof Registers): string {
+    this.session.revision();
+    return this.session.laboratory().registers.find((r) => r.name === name)?.hex ?? '0000';
+  }
+
+  hex2(value: number): string {
+    return value.toString(16).toUpperCase().padStart(2, '0');
+  }
+
+  changedRegister(name: keyof Registers): boolean {
+    this.session.revision();
+    return (this.session.laboratory().registers.find((r) => r.name === name)?.changedMask ?? 0) !== 0;
+  }
 
   bitOn(position: number): boolean {
     return ((this.view().value >>> position) & 1) === 1;

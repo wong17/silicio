@@ -161,3 +161,21 @@ svg {
     stroke-dashoffset: -24;
   }
 }
+
+.reasons {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.45;
+  color: kit.$dim;
+  li.on {
+    color: kit.$ink;
+  }
+  b {
+    color: kit.$amber-soft;
+    font-weight: 600;
+  }
+}

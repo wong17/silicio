@@ -35,9 +35,30 @@
       </dl>
     </div>
 
+    <div class="glossary">
+      <label class="kicker" for="glossary-search">Glosario ({{ total }} términos)</label>
+      <input
+        id="glossary-search"
+        type="search"
+        placeholder="Buscar: ALE, offset, SPD…"
+        [value]="query()"
+        (input)="query.set($any($event.target).value)"
+      />
+      <dl>
+        @for (t of terms(); track t.term) {
+          <div>
+            <dt>{{ t.term }} <small>{{ t.name }}</small></dt>
+            <dd>{{ t.definition }}</dd>
+          </div>
+        } @empty {
+          <p>Ningún término coincide.</p>
+        }
+      </dl>
+    </div>
+
     <p class="scope">
       El 8086 ejecuta un subconjunto admitido: MOV, ADD, SUB, CMP, INC, DEC, saltos, LOOP, NOP y HLT.
-      Sin temporización eléctrica ni interrupciones. Dirección = segmento × 16 + offset, limitada a 20
+      Sin temporización eléctrica ni interrupciones. Dirección = <span appTerm="segmento">segmento</span> × 16 + <span appTerm="offset">offset</span>, limitada a 20
       bits; las palabras se almacenan con el byte menos significativo primero.
     </p>
   </div>

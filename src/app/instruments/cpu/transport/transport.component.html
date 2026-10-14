@@ -51,3 +51,22 @@
     </span>
   </div>
 </div>
+
+<div class="phases" role="group" aria-label="Fases de la instrucción">
+  <ol>
+    @for (p of phases; track p.id; let i = $index) {
+      <li>
+        <button
+          type="button"
+          [attr.aria-pressed]="session.phase() === p.id"
+          [disabled]="session.cursor() < 0"
+          (click)="show(p.id)"
+        >
+          <span class="n" aria-hidden="true">{{ i + 1 }}</span>
+          {{ p.label }}
+        </button>
+      </li>
+    }
+  </ol>
+  <p class="summary" aria-live="polite">{{ summary() }}</p>
+</div>

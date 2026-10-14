@@ -2,6 +2,8 @@
 
 .light {
   @include kit.module;
+  gap: 8px;
+  padding: 10px;
 }
 
 .head {
