@@ -8,6 +8,8 @@ export type Section = 'atrium' | '8086' | 'memory' | 'time' | 'apple' | 'machine
 export interface SceneInputs {
   section: Section;
   exploded: boolean;
+  /** Opening of the chip, 0 to 1. */
+  explodedAmount: number;
   activePart: string;
   tick: number;
   memoryCells: { address: number; value: number }[];
@@ -27,7 +29,32 @@ export interface SceneInputs {
   lampOn: boolean;
 }
 
+/** Where a piece stands on the worktop (map) and, when callouts are on, on the canvas (CSS pixels). */
+export interface PieceAnchor {
+  id: string;
+  name: string;
+  x: number;
+  z: number;
+  scope: 'model' | 'bench';
+}
+export interface ScreenAnchor {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+}
+export interface CameraView {
+  azimuth: number;
+  distance: number;
+}
+
 export interface SceneCallbacks {
+  /** Model and bench piece positions, emitted when the station is (re)built. */
+  anchors: (anchors: PieceAnchor[]) => void;
+  /** Camera azimuth and distance, at most 10 times per second and only when they changed. */
+  view: (view: CameraView) => void;
+  /** Projected positions of the main model pieces, at most 10 times per second while callouts are on. */
+  callouts: (anchors: ScreenAnchor[]) => void;
   pieces: (pieces: PieceDefinition[]) => void;
   picked: (id: string) => void;
   /** Piece under the pointer, or null when the pointer leaves every piece. */
@@ -43,6 +70,7 @@ export function readSceneInputs(source: SceneInputs): SceneInputs {
   return {
     section: source.section,
     exploded: source.exploded,
+    explodedAmount: source.explodedAmount,
     activePart: source.activePart,
     tick: source.tick,
     memoryCells: source.memoryCells,

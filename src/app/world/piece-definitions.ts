@@ -1,3 +1,4 @@
+import { familyOf } from './piece-families';
 import { PIN_NAMES } from './cpu-pins';
 import type { PieceDefinition } from './interaction-registry';
 const names: Record<string, [string, string]> = {
@@ -217,6 +218,7 @@ export function pieceDefinition(id: string, experience: string): PieceDefinition
     id,
     name,
     description,
+    family: familyOf(id),
     scope: OPERABLE.has(id) || id.startsWith('tool') || id === 'supports' ? 'bench' : 'model',
     role:
       id.startsWith('tool') || OPERABLE.has(id)

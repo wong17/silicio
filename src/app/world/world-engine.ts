@@ -4,7 +4,9 @@ import { GpuResources } from './gpu-resources';
 import { releaseInstanceBuffers } from './instance-lifecycle';
 
 import * as THREE from 'three';
-import { SelectionMarker } from './selection-marker';
+import { SelectionMarker, selectionBounds } from './selection-marker';
+import { explodedOffset } from './exploded-layout';
+import { familyOf } from './piece-families';
 import { CameraRig } from './camera-rig';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -31,7 +33,7 @@ import { BENCH } from './models/bench-layout';
 import type { Reactions } from './models/workbench-props.model';
 import type { Animator, WorkshopTools } from './workshop-tools';
 
-import type { SceneInputs, SceneCallbacks, Section } from './scene-inputs';
+import type { SceneInputs, SceneCallbacks, Section, PieceAnchor, ScreenAnchor } from './scene-inputs';
 import { CPU_PARTS, APPLE_PARTS } from './models/station-layouts';
 
 const HOVER_INTERVAL_MS = 70;
@@ -46,9 +48,14 @@ const LAMP_GRIP_OFFSET = 0.56;
  * the lamp controller owns its pose, and the surface and label libraries own textures. This class
  * does not import Angular.
  */
+/** Layer used by thumbnail renders: the piece and the thumbnail lights are the only members. */
+const THUMBNAIL_LAYER = 7;
+
 export class WorldEngine implements SceneInputs {
   section: Section = 'atrium';
   exploded = false;
+  /** How far the chip is open, 0 to 1; only meaningful while `exploded` is true. */
+  explodedAmount = 1;
   activePart = '';
   tick = 0;
   memoryCells: { address: number; value: number }[] = [];
@@ -97,13 +104,25 @@ export class WorldEngine implements SceneInputs {
   private readonly tools: WorkshopTools = {
     track: (r) => this.track(r),
     material: (id, c, r, m, look?: SurfaceLook) => this.surfaces.material(id, c, r, m, look),
-    label: (p, t, x, y, z, w) => this.labels.create(p, t, x, y, z, w),
+    label: (p, t, x, y, z, w, o) => this.labels.create(p, t, x, y, z, w, o),
     animate: (update, scope = 'room') => this.animators.push({ update, scope }),
   };
   private animators: { update: Animator; scope: 'room' | 'subject' }[] = [];
   /** Scene time for animators; it advances with the frame delta and stays at zero under reduced motion. */
   private clock = 0;
   private rig?: CameraRig;
+  /** Floating legends over the main pieces; switched from the toolbar. */
+  private calloutsOn = false;
+  private calloutsDirty = true;
+  private telemetryClock = 0;
+  private lastView = { azimuth: Number.NaN, distance: Number.NaN };
+  private thumbnails = new Map<string, Blob>();
+  private thumbnailQueue: { id: string; size: number; resolve: (b: Blob | null) => void }[] = [];
+  private thumbnailRig?: {
+    camera: THREE.PerspectiveCamera;
+    target: THREE.WebGLRenderTarget;
+    lights: THREE.Light[];
+  };
   private explodedMotion?: gsap.core.Timeline;
   private pulseMotion?: gsap.core.Timeline;
   private packet?: THREE.Mesh;
@@ -154,7 +173,8 @@ export class WorldEngine implements SceneInputs {
       if (o instanceof THREE.Mesh && o.material instanceof THREE.MeshStandardMaterial)
         o.material.wireframe = this.viewMode === 'wireframe';
     });
-    if (changed.has('exploded')) this.updateParts();
+    if (changed.has('exploded') || changed.has('explodedAmount'))
+      this.updateParts(changed.has('exploded') ? 0.8 : 0.15);
     this.updateSelection();
     this.updateQuality();
     if (this.tick !== this.lastTick) {
@@ -316,6 +336,7 @@ export class WorldEngine implements SceneInputs {
       }
     });
     this.focusedObject = undefined;
+    this.releaseThumbnails();
     this.profiler.reset();
     this.gpuProfiler?.reset();
     this.contactBatches = [];
@@ -368,46 +389,29 @@ export class WorldEngine implements SceneInputs {
     root.position.y = BENCH.matTop - datum;
     root.updateMatrixWorld(true);
   }
-  private updateParts(): void {
+  private updateParts(duration = 0.8): void {
     this.explodedMotion?.kill();
     this.explodedMotion = gsap.timeline({
-      defaults: { duration: this.reduced ? 0 : 0.8, ease: 'power3.inOut', overwrite: 'auto' },
+      defaults: { duration: this.reduced ? 0 : duration, ease: 'power3.inOut', overwrite: 'auto' },
     });
+    const amount = this.exploded ? this.explodedAmount : 0;
     for (const [id, object] of this.parts) {
       const rest = object.userData['restY'] as number | undefined;
-      if (rest !== undefined && !id.startsWith('tool'))
-        this.explodedMotion.to(
-          object.position,
-          {
-            y:
-              rest +
-              (id === 'lid' && this.exploded && this.section !== 'atrium'
-                ? 2.1
-                : id !== 'lid' && this.exploded && ['8086', 'apple'].includes(this.section)
-                  ? 0.6
-                  : 0),
-          },
-          0,
-        );
+      const offset = explodedOffset(id, this.section, amount);
+      if (rest !== undefined && !id.startsWith('tool')) {
+        this.explodedMotion.to(object.position, { y: rest + offset.y }, 0);
+        if (id === 'lid')
+          this.explodedMotion.to(
+            object.position,
+            { x: offset.x, z: this.section === 'apple' ? 0.2 - 2.7 * (offset.x / 1.2) : offset.z },
+            0,
+          );
+      }
       object.visible =
         !(
           [...CPU_PARTS, ...APPLE_PARTS].some((p) => p.id === id) &&
           ['8086', 'apple'].includes(this.section)
-        ) || this.exploded;
-      if (id === 'lid')
-        this.explodedMotion.to(
-          object.position,
-          {
-            x: this.exploded && this.section !== 'atrium' ? 1.2 : 0,
-            z:
-              this.exploded && this.section !== 'atrium'
-                ? -2.5
-                : this.section === 'apple'
-                  ? 0.2
-                  : 0,
-          },
-          0,
-        );
+        ) || amount > 0;
     }
   }
   transfer(): void {
@@ -629,6 +633,155 @@ export class WorldEngine implements SceneInputs {
       if (id && this.parts.has(id)) this.registry.register(pieceDefinition(id, this.section), [o]);
     });
     this.callbacks.pieces(this.registry.listSelectable());
+    this.callbacks.anchors(this.collectAnchors());
+  }
+  private collectAnchors(): PieceAnchor[] {
+    const out: PieceAnchor[] = [];
+    const centre = new THREE.Vector3();
+    const box = new THREE.Box3();
+    const add = (id: string, object: THREE.Object3D, scope: 'model' | 'bench') => {
+      selectionBounds(object, box);
+      if (box.isEmpty()) return;
+      box.getCenter(centre);
+      out.push({ id, name: pieceDefinition(id, this.section).name, x: centre.x, z: centre.z, scope });
+    };
+    for (const [id, o] of this.parts) add(id, o, 'model');
+    for (const [id, o] of this.environmentParts) add(id, o, 'bench');
+    return out;
+  }
+  setCallouts(on: boolean): void {
+    this.calloutsOn = on;
+    this.telemetryClock = 1;
+    this.calloutsDirty = true;
+    if (!on) this.callbacks.callouts([]);
+  }
+  orbitTo(azimuth: number): void {
+    this.rig?.setReduced(this.reduced);
+    this.rig?.orbitTo(azimuth);
+  }
+  /** Camera view and callout anchors, throttled to 10 Hz and sent only when something moved. */
+  private emitTelemetry(dt: number): void {
+    this.telemetryClock += dt;
+    if (this.telemetryClock < 0.1 || !this.rig) return;
+    this.telemetryClock = 0;
+    const azimuth = this.rig.azimuth,
+      distance = this.rig.distance;
+    const moved =
+      Math.abs(azimuth - this.lastView.azimuth) > 0.002 || Math.abs(distance - this.lastView.distance) > 0.01;
+    if (moved) {
+      this.lastView = { azimuth, distance };
+      this.callbacks.view({ azimuth, distance });
+    }
+    if (this.calloutsOn && (moved || this.rig.moving || this.calloutsDirty))
+      this.callbacks.callouts(this.projectCallouts());
+    this.calloutsDirty = false;
+  }
+  private projectCallouts(): ScreenAnchor[] {
+    const w = this.canvas.clientWidth,
+      h = this.canvas.clientHeight;
+    const out: ScreenAnchor[] = [];
+    const v = new THREE.Vector3();
+    const box = new THREE.Box3();
+    this.camera.updateMatrixWorld();
+    for (const [id, o] of this.parts) {
+      if (!o.visible || familyOf(id)) continue;
+      selectionBounds(o, box);
+      if (box.isEmpty()) continue;
+      box.getCenter(v).project(this.camera);
+      if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) continue;
+      out.push({ id, name: pieceDefinition(id, this.section).name, x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h });
+    }
+    return out;
+  }
+  /**
+   * 3D thumbnail of one piece, drawn alone with its own lights (layer 7) so the room never shows through.
+   * Requests are served one per frame and cached for the station; null means no WebGL result.
+   */
+  thumbnail(id: string, size = 128): Promise<Blob | null> {
+    const hit = this.thumbnails.get(id);
+    if (hit) return Promise.resolve(hit);
+    if (!this.renderer || this.disposed) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      const queued = this.thumbnailQueue.find((q) => q.id === id);
+      if (queued) {
+        const first = queued.resolve;
+        queued.resolve = (b) => {
+          first(b);
+          resolve(b);
+        };
+      } else this.thumbnailQueue.push({ id, size, resolve });
+    });
+  }
+  private serveThumbnail(): void {
+    const job = this.thumbnailQueue.shift();
+    if (!job || !this.renderer) return;
+    const object = this.parts.get(job.id) ?? this.environmentParts.get(job.id);
+    const box = object ? selectionBounds(object, new THREE.Box3()) : undefined;
+    if (!object || !box || box.isEmpty()) return job.resolve(null);
+    const rig = (this.thumbnailRig ??= this.createThumbnailRig(job.size));
+    const pose = framePose(
+      rig.camera.fov,
+      box,
+      { x: 0, y: 0, width: job.size, height: job.size },
+      { width: job.size, height: job.size },
+      new THREE.Vector3(1, 1.1, 1.5),
+    );
+    rig.camera.position.copy(pose.position);
+    rig.camera.lookAt(pose.target);
+    rig.camera.updateMatrixWorld();
+    object.traverse((o) => o.layers.enable(THUMBNAIL_LAYER));
+    const previousTarget = this.renderer.getRenderTarget();
+    const previousShadow = this.renderer.shadowMap.enabled;
+    const previousBackground = this.scene.background;
+    const previousFog = this.scene.fog;
+    this.scene.background = null;
+    this.scene.fog = null;
+    this.renderer.shadowMap.enabled = false;
+    this.renderer.setRenderTarget(rig.target);
+    this.renderer.setClearColor('#14161a', 1);
+    this.renderer.clear();
+    this.renderer.render(this.scene, rig.camera);
+    const pixels = new Uint8Array(job.size * job.size * 4);
+    this.renderer.readRenderTargetPixels(rig.target, 0, 0, job.size, job.size, pixels);
+    this.renderer.setRenderTarget(previousTarget);
+    this.renderer.shadowMap.enabled = previousShadow;
+    this.scene.background = previousBackground;
+    this.scene.fog = previousFog;
+    object.traverse((o) => o.layers.disable(THUMBNAIL_LAYER));
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = job.size;
+    const context = canvas.getContext('2d');
+    if (!context) return job.resolve(null);
+    const image = context.createImageData(job.size, job.size);
+    for (let y = 0; y < job.size; y++)
+      image.data.set(
+        pixels.subarray((job.size - 1 - y) * job.size * 4, (job.size - y) * job.size * 4),
+        y * job.size * 4,
+      );
+    context.putImageData(image, 0, 0);
+    canvas.toBlob((blob) => {
+      if (blob && !this.disposed) this.thumbnails.set(job.id, blob);
+      job.resolve(blob);
+    }, 'image/png');
+  }
+  private createThumbnailRig(size: number) {
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 80);
+    camera.layers.set(THUMBNAIL_LAYER);
+    const target = new THREE.WebGLRenderTarget(size, size, { depthBuffer: true });
+    target.texture.colorSpace = THREE.SRGBColorSpace;
+    const key = new THREE.DirectionalLight('#fff1d8', 2.6),
+      fill = new THREE.HemisphereLight('#dfe8ff', '#403a30', 1.1);
+    key.position.set(3, 6, 4);
+    for (const l of [key, fill]) {
+      l.layers.set(THUMBNAIL_LAYER);
+      this.scene.add(l);
+    }
+    return { camera, target, lights: [key, fill] };
+  }
+  private releaseThumbnails(): void {
+    for (const job of this.thumbnailQueue) job.resolve(null);
+    this.thumbnailQueue = [];
+    this.thumbnails.clear();
   }
   private updateInputPolicy(): void {
     if (this.controls)
@@ -928,6 +1081,8 @@ export class WorldEngine implements SceneInputs {
     this.physics?.step(dt);
     this.rig?.setReduced(this.reduced);
     this.rig?.update(dt);
+    this.emitTelemetry(dt);
+    if (this.thumbnailQueue.length) this.serveThumbnail();
     this.controls?.update(dt);
     this.lampController?.update(dt, this.reduced, this.shadowsOn);
     this.clock += dt;
@@ -970,6 +1125,8 @@ export class WorldEngine implements SceneInputs {
     this.physics?.dispose();
     this.effects?.dispose();
     this.gpuProfiler?.dispose();
+    this.releaseThumbnails();
+    this.thumbnailRig?.target.dispose();
     cancelAnimationFrame(this.frame);
     this.observer?.disconnect();
     this.rig?.cancel();

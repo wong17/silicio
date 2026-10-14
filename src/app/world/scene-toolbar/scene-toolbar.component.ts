@@ -13,7 +13,10 @@ export type SceneCommand =
   | 'manipulate'
   | 'drop'
   | 'reset-tools'
-  | 'lamp-power';
+  | 'lamp-power'
+  | 'callouts'
+  | 'tray'
+  | 'map';
 
 export interface SceneTool {
   command: SceneCommand;
@@ -54,6 +57,7 @@ export const SCENE_TOOL_GROUPS: SceneToolGroup[] = [
       { command: 'explode', label: 'Abrir o cerrar chip', icon: 'chip', key: 'E', toggle: true, chipOnly: true },
       { command: 'representation', label: 'Malla y material', icon: 'wire', key: 'W', toggle: true },
       { command: 'light', label: 'Inspección cercana', icon: 'magnifier', key: 'I', toggle: true },
+      { command: 'callouts', label: 'Rotular piezas', icon: 'label', key: 'T', toggle: true },
     ],
   },
   {
@@ -91,6 +95,7 @@ export class SceneToolbarComponent {
   @Input() inspection = false;
   @Input() manipulate = false;
   @Input() lampOn = true;
+  @Input() callouts = false;
   /** True while a tool is in hand; the release command has nothing to do otherwise. */
   @Input() holding = false;
   @Output() command = new EventEmitter<SceneCommand>();
@@ -123,6 +128,8 @@ export class SceneToolbarComponent {
         return this.manipulate;
       case 'lamp-power':
         return this.lampOn;
+      case 'callouts':
+        return this.callouts;
       default:
         return null;
     }

@@ -7,6 +7,7 @@ import type { Section } from '../world/scene-inputs';
 import type { LampTarget } from '../world/lamp-limits';
 import type { SceneCommand } from '../world/scene-toolbar/scene-toolbar.component';
 import { BufferExperiment, LaboratoryFacade } from './laboratory.facade';
+import type { CameraView, PieceAnchor, ScreenAnchor } from '../world/scene-inputs';
 import { describePiece, type PieceOption } from './piece-descriptions';
 
 export type Tab = 'state' | 'program' | 'trace';
@@ -22,7 +23,7 @@ export const BUS_LIST = [
   { id: 'control', name: 'Control', detail: 'Indica la operación y coordina su realización.' },
 ];
 
-const INSTRUMENT_PARTS = [
+export const INSTRUMENT_PARTS = [
   'alu',
   'registers',
   'control',
@@ -77,6 +78,16 @@ export class LabSession {
   readonly segment = signal(0x2000);
   readonly offset = signal(10);
   readonly selectablePieces = signal<PieceOption[]>([]);
+  /** Piece positions and camera azimuth reported by the scene, read by the bench map. */
+  readonly anchors = signal<PieceAnchor[]>([]);
+  readonly cameraView = signal<CameraView>({ azimuth: 0.5, distance: 15 });
+  /** Floating legends over the main pieces (key T). */
+  readonly callouts = signal(false);
+  readonly calloutAnchors = signal<ScreenAnchor[]>([]);
+  /** Which HUD drawers are open; kept across stations and saved with the preferences. */
+  readonly hud = signal<{ map: boolean; tray: boolean }>({ map: false, tray: false });
+  /** How far the chip is opened, 0 to 100 percent. */
+  readonly explodeAmount = signal(100);
   readonly bufferExperiment = new BufferExperiment();
   source = MISSIONS[0].source;
   segmentText = '2000';
@@ -220,6 +231,7 @@ export class LabSession {
         this.quality.set(saved.quality);
       if (!saved.quality && narrow) this.quality.set('balanced');
       this.reduced.set(saved.reduced ?? prefersReduced);
+      if (saved.hud) this.hud.set({ map: !!saved.hud.map, tray: !!saved.hud.tray });
     } catch {
       this.reduced.set(prefersReduced);
     }
@@ -234,7 +246,10 @@ export class LabSession {
   /** Piece selection, including the side effects that open an assembly or toggle an element. */
   part(id: string): void {
     this.activePart.set(id);
-    if (INSTRUMENT_PARTS.includes(id)) this.exploded.set(true);
+    if (INSTRUMENT_PARTS.includes(id)) {
+      this.exploded.set(true);
+      if (this.explodeAmount() === 0) this.explodeAmount.set(100);
+    }
     if (id === 'lamp') this.inspection.set(!this.inspection());
     if (id === 'scope') this.signalChannel.set(this.signalChannel() === 'ALE' ? 'RD' : 'ALE');
     if (id.startsWith('cell-')) {
@@ -265,6 +280,15 @@ export class LabSession {
         break;
       case 'lamp-power':
         this.lampOn.set(!this.lampOn());
+        break;
+      case 'callouts':
+        this.callouts.set(!this.callouts());
+        break;
+      case 'tray':
+        this.setHud({ tray: !this.hud().tray });
+        break;
+      case 'map':
+        this.setHud({ map: !this.hud().map });
         break;
     }
   }
@@ -477,6 +501,11 @@ export class LabSession {
     this.savePreferences();
   }
 
+  setHud(patch: Partial<{ map: boolean; tray: boolean }>): void {
+    this.hud.update((h) => ({ ...h, ...patch }));
+    this.savePreferences();
+  }
+
   setQuality(value: Quality): void {
     this.quality.set(value);
     this.savePreferences();
@@ -486,7 +515,7 @@ export class LabSession {
     try {
       localStorage.setItem(
         'silicio.preferences',
-        JSON.stringify({ quality: this.quality(), reduced: this.reduced() }),
+        JSON.stringify({ quality: this.quality(), reduced: this.reduced(), hud: this.hud() }),
       );
     } catch {}
   }

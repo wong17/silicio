@@ -1,4 +1,5 @@
 import type * as T from 'three';
+import type { LabelOptions } from './textures/label-ink';
 import type { SurfaceLook } from './textures/surface-library';
 
 /** Per-frame update of one model part; `seconds` is scene time, frozen when reduced motion is on. */
@@ -13,7 +14,15 @@ export interface WorkshopTools {
     metalness: number,
     look?: SurfaceLook,
   ): T.MeshStandardMaterial;
-  label(parent: T.Object3D, text: string, x: number, y: number, z: number, width?: number): void;
+  label(
+    parent: T.Object3D,
+    text: string,
+    x: number,
+    y: number,
+    z: number,
+    width?: number,
+    options?: LabelOptions,
+  ): void;
   /**
    * Registers an animator. The room scope lives as long as the bench; the subject scope is dropped
    * when the station changes, together with the geometry it drives.

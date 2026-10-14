@@ -150,10 +150,16 @@ describe('SILICIO / shell y consola', () => {
   it('renderer_failure_keeps_accessible_pin_catalog', () => {
     const { fixture, session } = create();
     session.section.set('8086');
+    session.setHud({ tray: true });
     fixture.detectChanges();
-    const option = (fixture.nativeElement as HTMLElement).querySelector(
-      'select#piece option[value="pin-25"]',
+    const root = fixture.nativeElement as HTMLElement;
+    const family = [...root.querySelectorAll<HTMLButtonElement>('app-piece-tray [role="option"]')].find((b) =>
+      b.getAttribute('aria-label')?.startsWith('Terminales'),
     );
+    expect(family).toBeDefined();
+    family!.click();
+    fixture.detectChanges();
+    const option = root.querySelector('app-piece-tray .selector button[aria-label^="Pin 25"]');
     expect(option).not.toBeNull();
     session.part('pin-25');
     expect(session.selectedDescription()).toContain('ALE');
@@ -167,7 +173,9 @@ describe('SILICIO / shell y consola', () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('.address')).toBeNull();
     expect(root.textContent).not.toContain('Banco par · D0–D7');
-    expect(root.querySelector('select#piece option[value="cell-0"]')).toBeNull();
+    session.setHud({ tray: true });
+    fixture.detectChanges();
+    expect(root.querySelector('app-piece-tray')?.textContent).not.toContain('Bytes');
     expect(session.state().memory[0x2000a]).toBe(5);
   });
 });

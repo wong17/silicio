@@ -1,0 +1,53 @@
+@if (legends().length) {
+  <ul class="legends" aria-label="Rótulos de las piezas principales">
+    @for (l of legends(); track l.id) {
+      <li [style.left.px]="l.x" [style.top.px]="l.y">
+        <svg class="lead" aria-hidden="true">
+          <line [attr.x1]="l.ax - l.x" [attr.y1]="l.ay - l.y + 13" [attr.x2]="l.x < l.ax ? 132 : 0" [attr.y2]="13" />
+        </svg>
+        <button type="button" [class.on]="session.activePart() === l.id" (click)="picked.emit(l.id)">{{ l.name }}</button>
+      </li>
+    }
+  </ul>
+}
+
+<div class="dock">
+  @if (hud().tray) {
+    <div class="drawer tray" data-occludes id="hud-tray">
+      <app-piece-tray [thumbnailer]="thumbnailer()" (picked)="picked.emit($event)" (focused)="focused.emit($event)" />
+    </div>
+  }
+  @if (hud().map) {
+    <div class="drawer map" data-occludes id="hud-map">
+      <app-bench-map
+        (aimSelected)="aimSelected.emit()"
+        (picked)="picked.emit($event)"
+        (focused)="focused.emit($event)"
+        (orbit)="orbit.emit($event)"
+      />
+    </div>
+  }
+  <div class="toggles">
+    <button
+      type="button"
+      class="toggle"
+      [attr.aria-pressed]="hud().tray"
+      aria-controls="hud-tray"
+      aria-keyshortcuts="P"
+      (click)="toggleTray()"
+    >
+      Piezas
+    </button>
+    <button
+      type="button"
+      class="toggle"
+      [attr.aria-pressed]="hud().map"
+      aria-controls="hud-map"
+      aria-keyshortcuts="B"
+      (click)="toggleMap()"
+    >
+      <span class="led" [class.on]="session.lampOn()" aria-hidden="true"></span>
+      Mapa
+    </button>
+  </div>
+</div>

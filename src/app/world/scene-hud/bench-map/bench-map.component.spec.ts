@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { expect, it } from 'vitest';
-import { LightPadComponent } from './light-pad.component';
-import { LAMP_LIMITS } from '../../world/lamp-limits';
+import { BenchMapComponent } from './bench-map.component';
+import { LAMP_LIMITS } from '../../lamp-limits';
 
 it('height_slider_spans_the_lamp_limits', async () => {
-  await TestBed.configureTestingModule({ imports: [LightPadComponent] }).compileComponents();
-  const fixture = TestBed.createComponent(LightPadComponent);
+  await TestBed.configureTestingModule({ imports: [BenchMapComponent] }).compileComponents();
+  const fixture = TestBed.createComponent(BenchMapComponent);
   fixture.detectChanges();
   const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('#lamp-height')!;
   expect(Number(input.min)).toBe(LAMP_LIMITS.height[0]);

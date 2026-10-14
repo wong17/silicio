@@ -29,6 +29,7 @@
         [history]="session.historyView()"
         [viewMode]="session.viewMode()"
         [exploded]="session.exploded()"
+        [explodedAmount]="session.explodeAmount() / 100"
         [activePart]="session.activePart()"
         [tick]="session.tick()"
         [reduced]="session.reduced()"
@@ -42,6 +43,9 @@
         [lamp]="session.lampTarget()"
         [lampOn]="session.lampOn()"
         (pieces)="session.selectablePieces.set($event)"
+        (anchors)="session.anchors.set($event)"
+        (view)="session.cameraView.set($event)"
+        (callouts)="session.calloutAnchors.set($event)"
         (picked)="pick($event)"
         (hovered)="hoveredId.set($event)"
         (lampMoved)="session.lampTarget.set($event)"
@@ -74,8 +78,19 @@
       [manipulate]="session.manipulate()"
       [lampOn]="session.lampOn()"
       [holding]="holding() !== null"
+      [callouts]="session.callouts()"
       (command)="sceneCommand($event)"
     />
+
+    @if (session.section() !== 'atrium') {
+      <app-scene-hud
+        [thumbnailer]="thumbnailer"
+        (picked)="pick($event)"
+        (focused)="focusPiece($event)"
+        (orbit)="orbitTo($event)"
+        (aimSelected)="aimSelected()"
+      />
+    }
 
     <p class="scene-caption"><span aria-hidden="true"></span>{{ caption() }}</p>
     <div class="hover-tip" #tip [class.visible]="!!hoveredId()" aria-hidden="true">
@@ -170,11 +185,7 @@
         }
       }
 
-      @if (session.section() !== 'atrium') {
-        <app-light-pad (aimSelected)="aimSelected()" />
-      }
-
-      <app-piece-inspector (focus)="focusSelected()" />
+      <app-piece-inspector (focus)="focusSelected()" (aim)="aimSelected()" />
 
       @if (session.error()) {
         <p class="error" role="alert">{{ session.error() }}</p>

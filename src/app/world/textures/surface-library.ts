@@ -43,7 +43,7 @@ export function resolveSurface(
     exposed: look.exposed ?? (metal ? '#c6c9cb' : mixHex(color, '#d8d2c0', 0.35)),
     grime: look.grime ?? GRIME,
     dirt: look.dirt ?? 0.35,
-    wear: look.wear ?? (metal ? 0.5 : 0.18),
+    wear: look.wear ?? (metal ? 0.4 : 0.12),
     roughness: [Math.max(0.05, roughness * 0.8), Math.min(1, roughness * 1.1 + 0.04)],
     bump: look.bump ?? (metal ? 0.35 : 0.5),
     scratches: look.scratches ?? (metal ? 6 : 2),

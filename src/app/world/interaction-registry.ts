@@ -1,3 +1,4 @@
+import type { PieceFamily } from './piece-families';
 import * as T from 'three';
 export interface PieceDefinition {
   id: string;
@@ -7,6 +8,7 @@ export interface PieceDefinition {
   description?: string;
   /** Where the piece lives: the station's own model or the shared workbench. */
   scope?: 'model' | 'bench';
+  family?: PieceFamily;
   sourceRefs?: string[];
   modelFidelity?: string;
 }

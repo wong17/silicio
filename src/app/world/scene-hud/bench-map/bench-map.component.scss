@@ -1,4 +1,4 @@
-@use '../../shared/console-kit' as kit;
+@use '../../../shared/console-kit' as kit;
 
 .light {
   @include kit.module;
@@ -142,4 +142,33 @@
   @include kit.readout;
   font-size: 12px;
   color: kit.$dim;
+}
+
+.marker {
+  cursor: pointer;
+  .hit {
+    fill: transparent;
+  }
+  .dot {
+    fill: #8fb3a6;
+    stroke: #101314;
+    stroke-width: 1;
+  }
+  &:hover .dot,
+  &.selected .dot {
+    fill: kit.$amber-soft;
+    r: 4.6;
+  }
+}
+
+.wedge {
+  cursor: grab;
+  path {
+    fill: rgba(159, 214, 166, 0.35);
+    stroke: kit.$green;
+    stroke-width: 1;
+  }
+  .grip {
+    fill: transparent;
+  }
 }

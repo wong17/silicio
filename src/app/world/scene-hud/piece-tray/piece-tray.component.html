@@ -1,0 +1,68 @@
+<section class="tray" aria-label="Piezas del banco">
+  <header class="head">
+    <div class="scope" role="group" aria-label="Qué piezas listar">
+      <button type="button" [attr.aria-pressed]="scope() === 'model'" (click)="scope.set('model')">Modelo</button>
+      <button type="button" [attr.aria-pressed]="scope() === 'bench'" (click)="scope.set('bench')">Banco</button>
+    </div>
+    <p class="count">{{ pieces().length }} piezas</p>
+  </header>
+
+  <div class="cards" role="listbox" aria-label="Piezas" (keydown)="arrow($event)">
+    @for (item of items(); track item.kind === 'piece' ? item.piece.id : item.id; let first = $first) {
+      <button
+        type="button"
+        role="option"
+        class="card"
+        [class.family]="item.kind === 'family'"
+        [attr.aria-selected]="isSelected(item)"
+        [attr.aria-expanded]="item.kind === 'family' ? openFamily() === item.id : null"
+        [attr.tabindex]="first || isSelected(item) ? 0 : -1"
+        [attr.aria-label]="nameOf(item)"
+        (click)="choose(item)"
+      >
+        @if (pictureOf(item); as src) {
+          <img [src]="src" alt="" width="64" height="64" />
+        } @else {
+          <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true">
+            <rect x="8" y="14" width="48" height="36" rx="5" />
+            <path d="M16 14v-6M28 14v-6M40 14v-6M52 14v-6M16 50v6M28 50v6M40 50v6M52 50v6" />
+            <text x="32" y="38" text-anchor="middle">{{ initials(nameOf(item)) }}</text>
+          </svg>
+        }
+        <span class="name">{{ nameOf(item) }}</span>
+      </button>
+    }
+  </div>
+
+  @if (family(); as f) {
+    <div class="selector" [attr.data-layout]="f.layout" role="group" [attr.aria-label]="f.label">
+      @if (rows(); as r) {
+        <div class="dip">
+          <div class="row">
+            @for (m of r.top; track m.id) {
+              <button type="button" [class.on]="session.activePart() === m.id" [attr.aria-label]="m.name" (click)="pickMember(m.id)">
+                {{ label(m) }}
+              </button>
+            }
+          </div>
+          <div class="body" aria-hidden="true">DIP-40</div>
+          <div class="row">
+            @for (m of r.bottom; track m.id) {
+              <button type="button" [class.on]="session.activePart() === m.id" [attr.aria-label]="m.name" (click)="pickMember(m.id)">
+                {{ label(m) }}
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="grid" [style.--columns]="f.columns ?? f.members.length">
+          @for (m of f.members; track m.id) {
+            <button type="button" [class.on]="session.activePart() === m.id" [attr.aria-label]="m.name" (click)="pickMember(m.id)">
+              {{ label(m) }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+</section>

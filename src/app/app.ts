@@ -23,7 +23,7 @@ import { SceneToolbarComponent, type SceneCommand } from './world/scene-toolbar/
 import { ExperienceNavComponent } from './shell/experience-nav/experience-nav.component';
 import { ConsoleHeaderComponent } from './console/console-header/console-header.component';
 import { AtriumPortalsComponent } from './console/atrium-portals/atrium-portals.component';
-import { LightPadComponent } from './console/light-pad/light-pad.component';
+import { SceneHudComponent } from './world/scene-hud/scene-hud.component';
 import { PieceInspectorComponent } from './console/piece-inspector/piece-inspector.component';
 import { SessionPanelComponent } from './console/session-panel/session-panel.component';
 import { TransportComponent } from './instruments/cpu/transport/transport.component';
@@ -62,7 +62,7 @@ const NARROW = '(max-width: 899px)';
     SceneToolbarComponent,
     ConsoleHeaderComponent,
     AtriumPortalsComponent,
-    LightPadComponent,
+    SceneHudComponent,
     PieceInspectorComponent,
     SessionPanelComponent,
     TransportComponent,
@@ -132,6 +132,7 @@ export class App implements AfterViewInit, OnDestroy {
       .subscribe(() => this.route());
     // Motion follows the preference whichever control changed it: the system setting or the panel.
     effect(() => this.applyMotion(this.session.reduced()));
+    effect(() => this.world()?.setCallouts(this.session.callouts()));
   }
 
   private route(): void {
@@ -255,6 +256,9 @@ export class App implements AfterViewInit, OnDestroy {
       i: 'light',
       l: 'lamp-power',
       m: 'manipulate',
+      t: 'callouts',
+      p: 'tray',
+      b: 'map',
     };
     // Escape lets go of a tool in hand first; a second press leaves manipulation.
     if (event.key === 'Escape' && this.holding()) {
@@ -279,6 +283,18 @@ export class App implements AfterViewInit, OnDestroy {
   focusSelected(): void {
     this.world()?.focusSelected();
   }
+
+  /** Double click on a map marker or tray card: select, then frame. */
+  focusPiece(id: string): void {
+    this.pick(id);
+    queueMicrotask(() => this.world()?.focusSelected());
+  }
+
+  orbitTo(azimuth: number): void {
+    this.world()?.orbitTo(azimuth);
+  }
+
+  readonly thumbnailer = (id: string, size: number) => this.world()?.thumbnail(id, size) ?? Promise.resolve(null);
 
   /** Lights the selected piece. The lamp is switched on too, because an unlit lamp shows nothing. */
   aimSelected(): void {

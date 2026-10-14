@@ -1,10 +1,23 @@
 import * as THREE from 'three';
 import { RENDER_ORDER } from '../render-order';
+import { pickInk, hexLuminance, INK, type LabelOptions } from './label-ink';
 import { LABEL_HEIGHT, LABEL_WIDTH, paintLabel } from './label-canvas';
 
 interface LabelRecord {
   canvas: HTMLCanvasElement;
   text: string;
+  ink: string;
+  outline: string;
+  plate: boolean;
+}
+
+/** Relative luminance of the surface a legend is printed on; unknown hosts count as dark, as before. */
+export function surfaceLuminance(parent: THREE.Object3D, host?: string): number {
+  if (host) return hexLuminance(host);
+  const material = (parent as THREE.Mesh).material;
+  const m = Array.isArray(material) ? material[0] : material;
+  const color = (m as THREE.MeshStandardMaterial | undefined)?.color;
+  return color ? 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b : 0.02;
 }
 
 /** Printed legends placed on the bench. Canvases are kept so they can be repainted when fonts arrive. */
@@ -14,23 +27,41 @@ export class SceneLabels {
 
   constructor(private readonly track: <G extends THREE.Material | THREE.BufferGeometry | THREE.Texture>(r: G) => G) {
     void document.fonts?.ready.then(() => {
-      if (!this.disposed) for (const r of this.records) paintLabel(r.canvas, r.text);
+      if (!this.disposed) for (const r of this.records) paintLabel(r.canvas, r.text, r.ink, r.outline, r.plate);
     });
   }
 
-  create(parent: THREE.Object3D, text: string, x: number, y: number, z: number, width = 1.3): THREE.Mesh {
+  create(
+    parent: THREE.Object3D,
+    text: string,
+    x: number,
+    y: number,
+    z: number,
+    width = 1.3,
+    options: LabelOptions = {},
+  ): THREE.Mesh {
     const canvas = document.createElement('canvas');
     canvas.width = LABEL_WIDTH;
     canvas.height = LABEL_HEIGHT;
-    paintLabel(canvas, text);
-    const record = { canvas, text };
+    const mode = options.ink ?? 'auto';
+    const inks =
+      mode === 'light'
+        ? { ink: INK.light, outline: INK.dark }
+        : mode === 'dark'
+          ? { ink: INK.dark, outline: INK.light }
+          : pickInk(surfaceLuminance(parent, options.host));
+    const plate = options.plate ?? false;
+    paintLabel(canvas, text, inks.ink, inks.outline, plate);
+    const record = { canvas, text, ...inks, plate };
     this.records.add(record);
     const texture = this.track(new THREE.CanvasTexture(canvas));
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = 4;
+    texture.anisotropy = 8;
     const material = this.track(
-      new THREE.MeshBasicMaterial({
+      new THREE.MeshStandardMaterial({
         map: texture,
+        roughness: 0.85,
+        metalness: 0,
         transparent: true,
         depthWrite: false,
         polygonOffset: true,
@@ -56,8 +87,8 @@ export class SceneLabels {
       const record = o.userData['labelRecord'] as LabelRecord | undefined;
       if (!record || record.text === text) return;
       record.text = text;
-      paintLabel(record.canvas, text);
-      const material = (o as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      paintLabel(record.canvas, text, record.ink, record.outline, record.plate);
+      const material = (o as THREE.Mesh).material as THREE.MeshStandardMaterial;
       if (material.map) material.map.needsUpdate = true;
     });
   }

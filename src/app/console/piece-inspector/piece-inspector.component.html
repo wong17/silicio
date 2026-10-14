@@ -4,18 +4,34 @@
     <h3>{{ name() }}</h3>
   </header>
   <p class="description">{{ session.selectedDescription() }}</p>
-  <div class="row">
-    <label class="kicker" for="piece">Inspeccionar en el banco</label>
-    <select id="piece" [ngModel]="session.activePart()" (ngModelChange)="session.part($event)">
-      @for (p of modelPieces(); track p.id) {
-        <option [value]="p.id">{{ p.name }}</option>
-      }
-      <optgroup label="Banco de trabajo">
-        @for (p of benchPieces(); track p.id) {
-          <option [value]="p.id">{{ p.name }}</option>
-        }
-      </optgroup>
-    </select>
+
+  <div class="actions">
+    <button type="button" [attr.aria-busy]="busy() === 'focus'" [disabled]="busy() !== null" (click)="act('focus')">
+      Enfocar
+    </button>
+    <button type="button" [attr.aria-busy]="busy() === 'aim'" [disabled]="busy() !== null" (click)="act('aim')">
+      Iluminar
+    </button>
+    @if (chipStation() && internal() && !chipOpen()) {
+      <button type="button" [attr.aria-busy]="busy() === 'chip'" [disabled]="busy() !== null" (click)="act('chip')">
+        Abrir chip
+      </button>
+    }
   </div>
-  <button type="button" class="focus" (click)="focus.emit()">Enfocar en el banco</button>
+
+  @if (chipStation()) {
+    <div class="amount">
+      <label class="kicker" for="explode-amount">Apertura del chip</label>
+      <input
+        id="explode-amount"
+        type="range"
+        min="0"
+        max="100"
+        step="5"
+        [value]="session.exploded() ? session.explodeAmount() : 0"
+        (input)="setAmount($any($event.target).value)"
+      />
+      <output for="explode-amount">{{ session.exploded() ? session.explodeAmount() : 0 }} %</output>
+    </div>
+  }
 </section>

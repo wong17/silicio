@@ -16,6 +16,7 @@ import { WorldEngine } from './world-engine';
 import { readSceneInputs, type SceneInputs, type Section, type QualityTier } from './scene-inputs';
 import type { PieceDefinition } from './interaction-registry';
 import type { LampTarget } from './lamp-limits';
+import type { CameraView, PieceAnchor, ScreenAnchor } from './scene-inputs';
 export type { Section } from './scene-inputs';
 
 /** Angular adapter for the 3D bench: inputs go to the engine, callbacks return inside the zone. */
@@ -28,6 +29,7 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   @ViewChild('canvas', { static: true }) private canvasRef!: ElementRef<HTMLCanvasElement>;
   @Input() section: Section = 'atrium';
   @Input() exploded = false;
+  @Input() explodedAmount = 1;
   @Input() activePart = '';
   @Input() tick = 0;
   @Input() memoryCells: { address: number; value: number }[] = [];
@@ -49,6 +51,9 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   @Output() hovered = new EventEmitter<string | null>();
   @Output() lampMoved = new EventEmitter<LampTarget>();
   @Output() holding = new EventEmitter<string | null>();
+  @Output() anchors = new EventEmitter<PieceAnchor[]>();
+  @Output() view = new EventEmitter<CameraView>();
+  @Output() callouts = new EventEmitter<ScreenAnchor[]>();
   readonly supported = signal(true);
   private engine?: WorldEngine;
   constructor(private zone: NgZone) {}
@@ -61,6 +66,9 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
           hovered: (id) => this.zone.run(() => this.hovered.emit(id)),
           lampMoved: (target) => this.zone.run(() => this.lampMoved.emit(target)),
           holding: (id) => this.zone.run(() => this.holding.emit(id)),
+          anchors: (a) => this.zone.run(() => this.anchors.emit(a)),
+          view: (v) => this.zone.run(() => this.view.emit(v)),
+          callouts: (c) => this.zone.run(() => this.callouts.emit(c)),
           unavailable: () => this.zone.run(() => this.supported.set(false)),
         });
         this.engine.initialize();
@@ -85,6 +93,15 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   }
   zoom(factor: number): void {
     this.engine?.zoom(factor);
+  }
+  orbitTo(azimuth: number): void {
+    this.engine?.orbitTo(azimuth);
+  }
+  setCallouts(on: boolean): void {
+    this.engine?.setCallouts(on);
+  }
+  thumbnail(id: string, size = 128): Promise<Blob | null> {
+    return this.engine?.thumbnail(id, size) ?? Promise.resolve(null);
   }
   resetView(): void {
     this.engine?.resetView();

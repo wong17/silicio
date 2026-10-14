@@ -1,6 +1,6 @@
-<section class="light" aria-label="Panel de luz del banco">
+<section class="light" aria-label="Mapa del banco">
   <header class="head">
-    <p class="kicker">Iluminación del banco</p>
+    <p class="kicker">Mapa del banco</p>
     <button
       type="button"
       class="power"
@@ -41,7 +41,25 @@
     <circle class="pool" [attr.cx]="spot().cx" [attr.cy]="spot().cy" [attr.r]="spot().radius" />
     <circle class="target" [attr.cx]="spot().cx" [attr.cy]="spot().cy" r="5" />
     <path class="axis" [attr.d]="'M' + spot().cx + ' ' + (spot().cy - 9) + 'v18M' + (spot().cx - 9) + ' ' + spot().cy + 'h18'" />
-    <text class="camera" [attr.x]="width / 2" [attr.y]="height - 8">cámara</text>
+    @for (m of markers(); track m.id) {
+      <g
+        class="marker"
+        [class.selected]="m.selected"
+        role="button"
+        tabindex="-1"
+        [attr.aria-label]="m.name"
+        (pointerdown)="markerDown($event, m.id)"
+        (dblclick)="focused.emit(m.id)"
+      >
+        <title>{{ m.name }}</title>
+        <circle [attr.cx]="m.cx" [attr.cy]="m.cy" r="9" class="hit" />
+        <circle [attr.cx]="m.cx" [attr.cy]="m.cy" r="3.4" class="dot" />
+      </g>
+    }
+    <g class="wedge" role="slider" aria-label="Posición de la cámara" [attr.aria-valuenow]="wedge().degrees" aria-valuemin="-180" aria-valuemax="180" (pointerdown)="wedgeDown($event)">
+      <path [attr.d]="wedge().path" />
+      <circle [attr.cx]="wedge().x" [attr.cy]="wedge().y" r="9" class="grip" />
+    </g>
   </svg>
 
   <div class="height">
