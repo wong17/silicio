@@ -43,5 +43,5 @@ npm run check:offline -- --dist
 npm run preview               # http://127.0.0.1:4300
 ```
 
-Es una aplicación estática de una sola página: sirve `dist/silicio/browser` desde cualquier hosting y reescribe las rutas (`/8086`, `/memory`…) a `index.html`. Ya incluye `public/_redirects` (Netlify), `netlify.toml` y `vercel.json`; para GitHub Pages copia `index.html` a `404.html`; para Cloudflare usa `wrangler.jsonc` (Build command `npm run build`, Deploy command `npx wrangler deploy`). Todo (fuentes, worker, WASM) viaja en el paquete: no hace peticiones a otros orígenes. Carga inicial de unos 609 kB; la escena (834 kB) y la física Rapier (4,3 MB, 1,2 MB comprimida) llegan diferidas.
+Es una aplicación estática de una sola página: sirve `dist/silicio/browser` desde cualquier hosting y reescribe las rutas (`/8086`, `/memory`…) a `index.html`. Ya incluye `netlify.toml` y `vercel.json` (Cloudflare lo resuelve con `wrangler.jsonc`, y un `_redirects` con `/* /index.html 200` allí falla); para GitHub Pages copia `index.html` a `404.html`; para Cloudflare usa `wrangler.jsonc` (Build command `npm run build`, Deploy command `npx wrangler deploy`). Todo (fuentes, worker, WASM) viaja en el paquete: no hace peticiones a otros orígenes. Carga inicial de unos 609 kB; la escena (834 kB) y la física Rapier (4,3 MB, 1,2 MB comprimida) llegan diferidas.
 
