@@ -52,6 +52,7 @@
         (hovered)="hoveredId.set($event)"
         (lampMoved)="session.lampTarget.set($event)"
         (holding)="holding.set($event)"
+        (qualitySuggested)="suggestQuality($event)"
       />
     } @placeholder {
       <p class="scene-loading" role="status">Preparando el banco…</p>

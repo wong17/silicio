@@ -5,7 +5,7 @@ import { releaseInstanceBuffers } from './instance-lifecycle';
 
 import * as THREE from 'three';
 import { AmbientDust } from './effects/ambient-dust';
-import { IdleGovernor, ResolutionGovernor } from './render-governors';
+import { IdleGovernor, QualityGovernor, ResolutionGovernor } from './render-governors';
 import { HoverGlow } from './hover-glow';
 import { SelectionMarker, selectionBounds } from './selection-marker';
 import { ActivityChannel, IDLE_ACTIVITY, type StationActivity } from '../laboratory/station-activity';
@@ -57,6 +57,13 @@ const LAMP_GRIP_OFFSET = 0.56;
  */
 /** Layer used by thumbnail renders: the piece and the thumbnail lights are the only members. */
 const THUMBNAIL_LAYER = 7;
+
+/** Authored camera for framing a piece: distance in world units, angles in degrees. */
+export interface FocusView {
+  distance?: number;
+  azimuth?: number;
+  polar?: number;
+}
 
 export class WorldEngine implements SceneInputs {
   section: Section = 'atrium';
@@ -126,6 +133,7 @@ export class WorldEngine implements SceneInputs {
   private pixelRatioDirty = false;
   private dust?: AmbientDust;
   private readonly resolutionGovernor = new ResolutionGovernor();
+  private readonly qualityGovernor = new QualityGovernor();
   private readonly idleGovernor = new IdleGovernor();
   private readonly hoverGlow = new HoverGlow();
   private readonly activityChannel = new ActivityChannel();
@@ -510,27 +518,40 @@ export class WorldEngine implements SceneInputs {
     const bottom = Math.max(top + 64, bottomEdge);
     return { x: 16, y: top, width: Math.max(64, r.width - 32), height: Math.max(64, bottom - top) };
   }
-  private fitObject(o: THREE.Object3D): void {
+  private fitObject(o: THREE.Object3D, view?: FocusView): void {
     if (!this.controls || !this.camera || !this.rig) return;
-    const b = new THREE.Box3().setFromObject(o);
+    const b = selectionBounds(o, new THREE.Box3());
     if (b.isEmpty()) return;
     const canvas = this.canvas;
+    let direction = this.camera.position.clone().sub(this.controls.target);
+    if (view?.azimuth !== undefined || view?.polar !== undefined) {
+      // An authored angle (exhibition mode): azimuth around the bench, polar from the vertical, in degrees.
+      const az = THREE.MathUtils.degToRad(view.azimuth ?? 25),
+        phi = THREE.MathUtils.degToRad(view.polar ?? 55);
+      direction = new THREE.Vector3(Math.sin(phi) * Math.sin(az), Math.cos(phi), Math.sin(phi) * Math.cos(az));
+    }
     const pose = framePose(
       this.camera.fov,
       b,
       this.freeRegion(),
       { width: canvas.clientWidth, height: canvas.clientHeight },
-      this.camera.position.clone().sub(this.controls.target),
+      direction,
     );
+    if (view?.distance !== undefined) {
+      // Small pieces would otherwise fill the view with a single face: keep a readable distance.
+      const away = pose.position.clone().sub(pose.target);
+      const wanted = Math.max(away.length(), view.distance);
+      pose.position.copy(pose.target).addScaledVector(away.normalize(), wanted);
+    }
     this.controls.minDistance = Math.max(0.3, b.getBoundingSphere(new THREE.Sphere()).radius * 0.7);
     this.rig.setReduced(this.reduced);
     this.rig.moveTo(pose);
   }
-  focusSelected(): void {
+  focusSelected(view?: FocusView): void {
     const o = this.parts.get(this.activePart) || this.environmentParts.get(this.activePart);
     if (!o || !o.visible) return;
-    this.focusedObject = o;
-    this.fitObject(o);
+    this.focusedObject = view ? undefined : o;
+    this.fitObject(o, view);
   }
   /**
    * Aims the lamp at the centre of a bench piece, keeping the head height. `limit` means the arm
@@ -1189,6 +1210,15 @@ export class WorldEngine implements SceneInputs {
   private adaptResolution(): void {
     const profile = this.profiler.result;
     if (profile.samples < 60) return;
+    const suggestion = this.qualityGovernor.update(this.quality, profile.p50, this.resolutionGovernor.value);
+    if (suggestion) {
+      this.profiler.reset();
+      this.resolutionGovernor.reset();
+      this.resolutionScale = 1;
+      this.pixelRatioDirty = true;
+      this.callbacks.qualitySuggested(suggestion);
+      return;
+    }
     const next = this.resolutionGovernor.update(profile.p50);
     if (next === this.resolutionScale) return;
     this.resolutionScale = next;

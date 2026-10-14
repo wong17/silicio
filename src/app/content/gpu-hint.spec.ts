@@ -13,3 +13,16 @@ describe('pista de GPU débil', () => {
     expect(isWeakGpu(undefined)).toBe(false);
   });
 });
+
+import { initialTier } from './gpu-hint';
+describe('perfil inicial', () => {
+  it('weak_devices_start_light', () => {
+    expect(initialTier({ gpu: 'NVIDIA GeForce GT 730', narrow: false })).toBe('low');
+    expect(initialTier({ cores: 2, narrow: false })).toBe('low');
+    expect(initialTier({ memory: 2, narrow: true })).toBe('low');
+  });
+  it('capable_devices_start_balanced', () => {
+    expect(initialTier({ gpu: 'Apple M2', cores: 8, memory: 8, narrow: false })).toBe('balanced');
+    expect(initialTier({ narrow: true })).toBe('balanced');
+  });
+});

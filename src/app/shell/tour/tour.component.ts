@@ -6,7 +6,7 @@ import { TOUR, type TourStep } from '../../content/tour';
   selector: 'app-tour',
   template: `
     @if (step(); as s) {
-      <aside class="tour" role="dialog" aria-label="Modo exposición" aria-live="polite">
+      <aside class="tour" data-occludes role="dialog" aria-label="Modo exposición" aria-live="polite">
         <p class="meta">
           <span>{{ s.slot }}</span>
           <span>Paso {{ position() + 1 }} de {{ total }}</span>

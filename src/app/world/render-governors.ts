@@ -84,3 +84,47 @@ export class IdleGovernor {
     return this.parity === 1;
   }
 }
+
+export type Tier = 'high' | 'balanced' | 'low';
+const ORDER: Tier[] = ['low', 'balanced', 'high'];
+
+/**
+ * Picks the graphics profile from what the frames cost. It steps down when the resolution had to fall and
+ * the frame is still slow for several windows, and steps up only after a long calm stretch at full
+ * resolution. Never more than one tier per decision, and a cool-down between decisions.
+ */
+export class QualityGovernor {
+  private slow = 0;
+  private fast = 0;
+  private cooldown = 0;
+
+  static readonly SLOW_WINDOWS = 3;
+  static readonly FAST_WINDOWS = 8;
+  static readonly COOLDOWN = 4;
+
+  /** `p50` in ms, `scale` the resolution governor's value. Returns a tier to move to, or undefined. */
+  update(tier: Tier, p50: number, scale: number): Tier | undefined {
+    if (this.cooldown > 0) {
+      this.cooldown--;
+      return undefined;
+    }
+    const i = ORDER.indexOf(tier);
+    this.slow = p50 > 24 && scale <= 0.8 ? this.slow + 1 : 0;
+    this.fast = p50 > 0 && p50 < 11 && scale >= 1 ? this.fast + 1 : 0;
+    if (this.slow >= QualityGovernor.SLOW_WINDOWS && i > 0) {
+      this.slow = this.fast = 0;
+      this.cooldown = QualityGovernor.COOLDOWN;
+      return ORDER[i - 1];
+    }
+    if (this.fast >= QualityGovernor.FAST_WINDOWS && i < ORDER.length - 1) {
+      this.slow = this.fast = 0;
+      this.cooldown = QualityGovernor.COOLDOWN;
+      return ORDER[i + 1];
+    }
+    return undefined;
+  }
+
+  reset(): void {
+    this.slow = this.fast = this.cooldown = 0;
+  }
+}

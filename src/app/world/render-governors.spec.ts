@@ -46,3 +46,36 @@ describe('gobernadores de render', () => {
     for (let t = 1000; t < 1100; t += 16) expect(g.frameAllowed(t, true)).toBe(true);
   });
 });
+
+import { QualityGovernor } from './render-governors';
+describe('calidad automática', () => {
+  it('steps_down_after_sustained_slowness', () => {
+    const g = new QualityGovernor();
+    expect(g.update('high', 30, 0.7)).toBeUndefined();
+    expect(g.update('high', 30, 0.7)).toBeUndefined();
+    expect(g.update('high', 30, 0.7)).toBe('balanced');
+  });
+  it('one_slow_window_is_not_enough', () => {
+    const g = new QualityGovernor();
+    g.update('balanced', 40, 0.6);
+    g.update('balanced', 12, 1);
+    expect(g.update('balanced', 40, 0.6)).toBeUndefined();
+  });
+  it('cools_down_between_decisions', () => {
+    const g = new QualityGovernor();
+    for (let i = 0; i < 3; i++) g.update('high', 30, 0.7);
+    for (let i = 0; i < QualityGovernor.COOLDOWN; i++) expect(g.update('balanced', 30, 0.7)).toBeUndefined();
+  });
+  it('never_goes_below_low_or_above_high', () => {
+    const g = new QualityGovernor();
+    for (let i = 0; i < 10; i++) expect(g.update('low', 60, 0.5)).toBeUndefined();
+    const h = new QualityGovernor();
+    for (let i = 0; i < 20; i++) expect(h.update('high', 6, 1)).toBeUndefined();
+  });
+  it('steps_up_only_after_a_long_calm_stretch', () => {
+    const g = new QualityGovernor();
+    let result: string | undefined;
+    for (let i = 0; i < 8; i++) result = g.update('low', 8, 1);
+    expect(result).toBe('balanced');
+  });
+});

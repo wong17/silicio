@@ -11,6 +11,7 @@
   </ul>
 }
 
+@if (session.tourIndex() === null) {
 <div class="dock">
   <div class="drawers">
   @if (hud().tray) {
@@ -53,3 +54,4 @@
     </button>
   </div>
 </div>
+}

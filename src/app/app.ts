@@ -19,7 +19,7 @@ import Lenis from 'lenis';
 import { EXPERIENCES } from './content/experiences';
 import { LabSession, type Tab } from './laboratory/lab-session.service';
 import { fromQuery, readShot, toQuery } from './content/deeplink';
-import { isWeakGpu } from './content/gpu-hint';
+import { initialTier } from './content/gpu-hint';
 import { PerfMeterComponent } from './shell/perf-meter/perf-meter.component';
 import { TourComponent } from './shell/tour/tour.component';
 import { StationMissionComponent } from './console/station-mission/station-mission.component';
@@ -235,7 +235,16 @@ export class App implements AfterViewInit, OnDestroy {
     // First visit on an old GPU: start with the light profile instead of waiting for the resolution to fall.
     setTimeout(() => {
       const gpu = document.querySelector('canvas[data-gpu]')?.getAttribute('data-gpu') ?? undefined;
-      if (!this.session.qualityChosen && isWeakGpu(gpu)) this.session.quality.set('low');
+      const nav = navigator as Navigator & { deviceMemory?: number };
+      if (!this.session.qualityChosen)
+        this.session.quality.set(
+          initialTier({
+            gpu,
+            cores: nav.hardwareConcurrency,
+            memory: nav.deviceMemory,
+            narrow: matchMedia(NARROW).matches,
+          }),
+        );
     }, 1500);
     this.media.addEventListener('change', this.mediaChanged);
     this.zone.runOutsideAngular(() => {
@@ -378,6 +387,9 @@ export class App implements AfterViewInit, OnDestroy {
     const next = Math.min(TOUR.length - 1, Math.max(0, current + delta));
     this.session.tourIndex.set(next);
     const step = TOUR[next];
+    // The talk needs a clear scene: drawers and legends stay out of the way while it runs.
+    this.session.hud.set({ map: false, tray: false });
+    this.session.callouts.set(false);
     if (step.memoryModel) this.session.memoryModel.set(step.memoryModel);
     const place = () => {
       this.session.part(step.piece);
@@ -386,7 +398,7 @@ export class App implements AfterViewInit, OnDestroy {
         this.session.exploded.set(step.open);
         if (step.open && this.session.explodeAmount() === 0) this.session.explodeAmount.set(100);
       }
-      setTimeout(() => this.world()?.focusSelected(), 250);
+      setTimeout(() => this.world()?.focusSelected(step.view), 450);
     };
     if (this.session.section() === step.station) place();
     else {
@@ -396,6 +408,14 @@ export class App implements AfterViewInit, OnDestroy {
 
   tourExit(): void {
     this.session.tourIndex.set(null);
+  }
+
+  /** The scene measured its own frames; an automatic change never overrides a profile the student chose. */
+  suggestQuality(tier: 'high' | 'balanced' | 'low'): void {
+    if (this.session.qualityChosen) return;
+    this.session.quality.set(tier);
+    const names = { high: 'Detalle', balanced: 'Equilibrado', low: 'Ligero' };
+    this.session.notice.set(`Gráficos ajustados automáticamente a «${names[tier]}». Puedes cambiarlo en Sesión.`);
   }
 
   pick(id: string): void {

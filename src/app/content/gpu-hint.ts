@@ -4,3 +4,18 @@ const WEAK = [/\bGT\s?[0-9]{3}\b/i, /\bGeForce\s+(?:GT\s?)?[0-9]{3}\b/i, /Intel.
 export function isWeakGpu(renderer: string | undefined): boolean {
   return !!renderer && WEAK.some((p) => p.test(renderer));
 }
+
+export interface DeviceInfo {
+  gpu?: string;
+  cores?: number;
+  /** navigator.deviceMemory in GB, when the browser reports it. */
+  memory?: number;
+  narrow: boolean;
+}
+
+/** First profile for a device: only the clearly weak start light; the runtime governor refines it. */
+export function initialTier(d: DeviceInfo): 'high' | 'balanced' | 'low' {
+  if (isWeakGpu(d.gpu)) return 'low';
+  if ((d.memory !== undefined && d.memory <= 2) || (d.cores !== undefined && d.cores <= 2)) return 'low';
+  return 'balanced';
+}

@@ -19,6 +19,13 @@ describe('modo exposición', () => {
       expect(s.line.length).toBeGreaterThan(20);
     }
   });
+  it('every_step_frames_a_readable_view', () => {
+    for (const s of TOUR) {
+      expect(s.view.distance, s.id).toBeGreaterThanOrEqual(6);
+      expect(s.view.polar, s.id).toBeGreaterThan(20);
+      expect(s.view.polar, s.id).toBeLessThan(80);
+    }
+  });
   it('covers_every_station', () => {
     expect(new Set(TOUR.map((s) => s.station))).toEqual(new Set(['8086', 'memory', 'time', 'apple', 'machine']));
   });

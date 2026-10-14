@@ -70,6 +70,8 @@ export interface SceneCallbacks {
   /** Tool in hand, or null when the hand is empty. */
   holding: (id: string | null) => void;
   unavailable: () => void;
+  /** The frames say another graphics profile fits this device better. */
+  qualitySuggested: (tier: QualityTier) => void;
 }
 
 export function readSceneInputs(source: SceneInputs): SceneInputs {

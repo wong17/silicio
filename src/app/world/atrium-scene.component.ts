@@ -12,7 +12,7 @@ import {
   ViewChild,
   signal,
 } from '@angular/core';
-import { WorldEngine } from './world-engine';
+import { WorldEngine, type FocusView } from './world-engine';
 import { readSceneInputs, type SceneInputs, type Section, type QualityTier } from './scene-inputs';
 import type { PieceDefinition } from './interaction-registry';
 import type { LampTarget } from './lamp-limits';
@@ -55,6 +55,7 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   @Output() hovered = new EventEmitter<string | null>();
   @Output() lampMoved = new EventEmitter<LampTarget>();
   @Output() holding = new EventEmitter<string | null>();
+  @Output() qualitySuggested = new EventEmitter<QualityTier>();
   @Output() anchors = new EventEmitter<PieceAnchor[]>();
   @Output() view = new EventEmitter<CameraView>();
   @Output() callouts = new EventEmitter<ScreenAnchor[]>();
@@ -76,6 +77,7 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
           view: (v) => this.zone.run(() => this.view.emit(v)),
           callouts: (c) => this.zone.run(() => this.callouts.emit(c)),
           unavailable: () => this.zone.run(() => this.supported.set(false)),
+          qualitySuggested: (tier) => this.zone.run(() => this.qualitySuggested.emit(tier)),
         });
         this.engine.initialize();
         this.engine.update(readSceneInputs(this), new Set());
@@ -123,8 +125,8 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   resetView(): void {
     this.engine?.resetView();
   }
-  focusSelected(): void {
-    this.engine?.focusSelected();
+  focusSelected(view?: FocusView): void {
+    this.engine?.focusSelected(view);
   }
   aimLampAt(id: string): 'aimed' | 'limit' | 'missing' {
     return this.engine?.aimLampAt(id) ?? 'missing';
