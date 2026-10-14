@@ -140,11 +140,17 @@ export function computeSurface(spec: SurfaceSpec): SurfaceBuffers {
           break;
         }
         case 'mat': {
-          const gx = 0.5 + 0.5 * Math.cos(2 * Math.PI * u * 8),
-            gy = 0.5 + 0.5 * Math.cos(2 * Math.PI * v * 8);
-          const dot = Math.pow(gx * gy, 4);
-          h = 0.15 + 0.55 * dot + 0.15 * F;
-          t = 0.9 + 0.12 * dot;
+          // Dissipative bench mat: a fine field of raised studs (48 per tile), a groove every eighth row
+          // and column that splits it into panels.
+          const cell = 48;
+          const gx = 0.5 + 0.5 * Math.cos(2 * Math.PI * u * cell),
+            gy = 0.5 + 0.5 * Math.cos(2 * Math.PI * v * cell);
+          const stud = smoothstep(0.35, 0.8, gx * gy);
+          const pu = (u * 6) % 1,
+            pv = (v * 6) % 1;
+          const groove = 1 - smoothstep(0.006, 0.02, Math.min(pu, 1 - pu, pv, 1 - pv));
+          h = 0.3 + 0.3 * stud + 0.08 * F - 0.3 * groove;
+          t = 0.93 + 0.1 * stud - 0.3 * groove;
           break;
         }
         case 'pegboard': {

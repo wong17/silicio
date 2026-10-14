@@ -88,14 +88,14 @@ export class WorkbenchPropsModel extends WorkshopGeometry {
       meter,
       new T.PlaneGeometry(1.7, 0.85),
       this.tools.track(new T.MeshBasicMaterial({ map: lcdTexture })),
-      -0.2,
+      0,
       0.715,
       -0.35,
     );
     lcd.rotation.x = -Math.PI / 2;
     lcd.userData['dynamic'] = true;
     const dial = new T.Group();
-    dial.position.set(0.1, 0.78, 0.85);
+    dial.position.set(0, 0.78, 0.85);
     meter.add(dial);
     this.cylinder(dial, 0.56, 0.16, 0, 0, 0, this.tools.material('multimeter-dial', '#1c1d1e', 0.7, 0.02, { finish: 'rubber', size: 64 }));
     this.box(dial, 0.07, 0.03, 0.42, 0, 0.1, -0.26, this.tools.material('dial-pointer', '#e8e0c8', 0.5, 0, { size: 64 }));
