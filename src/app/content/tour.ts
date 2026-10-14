@@ -42,7 +42,8 @@ export const TOUR: readonly TourStep[] = [
     piece: 'pin-25',
     tab: 'state',
     open: false,
-    view: { distance: 7, azimuth: 12, polar: 50 },
+    // Pins 21-40 are the far row seen from the default side, so the camera goes around to face them.
+    view: { distance: 7, azimuth: 165, polar: 52 },
   },
   {
     id: 'add',
