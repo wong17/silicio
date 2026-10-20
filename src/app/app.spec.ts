@@ -24,12 +24,24 @@ describe('SILICIO / shell y consola', () => {
     vi.restoreAllMocks();
   });
 
-  it('expone cinco experiencias con enlaces accesibles', () => {
+  it('expone cuatro capítulos en el orden del recorrido, sin Cronoscopio', () => {
     const { fixture } = create();
     fixture.detectChanges();
     const nav = (fixture.nativeElement as HTMLElement).querySelector('nav.links')!;
-    expect(nav.querySelectorAll('a')).toHaveLength(5);
-    expect(nav.textContent).toContain('Cronoscopio');
+    const links = [...nav.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+    expect(links).toEqual(['/8086', '/memory', '/machine', '/apple']);
+    expect(nav.textContent).not.toContain('Cronoscopio');
+  });
+
+  it('la Ayuda está arriba a la derecha y el antiguo acordeón de sesión ya no existe', () => {
+    const { fixture, session } = create();
+    session.section.set('8086');
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('app-experience-nav app-help-dialog button.trigger')).not.toBeNull();
+    expect(root.querySelector('app-experience-nav app-panels-menu')).not.toBeNull();
+    expect(root.textContent).not.toContain('Sesión, gráficos y atajos');
+    expect(root.querySelector('app-session-panel')).toBeNull();
   });
 
   it('ejecuta una suma y recupera el estado anterior con el cronoscopio', () => {

@@ -1,12 +1,14 @@
 import { Component, computed, input, output } from '@angular/core';
 import { TOUR, type TourStep } from '../../content/tour';
+import { OccludesDirective } from '../workspace/occludes.directive';
 
 /** Exhibition mode card: where the talk is, the support line of the step and the way forward. */
 @Component({
   selector: 'app-tour',
+  imports: [OccludesDirective],
   template: `
     @if (step(); as s) {
-      <aside class="tour" data-occludes role="dialog" aria-label="Modo exposición" aria-live="polite">
+      <aside class="tour" appOccludes role="dialog" aria-label="Modo exposición" aria-live="polite">
         <p class="meta">
           <span>{{ s.slot }}</span>
           <span>Paso {{ position() + 1 }} de {{ total }}</span>

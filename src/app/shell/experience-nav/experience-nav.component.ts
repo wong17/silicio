@@ -1,6 +1,6 @@
 import { Component, effect, ElementRef, input, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { EXPERIENCES } from '../../content/experiences';
+import { CHAPTERS } from '../../content/experiences';
 import type { Section } from '../../world/scene-inputs';
 
 /** Brand and experience links. Narrow screens scroll this row, keeping the active link and the next one in view. */
@@ -12,7 +12,7 @@ import type { Section } from '../../world/scene-inputs';
 })
 export class ExperienceNavComponent {
   readonly active = input<Section>('atrium');
-  readonly experiences = EXPERIENCES;
+  readonly experiences = CHAPTERS;
   private readonly links = viewChild<ElementRef<HTMLElement>>('links');
 
   constructor() {

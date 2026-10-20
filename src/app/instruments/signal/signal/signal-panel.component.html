@@ -35,7 +35,7 @@
   </div>
   <p class="reading" aria-live="polite">{{ reading().text }}</p>
   <div class="capture">
-    <button type="button" (click)="capture()">Capturar traza</button>
+    <button type="button" (click)="capture()">Capturar señal</button>
     @if (captured(); as c) {
       <button type="button" (click)="clearCapture()">Descartar</button>
       <span class="kicker">Capturada: {{ c.channel }} · {{ c.label }}</span>

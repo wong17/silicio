@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { AtriumPortalsComponent } from './atrium-portals.component';
-import { EXPERIENCES } from '../../content/experiences';
+import { CHAPTERS as EXPERIENCES } from '../../content/experiences';
 
 describe('portales del atrio', () => {
   it('portal_preview_matches_its_station', async () => {

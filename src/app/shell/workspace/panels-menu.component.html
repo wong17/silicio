@@ -1,0 +1,50 @@
+<button
+  #button
+  type="button"
+  class="trigger"
+  aria-haspopup="menu"
+  [attr.aria-expanded]="open()"
+  aria-controls="panels-menu"
+  (click)="toggle()"
+>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 13h16M12 13v6" /></svg>
+  <span class="label">Paneles</span>
+</button>
+
+@if (open()) {
+  <div class="menu" id="panels-menu" #menu role="menu" aria-label="Paneles y distribución">
+    <p class="group-label" aria-hidden="true">Paneles</p>
+    @for (p of panels(); track p.id) {
+      <button
+        type="button"
+        role="menuitemcheckbox"
+        [attr.aria-checked]="p.open"
+        (click)="togglePanel(p.id, p.minimized)"
+      >
+        <span class="check" aria-hidden="true"></span>
+        <span class="name">{{ p.title }}</span>
+        @if (p.minimized) {
+          <small>minimizado</small>
+        }
+      </button>
+    }
+    @if (desk()) {
+      <hr />
+      <p class="group-label" aria-hidden="true">Distribución</p>
+      @for (preset of presets; track preset.id) {
+        <button
+          type="button"
+          role="menuitemradio"
+          [attr.aria-checked]="ws.layout().preset === preset.id"
+          (click)="choose(preset.id)"
+        >
+          <span class="dot" aria-hidden="true"></span>
+          <span class="name">{{ preset.label }}</span>
+          <small>{{ preset.hint }}</small>
+        </button>
+      }
+    }
+    <hr />
+    <button type="button" role="menuitem" (click)="reset()">Restablecer distribución</button>
+  </div>
+}

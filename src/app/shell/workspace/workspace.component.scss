@@ -1,0 +1,169 @@
+@use '../../shared/console-kit' as kit;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.desk {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stage-slot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+// Messages of the exercise sit over the scene and above floating windows (the stage is its own stacking
+// context, so they cannot live inside it).
+.overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+
+// In the absolute mode the windows are placed by the arrangement against the desk.
+.desk[data-mode='absolute'] .panels {
+  display: contents;
+}
+
+.splitter {
+  position: absolute;
+  z-index: 4;
+  background: transparent;
+  touch-action: none;
+  outline: none;
+  &::after {
+    content: '';
+    position: absolute;
+    background: kit.$edge;
+    transition: background 0.15s ease;
+  }
+  &:hover::after,
+  &.active::after,
+  &:focus-visible::after {
+    background: kit.$amber;
+  }
+  &.horizontal {
+    left: 0;
+    height: 12px;
+    margin-top: -6px;
+    cursor: ns-resize;
+    &::after {
+      left: 0;
+      right: 0;
+      top: 5px;
+      height: 2px;
+    }
+  }
+  &.vertical {
+    top: 0;
+    bottom: 0;
+    width: 12px;
+    margin-left: -6px;
+    cursor: ew-resize;
+    &::after {
+      top: 0;
+      bottom: 0;
+      left: 5px;
+      width: 2px;
+    }
+  }
+}
+
+// Phones: the scene on top, the instruments below it in reading order, all in one scrolling column.
+.desk[data-mode='flow'] {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  .overlay {
+    position: sticky;
+    flex: 0 0 0;
+    width: 100%;
+    height: 0;
+  }
+  .stage-slot {
+    position: relative;
+    flex: 0 0 auto;
+    height: clamp(200px, 42%, 460px);
+  }
+  .panels {
+    display: flex;
+    flex-direction: column;
+  }
+  &[data-phone='scene'] {
+    .stage-slot {
+      flex: 1 0 auto;
+      height: auto;
+    }
+    .panels {
+      display: none;
+    }
+  }
+  &[data-phone='instrument'] .stage-slot {
+    display: none;
+  }
+}
+
+// Short landscape screens: the scene keeps the left side, the instruments scroll on the right.
+.desk[data-mode='flow'][data-size='short'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 42%);
+  overflow: hidden;
+  .stage-slot {
+    height: auto;
+  }
+  .panels {
+    min-height: 0;
+    overflow-y: auto;
+    border-left: 1px solid kit.$edge;
+  }
+  &[data-phone='scene'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  &[data-phone='instrument'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tray {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 52px;
+  padding: 4px 12px;
+  border-top: 1px solid kit.$edge;
+  background: #15191a;
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 6px 14px;
+    font-size: 15px;
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.tray-label {
+  @include kit.kicker;
+  margin-right: 6px;
+}
+

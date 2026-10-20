@@ -1,4 +1,4 @@
-// Application frame: navigation row, stage with its overlays, instrument console and footer.
+// Application frame: navigation row, the desk (scene and instrument windows) and the footer.
 // Component-specific styling lives in each component; this file only places the regions.
 :host {
   display: block;
@@ -12,14 +12,13 @@
 .experience {
   height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 410px;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) 30px;
   background: #101214;
   color: var(--ink);
 }
 
 .topbar {
-  grid-column: 1 / -1;
   grid-row: 1;
 }
 
@@ -27,10 +26,16 @@
   display: none;
 }
 
-.stage {
+.desk-area {
   grid-row: 2;
+  min-height: 0;
+}
+
+.stage {
   position: relative;
-  container: stage / inline-size;
+  flex: 1;
+  // Size container: the overlays adapt to the height left by the docked instruments too.
+  container: stage / size;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -48,7 +53,7 @@
     radial-gradient(560px 400px at 0 0, rgba(16, 18, 20, 0.88) 0%, rgba(16, 18, 20, 0.55) 48%, rgba(16, 18, 20, 0) 100%),
     radial-gradient(460px 170px at 0 100%, rgba(16, 18, 20, 0.66) 0%, rgba(16, 18, 20, 0) 100%);
 }
-@media (max-width: 899px) {
+@media (max-width: 799px) {
   .stage::before {
     background: radial-gradient(420px 300px at 0 0, rgba(16, 18, 20, 0.86) 0%, rgba(16, 18, 20, 0.5) 50%, rgba(16, 18, 20, 0) 100%);
   }
@@ -96,6 +101,21 @@
   }
 }
 
+// Narrow or short scenes keep the title to its first line, so the bench is not hidden behind copy.
+@container stage (max-width: 760px) or (max-height: 520px) {
+  .title-block {
+    top: 14px;
+    left: 16px;
+    max-width: 260px;
+    h1 {
+      font-size: 34px;
+    }
+    p {
+      display: none;
+    }
+  }
+}
+
 .scene-loading {
   position: absolute;
   inset: auto 0 50% 0;
@@ -104,30 +124,81 @@
   color: #b7b6ae;
 }
 
-// The toolbar shares the bottom row on wide stages, so the hint rides just above it.
-@container stage (min-width: 1060px) {
-  .scene-caption {
-    bottom: 68px;
+// Notices and errors of the exercise: top right of the scene, never under the toolbar nor a floating window.
+.status-stack {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(380px, calc(100% - 24px));
+  pointer-events: auto;
+}
+
+.notice,
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.4;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  span {
+    flex: 1;
+  }
+  button {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin: -10px -8px -10px 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 }
 
+.notice {
+  border: 1px solid rgba(215, 172, 111, 0.45);
+  background: rgba(30, 27, 20, 0.94);
+  color: #f0d29c;
+}
+
+.error {
+  border: 1px solid rgba(224, 139, 114, 0.5);
+  background: rgba(36, 22, 19, 0.95);
+  color: #f0b4a0;
+}
+
+// The hint of the scene: one short line just above the scene bar, never under it.
 .scene-caption {
   position: absolute;
   left: 16px;
-  bottom: 12px;
+  bottom: 76px;
   z-index: 2;
   display: flex;
   align-items: center;
   gap: 8px;
+  max-width: min(360px, calc(100% - 32px));
   margin: 0;
   padding: 6px 10px;
   isolation: isolate;
   color: #e2ddd0;
   text-shadow: 0 1px 3px rgba(16, 18, 20, 0.9), 0 0 10px rgba(16, 18, 20, 0.75);
-  font: 500 11px 'IBM Plex Mono', monospace;
-  letter-spacing: 0.06em;
+  font: 500 12px/1.35 'IBM Plex Mono', monospace;
+  letter-spacing: 0.04em;
   pointer-events: none;
   span {
+    flex: 0 0 auto;
     width: 6px;
     height: 6px;
     border-radius: 50%;
@@ -157,57 +228,14 @@
   }
 }
 
-.console {
-  grid-row: 2;
-  min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  border-left: 1px solid var(--line);
-  background: #181c1e;
-  scrollbar-width: thin;
-  scrollbar-color: #3a4441 transparent;
-}
-
-.console-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 22px 22px calc(40px + env(safe-area-inset-bottom));
-}
-
-.tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  border-bottom: 1px solid #2d3533;
-  button {
-    min-height: 44px;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: #b7b6ae;
-    font-size: 15px;
-    &[aria-selected='true'] {
-      border-bottom-color: #d7ac6f;
-      color: #d7ac6f;
-    }
-  }
-}
-
-.tab-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 .part-map {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
   gap: 6px;
   button {
     min-height: 44px;
     padding: 8px 4px;
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 
@@ -220,24 +248,7 @@
   }
 }
 
-.notice {
-  margin: 0;
-  padding: 10px 12px;
-  background: linear-gradient(90deg, rgba(215, 172, 111, 0.18), rgba(215, 172, 111, 0) 75%);
-  color: #f0d29c;
-  font-size: 14px;
-}
-
-.error {
-  margin: 0;
-  padding: 10px 12px;
-  background: linear-gradient(90deg, rgba(224, 139, 114, 0.2), rgba(224, 139, 114, 0) 75%);
-  color: #f0b4a0;
-  font-size: 14px;
-}
-
 .footer {
-  grid-column: 1 / -1;
   grid-row: 3;
   display: flex;
   justify-content: space-between;
@@ -250,43 +261,13 @@
   letter-spacing: 0.06em;
 }
 
-// Wide screens get more room for the console.
-@media (min-width: 1600px) {
-  .experience {
-    grid-template-columns: minmax(0, 1fr) 460px;
-  }
-}
-
-@media (min-width: 900px) and (max-width: 1199px) {
-  .experience {
-    grid-template-columns: minmax(0, 1fr) 340px;
-  }
-  .title-block {
-    left: 20px;
-    top: 20px;
-    max-width: 300px;
-    p {
-      max-width: 260px;
-      font-size: 14px;
-    }
-  }
-  .console-inner {
-    padding: 18px 16px;
-  }
-}
-
-// Phones and small tablets: one column, scene above the console, modes above both.
-@media (max-width: 899px) {
+// Phones and small tablets: modes above the desk, which then stacks scene and instruments.
+@media (max-width: 799px) {
   body {
     overflow: hidden;
   }
   .experience {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto 48px minmax(200px, 42%) minmax(0, 1fr);
-    height: 100dvh;
-  }
-  .topbar {
-    grid-row: 1;
+    grid-template-rows: auto 48px minmax(0, 1fr);
   }
   .mobile-modes {
     grid-row: 2;
@@ -302,17 +283,8 @@
       font-size: 14px;
     }
   }
-  .stage {
+  .desk-area {
     grid-row: 3;
-  }
-  .console {
-    grid-row: 4;
-    border-left: 0;
-    border-top: 1px solid #54604f;
-  }
-  .console-inner {
-    padding: 14px 16px calc(26px + env(safe-area-inset-bottom));
-    gap: 14px;
   }
   .title-block {
     top: 10px;
@@ -335,56 +307,32 @@
   .footer {
     display: none;
   }
-  .experience[data-layout='scene'] {
-    grid-template-rows: auto 48px minmax(0, 1fr);
-    .console {
-      display: none;
-    }
-  }
-  .experience[data-layout='instrument'] {
-    grid-template-rows: auto 48px minmax(0, 1fr);
-    .stage {
-      display: none;
-    }
-    .console {
-      grid-row: 3;
-      border-top: 0;
-    }
-  }
-  .part-map {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
-// Short landscape phones: the scene sits beside the console instead of above it.
-@media (max-height: 500px) and (max-width: 899px) {
+// Short landscape screens: the modes stay, the footer goes.
+@media (max-height: 520px) {
   .experience {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 42%);
-    grid-template-rows: 56px 48px minmax(0, 1fr);
-  }
-  .topbar {
-    grid-column: 1 / -1;
+    grid-template-rows: auto 48px minmax(0, 1fr);
   }
   .mobile-modes {
-    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #1c2320;
+    button {
+      flex: 1;
+      min-height: 40px;
+      padding: 6px 4px;
+      font-size: 14px;
+    }
   }
-  .stage {
-    grid-column: 1;
+  .desk-area {
     grid-row: 3;
   }
-  .console {
-    grid-column: 2;
-    grid-row: 3;
-    border-top: 0;
-    border-left: 1px solid var(--line);
-  }
-  .experience[data-layout='scene'],
-  .experience[data-layout='instrument'] {
-    grid-template-columns: 1fr;
-    grid-template-rows: 56px 48px minmax(0, 1fr);
-  }
-  .experience[data-layout='instrument'] .console {
-    grid-column: 1;
+  .scene-caption,
+  .footer {
+    display: none;
   }
   .title-block h1 {
     font-size: 28px;

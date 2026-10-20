@@ -41,3 +41,53 @@ canvas {
   outline: 2px solid #e8c184;
   outline-offset: 3px;
 }
+
+// Names of the pieces, owned by the engine (they are created outside Angular, hence ::ng-deep). They move
+// with their anchors every frame and only the named few are shown; the tray lists every piece.
+.scene-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+:host ::ng-deep .scene-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  min-width: 0;
+  min-height: 0;
+  width: max-content;
+  max-width: 176px;
+  padding: 4px 8px;
+  border: 1px solid #46514d;
+  border-radius: 6px;
+  background: rgba(16, 19, 20, 0.88);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  color: #ede7d8;
+  font: 500 13px/1.25 'Barlow', sans-serif;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  pointer-events: auto;
+  cursor: pointer;
+  will-change: transform;
+  &:hover {
+    border-color: #8a7350;
+    background: rgba(24, 28, 29, 0.95);
+  }
+  &.selected {
+    border-color: #d7ac6f;
+    color: #f0d29c;
+  }
+}
+
+:host ::ng-deep .scene-label-lead {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1px;
+  background: rgba(215, 172, 111, 0.75);
+  transform-origin: 0 50%;
+  pointer-events: none;
+}

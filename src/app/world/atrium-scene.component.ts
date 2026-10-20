@@ -18,7 +18,7 @@ import type { PieceDefinition } from './interaction-registry';
 import type { LampTarget } from './lamp-limits';
 import { EMPTY_TIMELINE, type TimelineState } from './timeline-layout';
 import { IDLE_ACTIVITY, type StationActivity } from '../laboratory/station-activity';
-import type { CameraView, PieceAnchor, ScreenAnchor } from './scene-inputs';
+import type { CameraView, PieceAnchor, ViewportLayout } from './scene-inputs';
 export type { Section } from './scene-inputs';
 
 /** Angular adapter for the 3D bench: inputs go to the engine, callbacks return inside the zone. */
@@ -29,6 +29,7 @@ export type { Section } from './scene-inputs';
 })
 export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy, SceneInputs {
   @ViewChild('canvas', { static: true }) private canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('labels', { static: true }) private labelsRef!: ElementRef<HTMLElement>;
   @Input() section: Section = 'atrium';
   @Input() exploded = false;
   @Input() explodedAmount = 1;
@@ -50,6 +51,8 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   @Input() lamp: LampTarget = { x: -0.8, z: 0.6, height: 5 };
   @Input() lampOn = true;
   @Input() activity: StationActivity = IDLE_ACTIVITY;
+  /** Overlays measured by the shell; not part of SceneInputs because it never rebuilds the station. */
+  @Input() viewport: ViewportLayout | null = null;
   @Output() pieces = new EventEmitter<PieceDefinition[]>();
   @Output() picked = new EventEmitter<string>();
   @Output() hovered = new EventEmitter<string | null>();
@@ -58,7 +61,6 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
   @Output() qualitySuggested = new EventEmitter<QualityTier>();
   @Output() anchors = new EventEmitter<PieceAnchor[]>();
   @Output() view = new EventEmitter<CameraView>();
-  @Output() callouts = new EventEmitter<ScreenAnchor[]>();
   readonly supported = signal(true);
   private engine?: WorldEngine;
   private markReady!: () => void;
@@ -75,11 +77,12 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
           holding: (id) => this.zone.run(() => this.holding.emit(id)),
           anchors: (a) => this.zone.run(() => this.anchors.emit(a)),
           view: (v) => this.zone.run(() => this.view.emit(v)),
-          callouts: (c) => this.zone.run(() => this.callouts.emit(c)),
           unavailable: () => this.zone.run(() => this.supported.set(false)),
           qualitySuggested: (tier) => this.zone.run(() => this.qualitySuggested.emit(tier)),
         });
+        this.engine.attachLabels(this.labelsRef.nativeElement);
         this.engine.initialize();
+        this.engine.setViewport(this.viewport);
         this.engine.update(readSceneInputs(this), new Set());
       });
       this.markReady();
@@ -91,12 +94,10 @@ export class AtriumSceneComponent implements AfterViewInit, OnChanges, OnDestroy
     }
   }
   ngOnChanges(changes: SimpleChanges): void {
-    this.zone.runOutsideAngular(() =>
-      this.engine?.update(
-        readSceneInputs(this),
-        new Set(Object.keys(changes) as (keyof SceneInputs)[]),
-      ),
-    );
+    if (changes['viewport']) this.engine?.setViewport(this.viewport);
+    const keys = Object.keys(changes).filter((k) => k !== 'viewport') as (keyof SceneInputs)[];
+    if (!keys.length) return;
+    this.zone.runOutsideAngular(() => this.engine?.update(readSceneInputs(this), new Set(keys)));
   }
   rotate(direction: number): void {
     this.engine?.rotate(direction);

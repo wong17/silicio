@@ -204,6 +204,35 @@ const names: Record<string, [string, string]> = {
 };
 /** Bench objects that answer a click; each one is listed in the piece inspector too. */
 const OPERABLE = new Set(['scope', 'power', 'lamp', 'probe', 'cable', 'esd-mat', 'multimeter', 'solder-station', 'solder-spool', 'notebook', 'mug', 'parts', 'chips', 'pegboard-tools']);
+/**
+ * Short names for labels drawn over the scene. Only names that would not fit in two lines of a label, or
+ * that read better short, are here; they never become ambiguous within their station.
+ */
+const SHORT_NAMES: Record<string, string> = {
+  lid: 'Tapa',
+  socket: 'Zócalo',
+  clock: 'Oscilador',
+  encapsulation: 'Encapsulado',
+  interconnects: 'Enlaces',
+  traces: 'Pistas',
+  logic: 'Lógica de interfaz',
+  markings: 'Serigrafía',
+  passives: 'Desacoplo',
+  supports: 'Separadores',
+  'esd-mat': 'Alfombrilla',
+  'memory-board': 'Placa de memoria',
+  'memory-packages': 'Memoria del SoC',
+  alu: 'ALU',
+  registers: 'Registros',
+  biu: 'Interfaz de bus',
+  queue: 'Cola',
+  performance: 'Núcleos P',
+  efficiency: 'Núcleos E',
+  gpu: 'GPU',
+  neural: 'Motor neuronal',
+  unified: 'Memoria unificada',
+};
+
 export function pieceDefinition(id: string, experience: string): PieceDefinition {
   let name = names[id]?.[0] ?? id.replaceAll('-', ' '),
     description = names[id]?.[1];
@@ -223,6 +252,7 @@ export function pieceDefinition(id: string, experience: string): PieceDefinition
   return {
     id,
     name,
+    shortName: SHORT_NAMES[id] ?? name,
     description,
     family: familyOf(id),
     scope: OPERABLE.has(id) || id.startsWith('tool') || id === 'supports' ? 'bench' : 'model',

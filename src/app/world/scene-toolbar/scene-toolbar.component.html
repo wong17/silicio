@@ -53,12 +53,27 @@
   <symbol id="i-more" viewBox="0 0 24 24">
     <path d="M5 12h.01M12 12h.01M19 12h.01" />
   </symbol>
+  <symbol id="i-pieces" viewBox="0 0 24 24">
+    <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />
+  </symbol>
+  <symbol id="i-map" viewBox="0 0 24 24">
+    <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14" />
+  </symbol>
+  <symbol id="i-graphics" viewBox="0 0 24 24">
+    <path d="M4 18V6M4 12h3M10 18V6M10 8h3M16 18V6M16 15h3" />
+    <circle cx="8" cy="12" r="1.6" />
+    <circle cx="14" cy="8" r="1.6" />
+    <circle cx="20" cy="15" r="1.6" />
+  </symbol>
 </svg>
 
-<!-- Wide stages: every command in one bar centred under the bench, grouped by purpose. -->
-<div class="bar">
-  @for (group of groups; track group.id; let last = $last) {
-    <div class="group" role="group" [attr.aria-label]="group.label">
+<!--
+  One bar under the bench with three groups: Cámara, Inspección and Vistas. The stage width decides how
+  many fit; whatever does not fit is offered in «Más», with the same commands and the same names.
+-->
+<div class="bar" appOccludes="bottom">
+  @for (group of groups; track group.id) {
+    <div class="group" role="group" [attr.aria-label]="group.label" [attr.data-group]="group.id">
       @for (tool of group.tools; track tool.command) {
         @if (visible(tool)) {
           <button
@@ -80,39 +95,80 @@
         }
       }
     </div>
-    @if (!last) {
-      <span class="divider" aria-hidden="true"></span>
-    }
+    <span class="divider" aria-hidden="true" [attr.data-group]="group.id"></span>
   }
-</div>
 
-<!-- Narrow stages: the first commands plus one disclosure with the same button size. -->
-<div class="dock">
-  @for (tool of primaryTools; track tool.command) {
-    @if (visible(tool)) {
-      <button
-        type="button"
-        class="tool"
-        [attr.aria-label]="label(tool)"
-        [attr.data-tip]="label(tool)"
-        [disabled]="disabled(tool)"
-        (click)="run(tool.command, $event)"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true"><use [attr.href]="'#i-' + tool.icon" /></svg>
-      </button>
+  <div class="group views" role="group" aria-label="Vistas" data-group="views">
+    <button
+      type="button"
+      class="tool view"
+      aria-label="Piezas"
+      aria-controls="hud-tray"
+      aria-keyshortcuts="P"
+      [attr.aria-pressed]="session.hud().tray"
+      (click)="run('tray')"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pieces" /></svg>
+      <span class="word" aria-hidden="true">Piezas</span>
+      <span class="tip" aria-hidden="true">Piezas <kbd>P</kbd></span>
+    </button>
+    <button
+      type="button"
+      class="tool view"
+      aria-label="Mapa"
+      aria-controls="hud-map"
+      aria-keyshortcuts="B"
+      [attr.aria-pressed]="session.hud().map"
+      (click)="run('map')"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-map" /></svg>
+      <span class="word" aria-hidden="true">Mapa</span>
+      <span class="tip" aria-hidden="true">Mapa del banco <kbd>B</kbd></span>
+    </button>
+    <button
+      type="button"
+      class="tool view"
+      aria-label="Gráficos"
+      aria-haspopup="true"
+      aria-controls="scene-graphics"
+      [attr.aria-expanded]="graphicsOpen()"
+      [attr.aria-pressed]="graphicsOpen()"
+      (click)="toggleGraphics()"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-graphics" /></svg>
+      <span class="word" aria-hidden="true">Gráficos</span>
+      <span class="tip" aria-hidden="true">Calidad gráfica</span>
+    </button>
+    @if (graphicsOpen()) {
+      <div class="gfx-menu" id="scene-graphics" role="radiogroup" aria-label="Calidad gráfica" appOccludes>
+        @for (o of qualities; track o.value) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="session.quality() === o.value"
+            (click)="chooseQuality(o.value)"
+          >
+            <span class="name">{{ o.label }}</span>
+            <small>{{ o.hint }}</small>
+          </button>
+        }
+      </div>
     }
-  }
+  </div>
+
   <details class="more">
     <summary class="tool" aria-label="Más herramientas">
       <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-more" /></svg>
+      <span class="tip" aria-hidden="true">Más herramientas</span>
     </summary>
     <div class="more-grid">
-      @for (group of secondaryGroups; track group.id) {
+      @for (group of groups; track group.id) {
         @for (tool of group.tools; track tool.command) {
           @if (visible(tool)) {
             <button
               type="button"
               class="tool labelled"
+              [attr.data-group]="group.id"
               [attr.aria-pressed]="pressed(tool)"
               [disabled]="disabled(tool)"
               (click)="run(tool.command, $event)"
@@ -123,28 +179,6 @@
           }
         }
       }
-      <!-- The HUD panels live here on compact stages, so nothing floats over the scene. -->
-      <button type="button" class="tool labelled" [attr.aria-pressed]="session.hud().tray" (click)="run('tray', $event)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-tray" /></svg>
-        <span>Piezas</span>
-      </button>
-      <button type="button" class="tool labelled" [attr.aria-pressed]="session.hud().map" (click)="run('map', $event)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-frame" /></svg>
-        <span>Mapa</span>
-      </button>
-      <div class="quality" role="radiogroup" aria-label="Gráficos">
-        <span class="kicker">Gráficos</span>
-        @for (o of qualities; track o.value) {
-          <button
-            type="button"
-            role="radio"
-            [attr.aria-checked]="session.quality() === o.value"
-            (click)="chooseQuality(o.value)"
-          >
-            {{ o.label }}
-          </button>
-        }
-      </div>
     </div>
   </details>
 </div>

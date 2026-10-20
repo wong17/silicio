@@ -1,0 +1,203 @@
+@use '../../shared/console-kit' as kit;
+
+// A window of the desk. In the absolute mode the host is placed by the arrangement; in the flow mode
+// (phones, short landscape screens) it takes the full width in reading order. Places change at once:
+// animating them would resize the canvas on every frame.
+:host {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+:host([data-zone='float']) {
+  z-index: 6;
+  .frame {
+    border-color: kit.$edge-strong;
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  }
+}
+
+:host(.maximized) {
+  z-index: 8;
+}
+
+:host(.flow) {
+  position: static;
+  width: 100%;
+  .frame {
+    border-left: 0;
+    border-right: 0;
+  }
+  .body {
+    overflow: visible;
+  }
+}
+
+.frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid kit.$edge;
+  background: #181c1e;
+  outline: none;
+  &:focus-visible {
+    outline: 2px solid #e8c184;
+    outline-offset: -2px;
+  }
+}
+
+.head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 4px 0 14px;
+  border-bottom: 1px solid kit.$edge;
+  background: #1c2223;
+  &.draggable {
+    cursor: grab;
+    touch-action: none;
+  }
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: 600 18px/1.15 kit.$display;
+  letter-spacing: 0.02em;
+  color: #f0ebdf;
+  overflow-wrap: anywhere;
+}
+
+.tools {
+  display: flex;
+  gap: 2px;
+}
+
+.tool {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: kit.$dim;
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+  &:hover {
+    background: #2a3231;
+    color: kit.$ink;
+  }
+  &[aria-pressed='true'] {
+    border: 0;
+    background: kit.$amber-deep;
+    color: kit.$amber;
+  }
+  // Tooltips open below: the title bar can sit at the very top of the desk.
+  &[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 9;
+    padding: 5px 8px;
+    border: 1px solid #3a423f;
+    border-radius: 4px;
+    background: #101412;
+    color: #ede7d8;
+    font: 400 12px/1.2 'Barlow', sans-serif;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.14s ease;
+  }
+  &[data-tip]:hover::after,
+  &[data-tip]:focus-visible::after {
+    opacity: 1;
+  }
+}
+
+.move {
+  cursor: move;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% - 2px);
+  right: 4px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid kit.$edge-strong;
+  border-radius: 8px;
+  background: #121617;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+  button {
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font-size: 15px;
+    &:hover,
+    &:focus-visible {
+      background: #2a3231;
+    }
+    &[aria-checked='true'] {
+      color: kit.$amber;
+      &::before {
+        content: '● ';
+      }
+    }
+  }
+  hr {
+    width: 100%;
+    margin: 4px 0;
+    border: 0;
+    border-top: 1px solid kit.$edge;
+  }
+}
+
+.menu-label {
+  @include kit.kicker;
+  padding: 6px 12px 4px;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #3a4441 transparent;
+}
+
+.grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 22px;
+  height: 22px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(135deg, transparent 50%, kit.$edge-strong 50%, kit.$edge-strong 58%, transparent 58%, transparent 70%, kit.$edge-strong 70%, kit.$edge-strong 78%, transparent 78%);
+}

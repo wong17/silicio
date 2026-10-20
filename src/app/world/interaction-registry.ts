@@ -3,6 +3,8 @@ import * as T from 'three';
 export interface PieceDefinition {
   id: string;
   name: string;
+  /** Editorial short name for labels over the scene; the full name stays in the inspector and catalog. */
+  shortName?: string;
   role: 'academic' | 'operable' | 'environment';
   actions: string[];
   description?: string;

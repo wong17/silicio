@@ -58,31 +58,35 @@
   }
 }
 
+// Drawers open above the scene bar (12 px margin + 54 px bar + 10 px gap) and scroll if the scene is short.
 .dock {
   position: absolute;
+  top: 12px;
   right: 12px;
-  bottom: 12px;
+  bottom: 76px;
   left: 12px;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  justify-content: flex-end;
+  pointer-events: none;
 }
 
 .drawers {
   display: flex;
+  flex: 0 1 auto;
   align-items: flex-end;
   justify-content: flex-end;
   gap: 8px;
   width: 100%;
-  // Clears the toolbar that sits under the bench.
-  margin-bottom: 36px;
   min-width: 0;
+  min-height: 0;
 }
 
 .drawer {
   pointer-events: auto;
   min-width: 0;
+  max-height: 100%;
+  overflow: auto;
 }
 
 .drawer.tray {
@@ -97,83 +101,6 @@
   transform-origin: bottom right;
 }
 
-.toggles {
-  position: relative;
-  display: flex;
-  gap: 8px;
-  pointer-events: auto;
-}
-
-.gfx-menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
-  display: grid;
-  gap: 2px;
-  min-width: 220px;
-  padding: 6px;
-  border: 1px solid kit.$edge-strong;
-  border-radius: 10px;
-  background: rgba(14, 17, 18, 0.96);
-  animation: grow 160ms cubic-bezier(0.23, 1, 0.32, 1);
-  transform-origin: bottom right;
-  button {
-    display: grid;
-    gap: 2px;
-    min-height: 44px;
-    padding: 6px 10px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    background: none;
-    color: kit.$ink;
-    text-align: left;
-    font: 500 13px kit.$mono;
-    small {
-      color: kit.$dim;
-      font: 400 11px kit.$mono;
-    }
-    &[aria-checked='true'] {
-      border-color: kit.$amber;
-      background: kit.$amber-deep;
-      color: kit.$amber-soft;
-    }
-  }
-}
-
-.toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 8px 14px;
-  border: 1px solid kit.$edge-strong;
-  border-radius: 10px;
-  background: rgba(14, 17, 18, 0.9);
-  color: kit.$ink;
-  font: 500 12px kit.$mono;
-  letter-spacing: 0.06em;
-  &[aria-pressed='true'] {
-    border-color: kit.$amber;
-    color: kit.$amber-soft;
-  }
-}
-
-.led {
-  @include kit.led(kit.$amber, 8px);
-}
-
-// A stage wide enough for the toolbar plus the three toggles puts them on the toolbar's own row
-// (the toolbar drops to the same level, see scene-toolbar).
-@container stage (min-width: 1060px) {
-  .dock {
-    bottom: 14px;
-  }
-  .drawers {
-    margin-bottom: 0;
-  }
-}
-
 @keyframes grow {
   from {
     opacity: 0;
@@ -182,63 +109,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .drawer.map,
-  .gfx-menu {
+  .drawer.map {
     animation: none;
   }
 }
 
-// Phones: the map opens as a sheet along the bottom edge and the toggles sit above the dock.
-@media (max-width: 899px) {
-  .dock {
-    bottom: 64px;
-  }
+// Narrow scenes: the drawers stack and take the full width above the bar.
+@container stage (max-width: 599px) {
   .drawers {
     flex-direction: column;
     align-items: stretch;
-    margin-bottom: 0;
   }
   .drawer.map {
     width: 100%;
-  }
-}
-
-@media (max-width: 899px) {
-  // The dock spans the whole scene height; the drawers share what is left above the toggles and scroll.
-  .dock {
-    top: 12px;
-    justify-content: flex-end;
-  }
-  .drawers {
-    flex: 0 1 auto;
-    min-height: 0;
-    overflow: auto;
-    align-items: flex-end;
-  }
-  .drawer.map {
-    max-height: none;
-  }
-}
-
-// Compact stages: the toggles live in the toolbar menu, so the drawers only need to clear the dock.
-.toggles {
-  display: none;
-}
-@container stage (min-width: 1060px) {
-  .toggles {
-    display: flex;
-  }
-}
-@container stage (max-width: 1059px) {
-  .dock {
-    bottom: 104px;
-  }
-  .drawers {
-    margin-bottom: 0;
-  }
-}
-@media (max-width: 899px) {
-  .dock {
-    bottom: 72px;
   }
 }

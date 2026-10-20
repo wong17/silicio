@@ -1,0 +1,79 @@
+<section class="frame" #frame tabindex="-1" [attr.aria-labelledby]="headingId">
+  <header
+    class="head"
+    [class.draggable]="floating()"
+    (pointerdown)="pointerDown($event)"
+    (pointermove)="pointerMove($event)"
+    (pointerup)="pointerUp($event)"
+    (pointercancel)="pointerUp($event)"
+  >
+    <h2 class="title" [id]="headingId">{{ title() }}</h2>
+    <div class="tools">
+      @if (floating()) {
+        <button
+          type="button"
+          class="tool move"
+          [attr.aria-label]="'Mover ' + title() + ' con las flechas; Mayúsculas y flechas cambia su tamaño'"
+          data-tip="Mover con flechas"
+          (keydown)="handleKey($event)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3m3-3 3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3M21 12l-3-3m3 3-3 3" /></svg>
+        </button>
+      }
+      @if (mode() === 'absolute') {
+        <button type="button" class="tool" [attr.aria-label]="'Minimizar ' + title()" data-tip="Minimizar" (click)="minimize()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14" /></svg>
+        </button>
+        <button
+          type="button"
+          class="tool"
+          [attr.aria-label]="(maximized() ? 'Restaurar ' : 'Ampliar ') + title()"
+          [attr.aria-pressed]="maximized()"
+          [attr.data-tip]="maximized() ? 'Restaurar' : 'Ampliar'"
+          (click)="toggleMaximize()"
+        >
+          @if (maximized()) {
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></svg>
+          } @else {
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+          }
+        </button>
+        <button
+          #menuButton
+          type="button"
+          class="tool"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="menuOpen()"
+          [attr.aria-label]="'Opciones de ' + title()"
+          data-tip="Mover a…"
+          (click)="toggleMenu()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6h.01M12 12h.01M12 18h.01" stroke-width="3" /></svg>
+        </button>
+      }
+    </div>
+    @if (menuOpen()) {
+      <div class="menu" #menu role="menu" [attr.aria-label]="'Mover ' + title()">
+        <p class="menu-label" aria-hidden="true">Mover a</p>
+        <button type="button" role="menuitemradio" [attr.aria-checked]="placement().zone === 'bottom'" (click)="moveTo('bottom')">Abajo</button>
+        <button type="button" role="menuitemradio" [attr.aria-checked]="placement().zone === 'right'" (click)="moveTo('right')">Derecha</button>
+        <button type="button" role="menuitemradio" [attr.aria-checked]="placement().zone === 'float'" (click)="moveTo('float')">Ventana flotante</button>
+        <hr />
+        <button type="button" role="menuitem" (click)="close()">Cerrar panel</button>
+      </div>
+    }
+  </header>
+  <div class="body">
+    <ng-content />
+  </div>
+  @if (floating()) {
+    <span
+      class="grip"
+      aria-hidden="true"
+      (pointerdown)="pointerDown($event, true)"
+      (pointermove)="pointerMove($event)"
+      (pointerup)="pointerUp($event)"
+      (pointercancel)="pointerUp($event)"
+    ></span>
+  }
+</section>

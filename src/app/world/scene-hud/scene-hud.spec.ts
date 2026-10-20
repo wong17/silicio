@@ -5,6 +5,7 @@ import { BenchMapComponent } from './bench-map/bench-map.component';
 import { PieceTrayComponent } from './piece-tray/piece-tray.component';
 import { SceneHudComponent } from './scene-hud.component';
 import { PieceInspectorComponent } from '../../console/piece-inspector/piece-inspector.component';
+import { SceneViewportService } from '../../shell/workspace/scene-viewport.service';
 
 describe('HUD de escena', () => {
   beforeEach(() => {
@@ -26,41 +27,24 @@ describe('HUD de escena', () => {
   it('hud_marks_open_drawers_as_occluding', async () => {
     await TestBed.configureTestingModule({ imports: [SceneHudComponent] }).compileComponents();
     const session = TestBed.inject(LabSession);
+    const viewport = TestBed.inject(SceneViewportService);
+    const registered = vi.spyOn(viewport, 'register');
+    session.setHud({ map: false, tray: false });
     const fixture = TestBed.createComponent(SceneHudComponent);
     fixture.detectChanges();
-    const root = fixture.nativeElement as HTMLElement;
-    expect(root.querySelectorAll('[data-occludes]').length).toBe(0);
+    expect(registered).not.toHaveBeenCalled();
     session.setHud({ map: true, tray: true });
     fixture.detectChanges();
-    expect(root.querySelectorAll('[data-occludes]').length).toBe(2);
+    expect(registered.mock.calls.map(([element]) => element.id).sort()).toEqual(['hud-map', 'hud-tray']);
   });
 
-  it('toggles_reach_the_44px_target_size', async () => {
+  it('el HUD ya no repite Piezas, Mapa ni Gráficos: viven en la barra de la escena', async () => {
     await TestBed.configureTestingModule({ imports: [SceneHudComponent] }).compileComponents();
-    const fixture = TestBed.createComponent(SceneHudComponent);
-    fixture.detectChanges();
-    const toggles = (fixture.nativeElement as HTMLElement).querySelectorAll('.toggle');
-    expect(toggles.length).toBe(3);
-    for (const t of Array.from(toggles)) expect(t.getAttribute('aria-controls')).toMatch(/^hud-/);
-  });
-});
-
-describe('gráficos en el HUD', () => {
-  it('the_menu_changes_the_session_quality', async () => {
-    await TestBed.configureTestingModule({ imports: [SceneHudComponent] }).compileComponents();
-    const session = TestBed.inject(LabSession);
     const fixture = TestBed.createComponent(SceneHudComponent);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
-    (root.querySelector('.gfx') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    const options = root.querySelectorAll<HTMLButtonElement>('.gfx-menu [role=radio]');
-    expect(options.length).toBe(3);
-    options[2].click();
-    fixture.detectChanges();
-    expect(session.quality()).toBe('low');
-    expect(session.qualityChosen).toBe(true);
-    expect(root.querySelector('.gfx-menu')).toBeNull();
+    expect(root.querySelector('.toggle')).toBeNull();
+    expect(root.querySelector('[role="radiogroup"]')).toBeNull();
   });
 });
 

@@ -80,6 +80,22 @@
   white-space: nowrap;
 }
 
+// Desk actions (Paneles, Ayuda) close the row on every width.
+.actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  &:empty {
+    display: none;
+  }
+}
+
+.version + .actions {
+  margin-left: 0;
+}
+
 // Medium desktop: the version label and the small brand line leave room for five links.
 @media (min-width: 900px) and (max-width: 1279px) {
   :host {
@@ -144,6 +160,10 @@
   }
   .version {
     display: none;
+  }
+  .actions {
+    order: 2;
+    height: 40px;
   }
 }
 

@@ -35,6 +35,17 @@ export interface SceneInputs {
   activity: StationActivity;
 }
 
+/**
+ * Overlays drawn over the canvas, measured by the interface in CSS pixels local to the canvas: the
+ * rectangle they leave free (for framing) and the rectangles they cover (for legends).
+ */
+export interface ViewportLayout {
+  width: number;
+  height: number;
+  freeRect: { x: number; y: number; width: number; height: number };
+  occlusions: { x: number; y: number; width: number; height: number }[];
+}
+
 /** Where a piece stands on the worktop (map) and, when callouts are on, on the canvas (CSS pixels). */
 export interface PieceAnchor {
   id: string;
@@ -59,8 +70,6 @@ export interface SceneCallbacks {
   anchors: (anchors: PieceAnchor[]) => void;
   /** Camera azimuth and distance, at most 10 times per second and only when they changed. */
   view: (view: CameraView) => void;
-  /** Projected positions of the main model pieces, at most 10 times per second while callouts are on. */
-  callouts: (anchors: ScreenAnchor[]) => void;
   pieces: (pieces: PieceDefinition[]) => void;
   picked: (id: string) => void;
   /** Piece under the pointer, or null when the pointer leaves every piece. */

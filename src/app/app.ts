@@ -5,6 +5,7 @@ import {
   HostListener,
   NgZone,
   OnDestroy,
+  TemplateRef,
   computed,
   effect,
   inject,
@@ -15,7 +16,6 @@ import {
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { gsap } from 'gsap';
-import Lenis from 'lenis';
 import { EXPERIENCES } from './content/experiences';
 import { LabSession, type Tab } from './laboratory/lab-session.service';
 import { fromQuery, readShot, toQuery } from './content/deeplink';
@@ -28,11 +28,10 @@ import type { Section } from './world/scene-inputs';
 import { AtriumSceneComponent } from './world/atrium-scene.component';
 import { SceneToolbarComponent, type SceneCommand } from './world/scene-toolbar/scene-toolbar.component';
 import { ExperienceNavComponent } from './shell/experience-nav/experience-nav.component';
-import { ConsoleHeaderComponent } from './console/console-header/console-header.component';
 import { AtriumPortalsComponent } from './console/atrium-portals/atrium-portals.component';
 import { SceneHudComponent } from './world/scene-hud/scene-hud.component';
 import { PieceInspectorComponent } from './console/piece-inspector/piece-inspector.component';
-import { SessionPanelComponent } from './console/session-panel/session-panel.component';
+import { HelpDialogComponent } from './shell/help/help-dialog.component';
 import { TransportComponent } from './instruments/cpu/transport/transport.component';
 import { RegisterPanelComponent } from './instruments/cpu/register/register-panel.component';
 import { AluPanelComponent } from './instruments/cpu/alu/alu-panel.component';
@@ -44,6 +43,11 @@ import { DimmPanelComponent } from './instruments/memory/dimm/dimm-panel.compone
 import { ApplePanelComponent } from './instruments/apple/apple/apple-panel.component';
 import { SignalPanelComponent } from './instruments/signal/signal/signal-panel.component';
 import { MachineInstrumentComponent } from './instruments/machine/machine-instrument.component';
+import { WorkspaceComponent } from './shell/workspace/workspace.component';
+import { PanelsMenuComponent } from './shell/workspace/panels-menu.component';
+import { OccludesDirective } from './shell/workspace/occludes.directive';
+import { WorkspaceService } from './shell/workspace/workspace.service';
+import { SceneViewportService } from './shell/workspace/scene-viewport.service';
 
 export type Layout = 'scene' | 'shared' | 'instrument';
 
@@ -58,8 +62,8 @@ const CPU_PARTS = [
 const NARROW = '(max-width: 899px)';
 
 /**
- * Application shell: routing, layout modes, scene commands and motion. Session state lives in
- * LabSession; instruments read it directly, so this component only composes them.
+ * Application shell: routing, scene commands and motion. Session state lives in LabSession and the
+ * place of each instrument in WorkspaceService; this component only composes the stage and the panels.
  */
 @Component({
   selector: 'app-root',
@@ -68,14 +72,13 @@ const NARROW = '(max-width: 899px)';
     ExperienceNavComponent,
     AtriumSceneComponent,
     SceneToolbarComponent,
-    ConsoleHeaderComponent,
     AtriumPortalsComponent,
     SceneHudComponent,
     PerfMeterComponent,
     TourComponent,
     StationMissionComponent,
     PieceInspectorComponent,
-    SessionPanelComponent,
+    HelpDialogComponent,
     TransportComponent,
     RegisterPanelComponent,
     AluPanelComponent,
@@ -87,12 +90,17 @@ const NARROW = '(max-width: 899px)';
     ApplePanelComponent,
     SignalPanelComponent,
     MachineInstrumentComponent,
+    WorkspaceComponent,
+    PanelsMenuComponent,
+    OccludesDirective,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App implements AfterViewInit, OnDestroy {
   readonly session = inject(LabSession);
+  readonly ws = inject(WorkspaceService);
+  readonly viewport = inject(SceneViewportService);
   private readonly router = inject(Router);
   private readonly zone = inject(NgZone);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -116,10 +124,9 @@ export class App implements AfterViewInit, OnDestroy {
     const notice = this.aimNotice();
     if (notice) return notice;
     const held = this.holding();
-    if (held) return `En la mano: ${this.pieceName(held)} · Soltar herramienta la deja caer`;
-    return this.session.manipulate()
-      ? 'Manipulación activa · arrastra la vista o un objeto'
-      : 'Selecciona una pieza · arrastra el anillo de la lámpara para iluminar';
+    // One short line above the scene bar (40 characters or fewer when nothing is held).
+    if (held) return `En la mano: ${this.pieceName(held)} · Esc la suelta`;
+    return this.session.manipulate() ? 'Manipulación activa · arrastra un objeto' : 'Toca una pieza para inspeccionarla';
   });
   readonly current = computed(() => EXPERIENCES.find((e) => e.id === this.session.section()));
   readonly accent = computed(
@@ -127,13 +134,23 @@ export class App implements AfterViewInit, OnDestroy {
   );
   private readonly world = viewChild<AtriumSceneComponent>('world');
   private readonly tip = viewChild<ElementRef<HTMLElement>>('tip');
-  private readonly consoleEl = viewChild.required<ElementRef<HTMLElement>>('console');
-  private readonly consoleInner = viewChild.required<ElementRef<HTMLElement>>('consoleInner');
+  private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
+  private readonly programPanel = viewChild.required<TemplateRef<unknown>>('programPanel');
+  private readonly statePanel = viewChild.required<TemplateRef<unknown>>('statePanel');
+  private readonly inspectorPanel = viewChild.required<TemplateRef<unknown>>('inspectorPanel');
+  private readonly portalsPanel = viewChild.required<TemplateRef<unknown>>('portalsPanel');
+  private readonly instrumentsPanel = viewChild.required<TemplateRef<unknown>>('instrumentsPanel');
+  /** Content of each desk panel; the workspace places it, the shell only says what it contains. */
+  readonly panelTemplates = computed<Record<string, TemplateRef<unknown>>>(() => ({
+    program: this.programPanel(),
+    state: this.statePanel(),
+    inspector: this.inspectorPanel(),
+    portals: this.portalsPanel(),
+    instruments: this.instrumentsPanel(),
+  }));
   private navigation?: Subscription;
-  private lenis?: Lenis;
   private context?: gsap.Context;
   private media?: MediaQueryList;
-  private ticker = (seconds: number) => this.lenis?.raf(seconds * 1000);
   private mediaChanged = () => {
     this.session.reduced.set(this.media?.matches ?? false);
   };
@@ -142,9 +159,9 @@ export class App implements AfterViewInit, OnDestroy {
     this.navigation = this.router.events
       .pipe(filter((e) => e instanceof NavigationEnd))
       .subscribe(() => this.route());
-    // Motion follows the preference whichever control changed it: the system setting or the panel.
-    effect(() => this.applyMotion(this.session.reduced()));
     effect(() => this.world()?.setCallouts(this.session.callouts()));
+    // The desk offers the panels of whatever station the session shows, however it got there.
+    effect(() => this.ws.setExperience(this.session.section()));
     effect(() => {
       this.session.section();
       this.session.activePart();
@@ -166,6 +183,7 @@ export class App implements AfterViewInit, OnDestroy {
     this.lastSection = section;
     this.session.pause();
     this.session.section.set(section);
+    this.ws.setExperience(section);
     this.session.activePart.set(
       section === 'apple'
         ? 'performance'
@@ -184,7 +202,6 @@ export class App implements AfterViewInit, OnDestroy {
     // The 8086 and the SoC open by default; the memory modules start closed so their layers read as a choice.
     this.session.exploded.set(section === '8086' || section === 'apple');
     this.session.tab.set('state' as Tab);
-    this.consoleEl().nativeElement.scrollTo(0, 0);
     this.applyDeepLink();
   }
 
@@ -247,17 +264,8 @@ export class App implements AfterViewInit, OnDestroy {
         );
     }, 1500);
     this.media.addEventListener('change', this.mediaChanged);
+    this.viewport.attachStage(this.stage().nativeElement);
     this.zone.runOutsideAngular(() => {
-      if (!matchMedia(NARROW).matches)
-        this.lenis = new Lenis({
-          wrapper: this.consoleEl().nativeElement,
-          content: this.consoleInner().nativeElement,
-          autoRaf: false,
-          duration: 0.85,
-          prevent: (node) => node.tagName === 'TEXTAREA',
-        });
-      gsap.ticker.add(this.ticker);
-      this.applyMotion(this.session.reduced());
       this.context = gsap.context(() => {
         if (this.session.reduced()) return;
         gsap
@@ -268,16 +276,9 @@ export class App implements AfterViewInit, OnDestroy {
     });
   }
 
-  private applyMotion(reduced: boolean): void {
-    if (!this.lenis) return;
-    if (reduced) this.lenis.stop();
-    else this.lenis.start();
-  }
-
   setLayout(mode: Layout): void {
     this.layout.set(mode);
     this.session.manipulate.set(false);
-    this.lenis?.resize();
   }
 
   /** Editing the program on a phone brings the instrument column forward. */
@@ -393,7 +394,11 @@ export class App implements AfterViewInit, OnDestroy {
     if (step.memoryModel) this.session.memoryModel.set(step.memoryModel);
     const place = () => {
       this.session.part(step.piece);
-      if (step.tab) this.session.tab.set(step.tab);
+      if (step.tab) {
+        this.session.tab.set(step.tab);
+        // Programa and Estado are both on the desk; the step only makes sure its panel is open.
+        if (this.session.section() === '8086') this.ws.open(step.tab === 'program' ? 'program' : 'state', false);
+      }
       if (step.open !== undefined) {
         this.session.exploded.set(step.open);
         if (step.open && this.session.explodeAmount() === 0) this.session.explodeAmount.set(100);
@@ -415,12 +420,15 @@ export class App implements AfterViewInit, OnDestroy {
     if (this.session.qualityChosen) return;
     this.session.quality.set(tier);
     const names = { high: 'Detalle', balanced: 'Equilibrado', low: 'Ligero' };
-    this.session.notice.set(`Gráficos ajustados automáticamente a «${names[tier]}». Puedes cambiarlo en Sesión.`);
+    this.session.notice.set(`Gráficos ajustados automáticamente a «${names[tier]}». Puedes cambiarlo en Gráficos.`);
   }
 
+  /** A piece chosen by the student; the first choice opens the inspector, a minimized one stays minimized. */
   pick(id: string): void {
     this.aimNotice.set(null);
     this.session.part(id);
+    const inspector = this.ws.layout().panels.find((p) => p.id === 'inspector');
+    if (inspector && !inspector.open) this.ws.open('inspector', false);
   }
 
   focusSelected(): void {
@@ -480,8 +488,7 @@ export class App implements AfterViewInit, OnDestroy {
     this.session.dispose();
     this.navigation?.unsubscribe();
     this.context?.revert();
-    gsap.ticker.remove(this.ticker);
-    this.lenis?.destroy();
+    this.viewport.detachStage();
     this.media?.removeEventListener('change', this.mediaChanged);
   }
 }

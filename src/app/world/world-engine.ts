@@ -40,7 +40,11 @@ import { BENCH } from './models/bench-layout';
 import type { Reactions } from './models/workbench-props.model';
 import type { Animator, WorkshopTools } from './workshop-tools';
 
-import type { SceneInputs, SceneCallbacks, Section, PieceAnchor, ScreenAnchor } from './scene-inputs';
+import type { SceneInputs, SceneCallbacks, Section, PieceAnchor, ViewportLayout } from './scene-inputs';
+import { AnnotationLayer, AnnotationMarkers } from './annotations/annotation-layer';
+import { chooseNamed, VisibilityMemory, type AnnotationCandidate } from './annotations/annotation-policy';
+import { estimateLabelSize, placeLabels } from './annotations/label-placement';
+import { localAnchor } from './annotations/piece-anchors';
 import { CPU_PARTS, APPLE_PARTS } from './models/station-layouts';
 
 const HOVER_INTERVAL_MS = 70;
@@ -141,7 +145,16 @@ export class WorldEngine implements SceneInputs {
   private activitySession = '';
   /** Floating legends over the main pieces; switched from the toolbar. */
   private calloutsOn = false;
-  private calloutsDirty = true;
+  private viewport: ViewportLayout | null = null;
+  /** Names over the scene (DOM, owned here) and their markers in 3D. */
+  private annotationLayer?: AnnotationLayer;
+  private markers?: AnnotationMarkers;
+  private readonly localAnchors = new Map<string, THREE.Vector3>();
+  private readonly visibilityMemory = new VisibilityMemory();
+  private labelSpots = new Map<string, number>();
+  private namedLabels: string[] = [];
+  private annotationClock = 1;
+  private readonly occlusionRay = new THREE.Raycaster();
   private telemetryClock = 0;
   private lastView = { azimuth: Number.NaN, distance: Number.NaN };
   private thumbnails = new Map<string, Blob>();
@@ -310,6 +323,9 @@ export class WorldEngine implements SceneInputs {
 
     this.selectionBox = new SelectionMarker('#d7ac6f');
     this.scene.add(this.selectionBox);
+    this.markers = new AnnotationMarkers();
+    this.markers.points.visible = this.calloutsOn;
+    this.scene.add(this.markers.points);
     this.track(this.selectionBox.geometry);
     this.track(this.selectionBox.material as THREE.Material);
     this.scene.add(this.root);
@@ -388,6 +404,12 @@ export class WorldEngine implements SceneInputs {
     this.timelineRig = undefined;
     this.parts.clear();
     this.packet = undefined;
+    this.localAnchors.clear();
+    this.visibilityMemory.forget();
+    this.labelSpots.clear();
+    this.namedLabels = [];
+    this.annotationLayer?.clear();
+    this.annotationClock = 1;
   }
   private buildSubject(): void {
     const changed = this.root.userData['section'] !== this.section;
@@ -493,30 +515,24 @@ export class WorldEngine implements SceneInputs {
         ) || amount > 0;
     }
   }
-  /** Area of the viewport that the overlays leave free: below the title, above the toolbar. */
+  /** Overlays measured by the interface; the engine never looks for them in the DOM. */
+  setViewport(layout: ViewportLayout | null): void {
+    this.viewport = layout;
+    this.annotationClock = 1;
+  }
+  /** Element over the canvas where the names of the pieces are drawn. */
+  attachLabels(container: HTMLElement): void {
+    this.annotationLayer = new AnnotationLayer(container, (id) => this.callbacks.picked(id));
+  }
+  /** Area of the canvas that the overlays leave free, as measured by the interface. */
   private freeRegion(): ViewportRegion {
-    const canvas = this.canvas,
-      r = canvas.getBoundingClientRect(),
-      host = canvas.closest('.stage');
-    const title = host?.querySelector('.title-block')?.getBoundingClientRect();
-    // The toolbar is either the wide bar or the compact dock; whichever is displayed limits the frame.
-    const toolbar = ['.bar', '.dock']
-      .map((selector) => host?.querySelector<HTMLElement>(selector))
-      .find((element) => element && element.offsetParent !== null)
-      ?.getBoundingClientRect();
-    let top = Math.min(r.height * 0.32, Math.max(12, (title?.bottom ?? r.top) - r.top + 12));
-    let bottomEdge = (toolbar?.top ?? r.bottom) - r.top - 14;
-    // Any overlay marked data-occludes (HUD map, tray) takes the band it covers: top half pushes down, bottom half up.
-    host?.querySelectorAll<HTMLElement>('[data-occludes]').forEach((element) => {
-      if (element.offsetParent === null) return;
-      const box = element.getBoundingClientRect();
-      if (box.width === 0 || box.height === 0) return;
-      const middle = (box.top + box.bottom) / 2 - r.top;
-      if (middle < r.height / 2) top = Math.max(top, Math.min(r.height * 0.4, box.bottom - r.top + 8));
-      else bottomEdge = Math.min(bottomEdge, box.top - r.top - 8);
-    });
-    const bottom = Math.max(top + 64, bottomEdge);
-    return { x: 16, y: top, width: Math.max(64, r.width - 32), height: Math.max(64, bottom - top) };
+    const w = this.canvas.clientWidth,
+      h = this.canvas.clientHeight;
+    const v = this.viewport;
+    // A measurement taken for another canvas size is stale: frame on the whole canvas until the next one.
+    if (!v || Math.abs(v.width - w) > 2 || Math.abs(v.height - h) > 2)
+      return { x: 16, y: 16, width: Math.max(64, w - 32), height: Math.max(64, h - 32) };
+    return { ...v.freeRect };
   }
   private fitObject(o: THREE.Object3D, view?: FocusView): void {
     if (!this.controls || !this.camera || !this.rig) return;
@@ -733,9 +749,13 @@ export class WorldEngine implements SceneInputs {
   }
   setCallouts(on: boolean): void {
     this.calloutsOn = on;
-    this.telemetryClock = 1;
-    this.calloutsDirty = true;
-    if (!on) this.callbacks.callouts([]);
+    this.annotationClock = 1;
+    if (this.markers) this.markers.points.visible = on;
+    if (!on) {
+      this.namedLabels = [];
+      this.labelSpots.clear();
+      this.annotationLayer?.clear();
+    }
   }
   setView(azimuth: number, distance: number): void {
     this.rig?.setReduced(this.reduced);
@@ -745,7 +765,7 @@ export class WorldEngine implements SceneInputs {
     this.rig?.setReduced(this.reduced);
     this.rig?.orbitTo(azimuth);
   }
-  /** Camera view and callout anchors, throttled to 10 Hz and sent only when something moved. */
+  /** Camera view, throttled to 10 Hz and sent only when it moved. */
   private emitTelemetry(dt: number): void {
     this.telemetryClock += dt;
     if (this.telemetryClock < 0.1 || !this.rig) return;
@@ -758,26 +778,120 @@ export class WorldEngine implements SceneInputs {
       this.lastView = { azimuth, distance };
       this.callbacks.view({ azimuth, distance });
     }
-    if (this.calloutsOn && (moved || this.rig.moving || this.calloutsDirty))
-      this.callbacks.callouts(this.projectCallouts());
-    this.calloutsDirty = false;
   }
-  private projectCallouts(): ScreenAnchor[] {
+  /** Visible in the scene: the object and every ancestor up to the scene. */
+  private shown(object: THREE.Object3D): boolean {
+    for (let o: THREE.Object3D | null = object; o; o = o.parent) if (!o.visible) return false;
+    return true;
+  }
+  /**
+   * Markers and names of the pieces. Every frame the anchors are projected and the plates follow them; five
+   * times a second the visibility (a ray from the camera to each anchor), the chosen names and their places
+   * are recomputed, so the plates never reflow as one block while the camera turns.
+   */
+  private updateAnnotations(dt: number): void {
     const w = this.canvas.clientWidth,
       h = this.canvas.clientHeight;
-    const out: ScreenAnchor[] = [];
-    const v = new THREE.Vector3();
-    const box = new THREE.Box3();
+    if (!w || !h) return;
     this.camera.updateMatrixWorld();
+    const screen = new Map<string, { x: number; y: number }>();
+    const worlds = new Map<string, THREE.Vector3>();
+    const candidates: AnnotationCandidate[] = [];
+    const positions: THREE.Vector3[] = [];
+    const colors: THREE.Color[] = [];
+    const v = new THREE.Vector3();
     for (const [id, o] of this.parts) {
-      if (!o.visible || familyOf(id)) continue;
-      selectionBounds(o, box);
-      if (box.isEmpty()) continue;
-      box.getCenter(v).project(this.camera);
-      if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) continue;
-      out.push({ id, name: pieceDefinition(id, this.section).name, x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h });
+      if (familyOf(id) || !this.shown(o)) continue;
+      let local = this.localAnchors.get(id);
+      if (!local) {
+        local = localAnchor(o);
+        this.localAnchors.set(id, local);
+      }
+      const p = o.localToWorld(local.clone());
+      worlds.set(id, p);
+      v.copy(p).project(this.camera);
+      const onScreen = v.z > -1 && v.z < 1 && Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1;
+      const x = ((v.x + 1) / 2) * w,
+        y = ((1 - v.y) / 2) * h;
+      screen.set(id, { x, y });
+      candidates.push({ id, x, y, onScreen, occluded: false });
+      // Lifted towards the camera so the disc never sinks into the surface it marks.
+      positions.push(p.clone().addScaledVector(this.camera.position.clone().sub(p).normalize(), 0.03));
+      colors.push(
+        new THREE.Color(id === this.activePart ? '#fff3d6' : this.namedLabels.includes(id) ? '#e8c184' : '#8f7a57'),
+      );
     }
-    return out;
+    this.markers?.update(positions, colors, 9 * (this.renderer?.getPixelRatio() ?? 1));
+    this.annotationClock += dt;
+    if (this.annotationClock >= 0.2) {
+      this.annotationClock = 0;
+      this.refreshLabels(candidates, worlds, w, h);
+    }
+    this.annotationLayer?.position(screen);
+  }
+  private refreshLabels(
+    candidates: AnnotationCandidate[],
+    worlds: ReadonlyMap<string, THREE.Vector3>,
+    w: number,
+    h: number,
+  ): void {
+    for (const c of candidates) if (c.onScreen) c.occluded = this.occluded(c.id, worlds.get(c.id)!);
+    const named = chooseNamed(
+      {
+        candidates,
+        selected: this.activePart || null,
+        hovered: this.hoverId,
+        active: this.activity.blocks ?? [],
+        compact: w < 600 || h < 360,
+      },
+      this.visibilityMemory,
+    );
+    const byId = new Map(candidates.map((c) => [c.id, c]));
+    const requests = named.map((id) => {
+      const def = pieceDefinition(id, this.section);
+      const text = def.shortName ?? def.name;
+      return { id, text, fullName: def.name, x: byId.get(id)!.x, y: byId.get(id)!.y, ...estimateLabelSize(text) };
+    });
+    const placed = placeLabels(requests, this.viewport?.occlusions ?? [], { x: 0, y: 0, width: w, height: h }, this.labelSpots);
+    this.labelSpots = new Map(placed.map((p) => [p.id, p.candidate]));
+    this.namedLabels = placed.map((p) => p.id);
+    const info = new Map(requests.map((r) => [r.id, r]));
+    this.annotationLayer?.setLabels(
+      placed.map((p) => {
+        const r = info.get(p.id)!;
+        return {
+          id: p.id,
+          text: r.text,
+          fullName: r.fullName,
+          selected: p.id === this.activePart,
+          dx: p.x - r.x,
+          dy: p.y - r.y,
+          width: p.width,
+          lead: p.lead,
+        };
+      }),
+    );
+  }
+  /** Something opaque of the station or the bench stands between the camera and the anchor. */
+  private occluded(id: string, point: THREE.Vector3): boolean {
+    const origin = this.camera.position;
+    const direction = point.clone().sub(origin);
+    const distance = direction.length();
+    this.occlusionRay.set(origin, direction.normalize());
+    this.occlusionRay.near = 0.01;
+    this.occlusionRay.far = Math.max(0.01, distance - 0.02);
+    const piece = this.parts.get(id);
+    const targets = [this.root, ...this.environmentParts.values()];
+    for (const hit of this.occlusionRay.intersectObjects(targets, true)) {
+      const mesh = hit.object as THREE.Mesh;
+      if (!mesh.isMesh || !this.shown(mesh)) continue;
+      const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      if (material?.transparent && material.opacity < 0.6) continue;
+      let inside = false;
+      for (let o: THREE.Object3D | null = mesh; o; o = o.parent) if (o === piece) inside = true;
+      if (!inside) return true;
+    }
+    return false;
   }
   /**
    * 3D thumbnail of one piece, drawn alone with its own lights (layer 7) so the room never shows through.
@@ -1273,6 +1387,7 @@ export class WorldEngine implements SceneInputs {
     if (this.selectionBox?.visible) this.updateSelection();
     this.selectionBox?.update(dt, this.reduced);
     this.hoverGlow.update(dt, this.reduced);
+    if (this.calloutsOn) this.updateAnnotations(dt);
     this.renderer.info.reset();
     if (this.statsFrame % 30 === 0) this.gpuProfiler?.begin();
     if (this.effects && this.viewMode === 'material') this.effects.render();
@@ -1311,6 +1426,8 @@ export class WorldEngine implements SceneInputs {
     this.gpuProfiler?.dispose();
     this.releaseThumbnails();
     this.hoverGlow.dispose();
+    this.markers?.dispose();
+    this.annotationLayer?.dispose();
     this.thumbnailRig?.target.dispose();
     cancelAnimationFrame(this.frame);
     this.observer?.disconnect();

@@ -4,7 +4,10 @@
   [attr.data-layout]="layout()"
   [style.--accent]="accent()"
 >
-  <app-experience-nav class="topbar" [active]="session.section()" />
+  <app-experience-nav class="topbar" [active]="session.section()">
+    <app-panels-menu />
+    <app-help-dialog (tour)="sceneCommand('tour')" />
+  </app-experience-nav>
 
   <div class="mobile-modes" role="group" aria-label="Distribución del laboratorio">
     @for (m of modes; track m.id) {
@@ -14,212 +17,200 @@
     }
   </div>
 
-  <section
-    class="stage"
-    aria-label="Banco tridimensional"
-    (pointermove)="moveTip($event)"
-    (pointerleave)="hoveredId.set(null)"
-  >
-    @defer (on immediate) {
-      <app-atrium-scene
-        #world
+  <app-workspace class="desk-area" [templates]="panelTemplates()" [phoneLayout]="layout()">
+    <section
+      workspaceStage
+      class="stage"
+      #stage
+      aria-label="Banco tridimensional"
+      (pointermove)="moveTip($event)"
+      (pointerleave)="hoveredId.set(null)"
+    >
+      @defer (on immediate) {
+        <app-atrium-scene
+          #world
+          [section]="session.section()"
+          [memoryCells]="session.cells()"
+          [memoryBase]="session.physical() - (session.physical() % 32)"
+          [history]="session.historyView()"
+          [timeline]="session.timeline()"
+          [viewMode]="session.viewMode()"
+          [exploded]="session.exploded()"
+          [explodedAmount]="session.explodeAmount() / 100"
+          [activePart]="session.activePart()"
+          [tick]="session.tick()"
+          [reduced]="session.reduced()"
+          [quality]="session.quality()"
+          [manipulate]="session.manipulate()"
+          [inspection]="session.inspection()"
+          [memoryModel]="session.memoryModel()"
+          [signalChannel]="session.signalChannel()"
+          [readAccess]="session.lastReads()"
+          [writeAccess]="session.lastWrites()"
+          [lamp]="session.lampTarget()"
+          [lampOn]="session.lampOn()"
+          [activity]="session.activity()"
+          [viewport]="viewport.layout()"
+          (pieces)="session.selectablePieces.set($event)"
+          (anchors)="session.anchors.set($event)"
+          (view)="session.cameraView.set($event)"
+          (picked)="pick($event)"
+          (hovered)="hoveredId.set($event)"
+          (lampMoved)="session.lampTarget.set($event)"
+          (holding)="holding.set($event)"
+          (qualitySuggested)="suggestQuality($event)"
+        />
+      } @placeholder {
+        <p class="scene-loading" role="status">Preparando el banco…</p>
+      } @error {
+        <p class="scene-loading" role="alert">
+          Escena no disponible. Los instrumentos conservan sus acciones.
+        </p>
+      }
+
+      <div class="title-block" appOccludes="top">
+        @if (session.section() === 'atrium') {
+          <h1>DESMONTA<br />LA <em>LÓGICA.</em></h1>
+          <p>Entra en el 8086. Sigue una instrucción desde el byte hasta el resultado.</p>
+          <a class="enter" routerLink="/8086">ABRIR EL BANCO</a>
+        } @else {
+          <h1>{{ current()?.title }}</h1>
+          <p>{{ current()?.summary }}</p>
+        }
+      </div>
+
+      <app-scene-toolbar
         [section]="session.section()"
-        [memoryCells]="session.cells()"
-        [memoryBase]="session.physical() - (session.physical() % 32)"
-        [history]="session.historyView()"
-        [timeline]="session.timeline()"
-        [viewMode]="session.viewMode()"
         [exploded]="session.exploded()"
-        [explodedAmount]="session.explodeAmount() / 100"
-        [activePart]="session.activePart()"
-        [tick]="session.tick()"
-        [reduced]="session.reduced()"
-        [quality]="session.quality()"
-        [manipulate]="session.manipulate()"
+        [viewMode]="session.viewMode()"
         [inspection]="session.inspection()"
-        [memoryModel]="session.memoryModel()"
-        [signalChannel]="session.signalChannel()"
-        [readAccess]="session.lastReads()"
-        [writeAccess]="session.lastWrites()"
-        [lamp]="session.lampTarget()"
+        [manipulate]="session.manipulate()"
         [lampOn]="session.lampOn()"
-        [activity]="session.activity()"
-        (pieces)="session.selectablePieces.set($event)"
-        (anchors)="session.anchors.set($event)"
-        (view)="session.cameraView.set($event)"
-        (callouts)="session.calloutAnchors.set($event)"
-        (picked)="pick($event)"
-        (hovered)="hoveredId.set($event)"
-        (lampMoved)="session.lampTarget.set($event)"
-        (holding)="holding.set($event)"
-        (qualitySuggested)="suggestQuality($event)"
+        [holding]="holding() !== null"
+        [callouts]="session.callouts()"
+        [tour]="session.tourIndex() !== null"
+        [dimm]="session.memoryModel() === 'dimm'"
+        (command)="sceneCommand($event)"
       />
-    } @placeholder {
-      <p class="scene-loading" role="status">Preparando el banco…</p>
-    } @error {
-      <p class="scene-loading" role="alert">
-        Escena no disponible. La consola conserva sus acciones.
-      </p>
-    }
 
-    <div class="title-block">
-      @if (session.section() === 'atrium') {
-        <h1>DESMONTA<br />LA <em>LÓGICA.</em></h1>
-        <p>Entra en el 8086. Sigue una instrucción desde el byte hasta el resultado.</p>
-        <a class="enter" routerLink="/8086">ABRIR EL BANCO</a>
-      } @else {
-        <h1>{{ current()?.title }}</h1>
-        <p>{{ current()?.summary }}</p>
+      @if (session.section() !== 'atrium') {
+        <app-scene-hud
+          [thumbnailer]="thumbnailer"
+          (picked)="pick($event)"
+          (focused)="focusPiece($event)"
+          (orbit)="orbitTo($event)"
+          (aimSelected)="aimSelected()"
+        />
       }
-    </div>
 
-    <app-scene-toolbar
-      [section]="session.section()"
-      [exploded]="session.exploded()"
-      [viewMode]="session.viewMode()"
-      [inspection]="session.inspection()"
-      [manipulate]="session.manipulate()"
-      [lampOn]="session.lampOn()"
-      [holding]="holding() !== null"
-      [callouts]="session.callouts()"
-      [tour]="session.tourIndex() !== null"
-      [dimm]="session.memoryModel() === 'dimm'"
-      (command)="sceneCommand($event)"
-    />
+      @if (meter()) {
+        <app-perf-meter />
+      }
 
-    @if (session.section() !== 'atrium') {
-      <app-scene-hud
-        [thumbnailer]="thumbnailer"
-        (picked)="pick($event)"
-        (focused)="focusPiece($event)"
-        (orbit)="orbitTo($event)"
-        (aimSelected)="aimSelected()"
+      <app-tour
+        [index]="session.tourIndex()"
+        (next)="tourGo(1)"
+        (previous)="tourGo(-1)"
+        (close)="tourExit()"
       />
-    }
 
-    @if (meter()) {
-      <app-perf-meter />
-    }
+      @if (!session.hud().tray && !session.hud().map) {
+        <p class="scene-caption"><span aria-hidden="true"></span>{{ caption() }}</p>
+      }
+      <div class="hover-tip" #tip [class.visible]="!!hoveredId()" aria-hidden="true">
+        {{ hoverName() }}
+      </div>
+    </section>
 
-    <app-tour
-      [index]="session.tourIndex()"
-      (next)="tourGo(1)"
-      (previous)="tourGo(-1)"
-      (close)="tourExit()"
-    />
-
-    <p class="scene-caption"><span aria-hidden="true"></span>{{ caption() }}</p>
-    <div class="hover-tip" #tip [class.visible]="!!hoveredId()" aria-hidden="true">
-      {{ hoverName() }}
-    </div>
-  </section>
-
-  <aside class="console" #console aria-label="Consola de instrumentos">
-    <div class="console-inner" #consoleInner>
-      <app-console-header [section]="session.section()" />
-
-      @switch (session.section()) {
-        @case ('atrium') {
-          <app-atrium-portals [thumbnailer]="stationThumbnailer" />
+    @if (session.notice() || session.error() || ws.notice()) {
+      <div workspaceOverlay class="status-stack" appOccludes>
+        @if (session.error()) {
+          <p class="error" role="alert">{{ session.error() }}</p>
         }
-        @case ('8086') {
-          <app-transport />
-          <div class="tabs" role="tablist" aria-label="Instrumentos del procesador">
-            @for (t of ['state', 'program', 'trace']; track t) {
-              <button
-                type="button"
-                role="tab"
-                [attr.aria-selected]="session.tab() === t"
-                [attr.aria-controls]="'tab-' + t"
-                (click)="session.tab.set($any(t))"
-              >
-                {{ t === 'state' ? 'Estado' : t === 'program' ? 'Programa' : 'Traza' }}
-              </button>
-            }
-          </div>
-          <div class="tab-panel" [attr.id]="'tab-' + session.tab()" role="tabpanel">
-            @switch (session.tab()) {
-              @case ('state') {
-                <app-register-panel />
-                <app-alu-panel />
-                <div class="part-map" role="group" aria-label="Partes internas del procesador">
-                  @for (p of cpuParts; track p.id) {
-                    <button
-                      type="button"
-                      [attr.aria-pressed]="session.activePart() === p.id"
-                      (click)="session.part(p.id)"
-                    >
-                      {{ p.label }}
-                    </button>
-                  }
-                </div>
-              }
-              @case ('program') {
-                <app-program-panel (editorFocus)="editorFocus()" />
-              }
-              @case ('trace') {
-                <app-trace-panel />
-              }
-            }
-          </div>
-          @if (session.section() === '8086' && (session.activePart() === 'scope' || session.tab() === 'state')) {
-            <app-signal-panel />
-          }
-        }
-        @case ('time') {
-          <app-transport />
-          <app-trace-panel />
-        }
-        @case ('memory') {
-          <div class="model-switch" role="group" aria-label="Modelo de memoria">
-            <button
-              type="button"
-              [attr.aria-pressed]="session.memoryModel() === 'classic'"
-              (click)="session.memoryModel.set('classic'); session.part('bank-even')"
-            >
-              2164A / 8086
+        @if (session.notice()) {
+          <p class="notice" role="status">
+            <span>{{ session.notice() }}</span>
+            <button type="button" aria-label="Cerrar aviso" (click)="session.notice.set('')">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
-            <button
-              type="button"
-              [attr.aria-pressed]="session.memoryModel() === 'dimm'"
-              (click)="session.memoryModel.set('dimm'); session.part('dimm')"
-            >
-              DDR4 / galería
-            </button>
-          </div>
-          @if (session.memoryModel() === 'classic') {
-            <app-memory-panel />
-            <app-cache-panel />
-          } @else {
-            <app-dimm-panel />
-          }
+          </p>
         }
-        @case ('apple') {
-          <app-apple-panel />
+        @if (ws.notice()) {
+          <p class="notice" role="status">{{ ws.notice() }}</p>
         }
-        @case ('machine') {
-          <app-machine-instrument />
-        }
-      }
-
-      <app-station-mission />
-
-      <app-piece-inspector (focus)="focusSelected()" (aim)="aimSelected()" />
-
-      @if (session.notice()) {
-        <p class="notice" role="status">{{ session.notice() }}</p>
-      }
-
-      @if (session.error()) {
-        <p class="error" role="alert">{{ session.error() }}</p>
-      }
-
-      <app-session-panel />
-    </div>
-  </aside>
+      </div>
+    }
+  </app-workspace>
 
   <footer class="footer">
     <span>SILICIO / ARQUITECTURA DE MÁQUINAS</span>
     <span>8086 · MEMORIA · APPLE SILICON</span>
   </footer>
 </main>
+
+<ng-template #programPanel>
+  <app-transport />
+  <app-program-panel (editorFocus)="editorFocus()" />
+  <app-station-mission />
+</ng-template>
+
+<ng-template #statePanel>
+  <app-register-panel />
+  <app-alu-panel />
+  <div class="part-map" role="group" aria-label="Partes internas del procesador">
+    @for (p of cpuParts; track p.id) {
+      <button type="button" [attr.aria-pressed]="session.activePart() === p.id" (click)="session.part(p.id)">
+        {{ p.label }}
+      </button>
+    }
+  </div>
+  <app-signal-panel />
+</ng-template>
+
+<ng-template #inspectorPanel>
+  <app-piece-inspector (focus)="focusSelected()" (aim)="aimSelected()" />
+</ng-template>
+
+<ng-template #portalsPanel>
+  <app-atrium-portals [thumbnailer]="stationThumbnailer" />
+</ng-template>
+
+<ng-template #instrumentsPanel>
+  @switch (session.section()) {
+    @case ('time') {
+      <app-transport />
+      <app-trace-panel />
+    }
+    @case ('memory') {
+      <div class="model-switch" role="group" aria-label="Modelo de memoria">
+        <button
+          type="button"
+          [attr.aria-pressed]="session.memoryModel() === 'classic'"
+          (click)="session.memoryModel.set('classic'); session.part('bank-even')"
+        >
+          2164A / 8086
+        </button>
+        <button
+          type="button"
+          [attr.aria-pressed]="session.memoryModel() === 'dimm'"
+          (click)="session.memoryModel.set('dimm'); session.part('dimm')"
+        >
+          DDR4 / galería
+        </button>
+      </div>
+      @if (session.memoryModel() === 'classic') {
+        <app-memory-panel />
+        <app-cache-panel />
+      } @else {
+        <app-dimm-panel />
+      }
+    }
+    @case ('apple') {
+      <app-apple-panel />
+    }
+    @case ('machine') {
+      <app-machine-instrument />
+    }
+  }
+  <app-station-mission />
+</ng-template>

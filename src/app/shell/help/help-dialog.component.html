@@ -1,0 +1,180 @@
+<button
+  #trigger
+  type="button"
+  class="trigger"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="open()"
+  (click)="show()"
+>
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01" />
+  </svg>
+  <span class="label">Ayuda</span>
+</button>
+
+<dialog #dialog class="help" aria-labelledby="help-title" (cancel)="cancel($event)" (close)="closed()">
+  <header class="head">
+    <h2 id="help-title">Ayuda</h2>
+    <button #closeButton type="button" class="close" aria-label="Cerrar ayuda" (click)="hide()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </header>
+
+  <div class="layout">
+    <div class="tabs" role="tablist" aria-orientation="vertical" aria-label="Secciones de la ayuda">
+      @for (s of sections; track s.id; let i = $index) {
+        <button
+          type="button"
+          role="tab"
+          [id]="'help-tab-' + s.id"
+          [attr.data-section]="s.id"
+          [attr.aria-selected]="section() === s.id"
+          [attr.aria-controls]="'help-panel'"
+          [attr.tabindex]="section() === s.id ? 0 : -1"
+          (click)="choose(s.id)"
+          (keydown)="tabKey($event, i)"
+        >
+          {{ s.label }}
+        </button>
+      }
+    </div>
+
+    <section class="panel" id="help-panel" role="tabpanel" [attr.aria-labelledby]="'help-tab-' + section()">
+      @switch (section()) {
+        @case ('start') {
+          <h3>Cómo se usa el laboratorio</h3>
+          <ol class="steps">
+            <li>Elige un capítulo arriba: Banco 8086, Memoria, La máquina o Apple Silicon.</li>
+            <li>En el 8086, <strong>Programa</strong> y <strong>Estado</strong> están abajo, juntos: escribe o elige un experimento y pulsa <em>Paso</em>.</li>
+            <li>Toca una pieza en la escena para abrir su ficha en <strong>Pieza</strong>.</li>
+            <li>Con <strong>Paneles</strong> eliges qué instrumentos ves y si van abajo, a la derecha o flotando.</li>
+            <li>La barra bajo la escena mueve la cámara, abre el chip y muestra Piezas, Mapa y Gráficos.</li>
+          </ol>
+          <button type="button" class="primary" (click)="startTour()">Iniciar modo exposición</button>
+          <p class="note">El modo exposición recorre las estaciones en ocho minutos. Se avanza con las flechas y se sale con Esc.</p>
+        }
+        @case ('course') {
+          <h3>Temas del curso</h3>
+          <p class="note">Arquitectura de Máquinas I y II. Cada tema indica dónde se practica y si ya está disponible.</p>
+          <ul class="topics">
+            @for (t of topics; track t.topic) {
+              <li class="topic">
+                <div class="topic-head">
+                  <h4>{{ t.topic }}</h4>
+                  <span class="status" [attr.data-status]="t.status">{{ t.status }}</span>
+                </div>
+                <p class="source">{{ t.source }}</p>
+                <p>{{ t.where }}</p>
+                @if (t.status !== 'Próximamente') {
+                  <button type="button" (click)="openTopic(t)">Abrir</button>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @case ('emu') {
+          <h3>De EMU8086 a SILICIO</h3>
+          <p class="note">Dónde está cada ventana de EMU8086 en este laboratorio.</p>
+          <table class="equivalences">
+            <thead>
+              <tr>
+                <th scope="col">EMU8086</th>
+                <th scope="col">SILICIO</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of equivalences; track e.emu) {
+                <tr>
+                  <th scope="row">{{ e.emu }}</th>
+                  <td>{{ e.silicio }}</td>
+                  <td><span class="status" [attr.data-status]="e.status">{{ e.status }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        @case ('glossary') {
+          <h3>Glosario</h3>
+          <label class="kicker" for="help-glossary">Buscar entre {{ total }} términos</label>
+          <input
+            id="help-glossary"
+            type="search"
+            placeholder="ALE, offset, SPD…"
+            [value]="query()"
+            (input)="query.set($any($event.target).value)"
+          />
+          <dl class="glossary">
+            @for (t of terms(); track t.term) {
+              <div>
+                <dt>{{ t.term }} <small>{{ t.name }}</small></dt>
+                <dd>{{ t.definition }}</dd>
+              </div>
+            } @empty {
+              <p>Ningún término coincide.</p>
+            }
+          </dl>
+        }
+        @case ('shortcuts') {
+          <h3>Atajos del teclado</h3>
+          <p class="note">No se activan mientras escribes en el editor o en un campo.</p>
+          <dl class="shortcuts">
+            @for (s of shortcuts; track s[0]) {
+              <div>
+                <dt><kbd>{{ s[0] }}</kbd></dt>
+                <dd>{{ s[1] }}</dd>
+              </div>
+            }
+          </dl>
+        }
+        @case ('session') {
+          <h3>Sesión</h3>
+          <p class="note">La sesión se guarda sola en este navegador. Exportarla crea un archivo JSON con el programa, el historial y las ramas.</p>
+          <button type="button" class="primary" (click)="session.exportSession()">Exportar sesión y ramas</button>
+          <label class="kicker" for="help-session-file">Recuperar una sesión JSON</label>
+          <input id="help-session-file" type="file" accept="application/json,.json" (change)="importFile($event)" />
+        }
+        @case ('preferences') {
+          <h3>Preferencias</h3>
+          <label class="check">
+            <input type="checkbox" [ngModel]="session.reduced()" (ngModelChange)="session.setReduced($event)" />
+            Reducir movimiento
+          </label>
+          <button type="button" [attr.aria-pressed]="session.sound()" (click)="session.toggleSound()">
+            Sonido {{ session.sound() ? 'activado' : 'desactivado' }}
+          </button>
+          <div class="quality" role="radiogroup" aria-label="Calidad gráfica">
+            @for (o of qualities; track o.value) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="session.quality() === o.value"
+                (click)="session.setQuality(o.value)"
+              >
+                <span>{{ o.label }}</span>
+                <small>{{ o.hint }}</small>
+              </button>
+            }
+          </div>
+        }
+        @case ('scope') {
+          <h3>Alcance del modelo</h3>
+          <p>
+            El 8086 ejecuta un subconjunto: MOV, ADD, SUB, CMP, INC, DEC, PUSH y POP de registros, CALL y RET cercanos,
+            JMP, JZ, JNZ, LOOP, NOP y HLT, con registros de 16 bits. Todavía no admite INT 21h, MUL, DIV, DB/DW ni
+            macros; cuando lleguen, aparecerán aquí.
+          </p>
+          <p>
+            Dirección = <span appTerm="segmento">segmento</span> × 16 + <span appTerm="offset">offset</span>, limitada
+            a 20 bits; las palabras se guardan con el byte menos significativo primero.
+          </p>
+          <p>
+            Las fases son pasos didácticos, no ciclos eléctricos ni temporización real. Los modelos de Apple Silicon y de
+            La máquina son conceptuales: no reproducen el hardware comercial ni miden su rendimiento.
+          </p>
+        }
+      }
+    </section>
+  </div>
+</dialog>

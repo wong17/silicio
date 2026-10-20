@@ -1,0 +1,90 @@
+<div
+  class="desk"
+  #desk
+  [attr.data-mode]="arrangement().mode"
+  [attr.data-size]="ws.sizeClass()"
+  [attr.data-phone]="phoneLayout()"
+>
+  <div
+    class="overlay"
+    [style.width.px]="absolute() ? arrangement().scene.width : null"
+    [style.height.px]="absolute() ? arrangement().scene.height : null"
+  >
+    <ng-content select="[workspaceOverlay]" />
+  </div>
+  <div
+    class="stage-slot"
+    [style.width.px]="absolute() ? arrangement().scene.width : null"
+    [style.height.px]="absolute() ? arrangement().scene.height : null"
+  >
+    <ng-content select="[workspaceStage]" />
+  </div>
+
+  @if (bottomEdge() !== null) {
+    <div
+      class="splitter horizontal"
+      role="separator"
+      tabindex="0"
+      aria-orientation="horizontal"
+      aria-label="Altura de los instrumentos de abajo"
+      [attr.aria-valuenow]="splitterValue('bottom')"
+      aria-valuemin="160"
+      [attr.aria-valuemax]="splitterMax('bottom')"
+      [class.active]="preview()?.zone === 'bottom'"
+      [style.top.px]="preview()?.zone === 'bottom' ? preview()!.at : bottomEdge()"
+      [style.width.px]="arrangement().scene.width"
+      (pointerdown)="startSplit($event, 'bottom')"
+      (pointermove)="moveSplit($event)"
+      (pointerup)="endSplit($event)"
+      (pointercancel)="endSplit($event)"
+      (keydown)="splitKey($event, 'bottom')"
+    ></div>
+  }
+  @if (rightEdge() !== null) {
+    <div
+      class="splitter vertical"
+      role="separator"
+      tabindex="0"
+      aria-orientation="vertical"
+      aria-label="Ancho de los instrumentos de la derecha"
+      [attr.aria-valuenow]="splitterValue('right')"
+      aria-valuemin="320"
+      [attr.aria-valuemax]="splitterMax('right')"
+      [class.active]="preview()?.zone === 'right'"
+      [style.left.px]="preview()?.zone === 'right' ? preview()!.at : rightEdge()"
+      (pointerdown)="startSplit($event, 'right')"
+      (pointermove)="moveSplit($event)"
+      (pointerup)="endSplit($event)"
+      (pointercancel)="endSplit($event)"
+      (keydown)="splitKey($event, 'right')"
+    ></div>
+  }
+
+  <div class="panels" aria-label="Instrumentos">
+    @for (w of windows(); track w.id) {
+      <app-instrument-window
+        [panelId]="w.id"
+        [title]="w.title"
+        [placement]="w.placement"
+        [mode]="arrangement().mode"
+        [maximized]="arrangement().maximized === w.id"
+      >
+        @if (templates()[w.id]; as content) {
+          <ng-container [ngTemplateOutlet]="content" />
+        }
+      </app-instrument-window>
+    }
+  </div>
+</div>
+
+@if (minimized().length) {
+  <div class="tray" role="toolbar" aria-label="Paneles minimizados">
+    <span class="tray-label" aria-hidden="true">Minimizados</span>
+    @for (m of minimized(); track m.id) {
+      <button type="button" [attr.aria-label]="'Restaurar ' + m.title" (click)="ws.restore(m.id)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7" /></svg>
+        {{ m.title }}
+      </button>
+    }
+  </div>
+}
