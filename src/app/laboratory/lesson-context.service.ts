@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { SimulationCoordinator } from './controllers/simulation-coordinator';
 import { DEFAULT_CONTROLLER, type ControllerId, type ExperienceId } from './controllers/simulation-controller';
+import type { LessonPart } from '../simulation/lab-session-codec';
 import { transfer, validate, type ArtifactKind, type LearningArtifact, type Payloads } from '../simulation/learning-artifact';
 
 /**
@@ -30,6 +31,27 @@ export class LessonContext {
       ? (Object.keys(DEFAULT_CONTROLLER) as ExperienceId[]).find((v) => DEFAULT_CONTROLLER[v] === owner)
       : undefined;
   });
+
+  /** What the session file keeps of the lesson: who owns the clock, the view and the artifacts on offer. */
+  toPart(): LessonPart {
+    return {
+      lessonId: this.lessonId(),
+      controllerId: this.controllerId(),
+      view: this.view(),
+      artifacts: [...this.artifacts.values()],
+      artifactId: this.artifactId(),
+    };
+  }
+
+  /** Puts back a validated lesson. The clock stays paused: nothing resumes by itself. */
+  fromPart(part: LessonPart): void {
+    this.artifacts.clear();
+    for (const a of part.artifacts) this.artifacts.set(a.id, a);
+    this.artifactId.set(part.artifactId);
+    this.lessonId.set(part.lessonId);
+    if (part.controllerId) this.coordinator.activate(part.controllerId);
+    if (part.view) this.coordinator.changeView(part.view);
+  }
 
   begin(lessonId: string, controller: ControllerId): void {
     this.lessonId.set(lessonId);

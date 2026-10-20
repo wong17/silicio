@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
+import { pathOf } from '../../content/routes';
 import { AtriumPortalsComponent } from './atrium-portals.component';
 import { CHAPTERS as EXPERIENCES } from '../../content/experiences';
 
@@ -25,7 +26,7 @@ describe('portales del atrio', () => {
     const links = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a.portal'));
     expect(links).toHaveLength(EXPERIENCES.length);
     for (const [i, link] of links.entries()) {
-      expect(link.getAttribute('href')).toBe('/' + EXPERIENCES[i].id);
+      expect(link.getAttribute('href')).toBe('/' + pathOf(EXPERIENCES[i].id));
       expect(link.querySelector('img')).not.toBeNull();
     }
   });

@@ -32,11 +32,13 @@ import { AtriumPortalsComponent } from './console/atrium-portals/atrium-portals.
 import { SceneHudComponent } from './world/scene-hud/scene-hud.component';
 import { PieceInspectorComponent } from './console/piece-inspector/piece-inspector.component';
 import { HelpDialogComponent } from './shell/help/help-dialog.component';
+import { StateCompareComponent } from './instruments/cpu/compare/state-compare.component';
 import { PhasesComponent } from './instruments/cpu/phases/phases.component';
 import { ScreenPanelComponent } from './instruments/cpu/screen/screen-panel.component';
 import { PortsPanelComponent } from './instruments/cpu/ports/ports-panel.component';
 import { SimulationTransportComponent } from './shell/transport/simulation-transport.component';
 import { SimulationCoordinator } from './laboratory/controllers/simulation-coordinator';
+import { sectionOfPath } from './content/routes';
 import { experienceOf } from './laboratory/controllers/simulation-controller';
 import { RegisterPanelComponent } from './instruments/cpu/register/register-panel.component';
 import { AluPanelComponent } from './instruments/cpu/alu/alu-panel.component';
@@ -85,6 +87,7 @@ const NARROW = '(max-width: 899px)';
     PieceInspectorComponent,
     HelpDialogComponent,
     PhasesComponent,
+    StateCompareComponent,
     ScreenPanelComponent,
     PortsPanelComponent,
     SimulationTransportComponent,
@@ -229,8 +232,7 @@ export class App implements AfterViewInit, OnDestroy {
   private portsSeen = false;
 
   private route(): void {
-    const id = this.router.url.split('?')[0].split('/')[1] as Section;
-    const section: Section = EXPERIENCES.some((e) => e.id === id) ? id : 'atrium';
+    const section: Section = sectionOfPath(this.router.url.split('?')[0].split('/')[1] ?? '');
     // Writing the piece into the address re-enters here; the station itself must not be reset by that.
     if (section === this.lastSection) return;
     this.lastSection = section;
@@ -274,7 +276,8 @@ export class App implements AfterViewInit, OnDestroy {
       return;
     }
     const link = fromQuery(params);
-    if (link.piece) this.session.activePart.set(link.piece);
+    // The chronoscope's frames no longer exist: an old link naming one opens the station without a selection.
+    if (link.piece && !link.piece.startsWith('frame-')) this.session.activePart.set(link.piece);
     if (link.azimuth !== undefined && link.distance !== undefined) {
       const { azimuth, distance } = link;
       setTimeout(() => this.world()?.setView(azimuth, distance), 600);

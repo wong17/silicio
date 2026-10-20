@@ -70,6 +70,6 @@ export class SimulationTransportComponent {
   /** «Volver al paso»: back to the view that holds the exercise. */
   backToStep(): void {
     const home = this.lesson.home();
-    if (home) void this.router.navigateByUrl('/' + (home === 'soc' ? 'apple' : home));
+    if (home) void this.router.navigateByUrl('/' + home);
   }
 }

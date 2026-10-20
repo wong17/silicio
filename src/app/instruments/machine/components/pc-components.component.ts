@@ -107,6 +107,6 @@ export class PcComponentsComponent {
       return;
     }
     this.lesson.offer(artifact);
-    void this.router.navigateByUrl('/apple');
+    void this.router.navigateByUrl('/soc');
   }
 }

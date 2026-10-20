@@ -799,13 +799,13 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Modificar:** app.routes.ts, content/experiences.ts, deeplink.ts/.spec.ts, tour.ts, station-missions.ts, console/atrium-portals/, world/scene-inputs.ts y tests de restore/autosave.
 **Consume:** estados estabilizados de experiencias.
 
-- [ ] Navegar a una vista de consulta conserva LessonContext; iniciar otro ejercicio es una acción explícita.
-- [ ] Retirar Cronoscopio de carga normal; conservar parser de rutas/IDs antiguos; /apple y 'apple' se traducen a SoC.
-- [ ] /time → /8086 con comparación; tab=trace → pareja Programa/Estado; frame-N sin selección inexistente.
-- [ ] Comparación de dos snapshots nombrados sin vista de traza completa.
-- [ ] Sobre v3: CPU compatible con v1/v2 (con io), lección memoria, PC, SoC, guía, LessonContext y artefactos de comparación. Validar sus referencias; layout en almacenamiento separado versionado.
-- [ ] Importación atómica, tamaño acotado y error sin cambiar sesión vigente. v1/v2 reemplaza solo 8086 (programa, historial y ramas), conservando ejercicios independientes de Memoria, SSD/estado PC y SoC; recalcular las vistas vinculadas a Sesión 8086. v3 reemplaza el conjunto completo y rechaza payload incompleto. Importar pausa controladores y descarta respuestas pendientes, sin auto-reanudar.
-- [ ] Tests: v1/v2 conservan SSD y otras experiencias; v3 reemplaza todo de forma atómica; ramas, corrupción, versión desconocida, recarga y cuota agotada.
+- [x] Navegar a una vista de consulta conserva LessonContext; iniciar otro ejercicio es una acción explícita.
+- [x] Retirar Cronoscopio de carga normal; conservar parser de rutas/IDs antiguos; /apple y 'apple' se traducen a SoC.
+- [x] /time → /8086 con comparación; tab=trace → pareja Programa/Estado; frame-N sin selección inexistente.
+- [x] Comparación de dos snapshots nombrados sin vista de traza completa.
+- [x] Sobre v3: CPU compatible con v1/v2 (con io), lección memoria, PC, SoC, guía, LessonContext y artefactos de comparación. Validar sus referencias; layout en almacenamiento separado versionado.
+- [x] Importación atómica, tamaño acotado y error sin cambiar sesión vigente. v1/v2 reemplaza solo 8086 (programa, historial y ramas), conservando ejercicios independientes de Memoria, SSD/estado PC y SoC; recalcular las vistas vinculadas a Sesión 8086. v3 reemplaza el conjunto completo y rechaza payload incompleto. Importar pausa controladores y descarta respuestas pendientes, sin auto-reanudar.
+- [x] Tests: v1/v2 conservan SSD y otras experiencias; v3 reemplaza todo de forma atómica; ramas, corrupción, versión desconocida, recarga y cuota agotada.
 
 **Puerta:** sesiones antiguas conservan programa/ramas; rutas resueltas.
 

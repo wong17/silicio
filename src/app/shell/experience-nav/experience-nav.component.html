@@ -8,7 +8,7 @@
 <nav class="links" #links aria-label="Experiencias" (scroll)="onScroll()">
   @for (e of experiences; track e.id) {
     <a
-      [routerLink]="'/' + e.id"
+      [routerLink]="'/' + pathOf(e.id)"
       [class.active]="active() === e.id"
       [attr.aria-current]="active() === e.id ? 'page' : null"
       [style.--accent]="e.accent"

@@ -1,0 +1,29 @@
+<section class="compare" aria-label="Comparar dos estados">
+  <p class="kicker">Comparar estados</p>
+  <div class="actions">
+    <button type="button" (click)="session.capture()">Guardar estado A</button>
+    <button type="button" (click)="session.captureB()" [disabled]="!session.baseline()">Guardar estado B</button>
+    @if (session.baseline()) {
+      <button type="button" class="ghost" (click)="session.clearComparison()">Borrar</button>
+    }
+  </div>
+  @if (!session.baseline()) {
+    <p class="note">
+      Para comparar, guarda un estado con «Guardar estado A», sigue ejecutando o cambia el programa, y compara con el
+      estado actual o con un segundo estado B.
+    </p>
+  } @else {
+    <p class="note">{{ session.baselineText() }} · frente a {{ session.baselineB() ? 'el estado B' : 'el estado actual' }}.</p>
+    <div class="diff" role="table" aria-label="Diferencias">
+      @for (d of session.comparison(); track d.name) {
+        <div role="row">
+          <span role="cell">{{ d.name }}</span>
+          <del role="cell">{{ d.a }}</del>
+          <b role="cell">{{ d.b }}</b>
+        </div>
+      } @empty {
+        <p class="note">Registros, flags y memoria coinciden.</p>
+      }
+    </div>
+  }
+</section>

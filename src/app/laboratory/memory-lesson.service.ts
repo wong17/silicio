@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { SimulationCoordinator } from './controllers/simulation-coordinator';
+import type { MemoryPart } from '../simulation/lab-session-codec';
 import {
   ADDRESSING_MODES,
   ExerciseMemory,
@@ -130,6 +131,39 @@ export class MemoryLessonService {
     this.segDS.set('1000');
     this.segSS.set('3000');
     this.progress.update((p) => ({ ...p, addresses: 0 }));
+  }
+
+  /** What the session file keeps of the exercise: its bytes, the open activity and every input. */
+  toPart(): MemoryPart {
+    return {
+      activity: this.activity(),
+      format: this.format(),
+      exercise: this.exercise.snapshot(),
+      progress: { ...this.progress() },
+      inputs: {
+        mode: this.mode(), regBX: this.regBX(), regBP: this.regBP(), regSI: this.regSI(), regDI: this.regDI(),
+        displacement: this.displacement(), segDS: this.segDS(), segSS: this.segSS(), value: this.value(),
+      },
+    };
+  }
+
+  /** Puts back a part that was already validated. */
+  fromPart(part: MemoryPart): void {
+    this.activity.set(part.activity);
+    this.format.set(part.format);
+    this.exercise.restore(part.exercise);
+    this.progress.set({ ...part.progress });
+    const i = part.inputs;
+    this.mode.set(i.mode);
+    this.regBX.set(i.regBX);
+    this.regBP.set(i.regBP);
+    this.regSI.set(i.regSI);
+    this.regDI.set(i.regDI);
+    this.displacement.set(i.displacement);
+    this.segDS.set(i.segDS);
+    this.segSS.set(i.segSS);
+    this.value.set(i.value);
+    this.revision.update((n) => n + 1);
   }
 
   /** Switches to the exercise's own memory: hands the clock to it and pauses whoever had it. */

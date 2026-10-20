@@ -43,6 +43,22 @@ export class PcSession {
   readonly booting = computed(() => this.powered() && this.state().pc < 0x1000);
   readonly files = computed(() => Object.keys(this.state().ssd));
 
+  /** What the session file keeps of the PC: the exercise and the whole machine (the undo history is not saved). */
+  toPart() {
+    return { programId: this.programId(), state: this.state() };
+  }
+
+  fromPart(part: { programId: PcProgram['id']; state: PcState }): void {
+    this.programId.set(part.programId);
+    this.past.set([]);
+    this.state.set(part.state);
+    this.events.set([]);
+    this.focus.set(undefined);
+    this.waiting.set(false);
+    this.message.set('');
+    this.revision.update((n) => n + 1);
+  }
+
   private commit(next: PcState, events: readonly PcEvent[]): void {
     this.past.update((h) => [...h.slice(-(HISTORY_LIMIT - 1)), this.state()]);
     this.state.set(next);

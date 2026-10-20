@@ -80,6 +80,12 @@ export class BufferExperiment {
     return { kind: 'ready', values: this.view.output.values };
   }
 
+  /** Puts the dependency at a stage by replaying it from the start (the copies follow). */
+  restoreStage(stage: 0 | 1 | 2): void {
+    this.reset();
+    for (let n = 0; n < stage; n++) this.advance();
+  }
+
   get explicitCopyBytes(): number {
     return this.copies.toDevice + this.copies.fromDevice;
   }

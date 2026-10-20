@@ -78,7 +78,7 @@ export class ProgramPanelComponent {
   compareInSoc(): void {
     const regs = this.session.cpu.registers;
     this.lesson.offer(createArtifact('word-task', '8086', { accumulator: this.session.trace()[0]?.before.registers.AX ?? regs.AX, word: this.session.cpu.readWord(regs.DS, 10) }));
-    void this.router.navigateByUrl('/apple');
+    void this.router.navigateByUrl('/soc');
   }
 
   assembleAndContinue(): void {

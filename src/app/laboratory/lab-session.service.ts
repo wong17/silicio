@@ -5,6 +5,8 @@ import { joinWord, splitWord } from '../simulation/memory-lesson';
 import { Cpu8086Controller } from './controllers/cpu8086-controller';
 import { PcController } from './controllers/pc-controller';
 import { PcSession } from './pc-session.service';
+import { LessonContext } from './lesson-context.service';
+import { readLabSession, writeLabSession } from '../simulation/lab-session-codec';
 import { pcSceneActivity } from './pc-activity';
 import { MemoryLessonController } from './controllers/memory-controller';
 import { SocController } from './controllers/soc-controller';
@@ -57,6 +59,7 @@ export class LabSession {
   readonly memoryLesson = inject(MemoryLessonService);
   /** The PC exercise of «La máquina». */
   readonly pc = inject(PcSession);
+  private readonly lessonContext = inject(LessonContext);
   readonly cpu = new Cpu8086();
   readonly missions = LAB_MISSIONS;
   readonly registerNames = REGISTER_LIST;
@@ -100,6 +103,8 @@ export class LabSession {
   readonly bufferStage = signal(0);
   readonly baseline = signal<Snapshot | undefined>(undefined);
   readonly baselineText = signal('');
+  /** Second saved state for the comparison; without it the current state is the second one. */
+  readonly baselineB = signal<Snapshot | undefined>(undefined);
   readonly segment = signal(0x2000);
   readonly offset = signal(10);
   readonly selectablePieces = signal<PieceOption[]>([]);
@@ -253,7 +258,7 @@ export class LabSession {
   readonly comparison = computed(() => {
     this.revision();
     const a = this.baseline(),
-      b = this.state();
+      b = this.baselineB() ?? this.state();
     if (!a) return [];
     return [
       ...this.registerNames
@@ -457,6 +462,11 @@ export class LabSession {
       this.branches();
       this.cursor();
       this.missionIndex();
+      this.pc.revision();
+      this.memoryLesson.progress();
+      this.memoryLesson.revision();
+      this.bufferStage();
+      this.bufferRevision();
       untracked(() => this.scheduleAutosave());
     });
   }
@@ -863,6 +873,18 @@ export class LabSession {
     this.revision.update((n) => n + 1);
   }
 
+  captureB(): void {
+    this.baselineB.set(this.cpu.snapshot());
+    this.revision.update((n) => n + 1);
+  }
+
+  clearComparison(): void {
+    this.baseline.set(undefined);
+    this.baselineB.set(undefined);
+    this.baselineText.set('');
+    this.revision.update((n) => n + 1);
+  }
+
   editRegister(name: keyof Registers, text: string): void {
     this.pause();
     const value = this.parseHex(text);
@@ -1042,9 +1064,30 @@ export class LabSession {
     }
   }
 
-  /** Applies a serialized session (file import or autosave). Throws before any change if it is invalid. */
+  /**
+   * Applies a serialized session (file import or autosave). Everything is validated before anything changes:
+   * a v1/v2 file replaces only the 8086 (program, history and branches); a v3 file replaces every exercise.
+   * Importing pauses the clock and drops any step still being answered; nothing resumes by itself.
+   */
   private restoreFromText(text: string): void {
-    const session = readSession(text);
+    const loaded = readLabSession(text);
+    this.pause();
+    this.applyCpuSession(loaded.kind === 'legacy' ? loaded.cpu : loaded.lab.cpu);
+    if (loaded.kind === 'legacy') return;
+    const lab = loaded.lab;
+    this.memoryLesson.fromPart(lab.memory);
+    this.pc.fromPart(lab.pc);
+    this.bufferExperiment.setMode(lab.soc.mode);
+    this.separateMemory.set(lab.soc.mode === 'separate');
+    this.bufferExperiment.setInput(lab.soc.tile);
+    this.bufferExperiment.restoreStage(lab.soc.stage);
+    this.bufferStage.set(lab.soc.stage);
+    this.bufferNotice.set('');
+    this.bufferRevision.update((n) => n + 1);
+    this.lessonContext.fromPart(lab.lesson);
+  }
+
+  private applyCpuSession(session: ReturnType<typeof readSession>): void {
     this.cpu.load(session.source);
     this.laboratoryFacade.beginSession();
     this.cpu.restore(session.state);
@@ -1069,10 +1112,23 @@ export class LabSession {
     this.revision.update((n) => n + 1);
   }
 
-  /** The session as the v2 codec writes it: current timeline plus archived branches. */
+  /** The session as the v3 envelope: the 8086 as the v2 codec writes it, plus every other exercise. */
   serializeSession(pretty = false): string {
-    return JSON.stringify(
+    return writeLabSession(
+      this.cpuSessionV2(),
       {
+        memory: this.memoryLesson.toPart(),
+        pc: this.pc.toPart(),
+        soc: { mode: this.separateMemory() ? 'separate' : 'shared', tile: [...this.bufferExperiment.view.input.values], stage: this.bufferStage() as 0 | 1 | 2 },
+        lesson: this.lessonContext.toPart(),
+      },
+      pretty,
+    );
+  }
+
+  /** The 8086 session: current timeline plus archived branches. */
+  private cpuSessionV2(): unknown {
+    return {
         version: 2,
         current: {
           version: 1,
@@ -1094,10 +1150,7 @@ export class LabSession {
             missionIndex: this.missionIndex(),
           },
         })),
-      },
-      null,
-      pretty ? 2 : undefined,
-    );
+    };
   }
 
   /** Saves the session a moment after the last change. Storage failures never reach the student. */
@@ -1105,7 +1158,14 @@ export class LabSession {
     clearTimeout(this.autosaveTimer);
     this.autosaveTimer = setTimeout(() => {
       try {
-        if (!this.cpu.trace.length && !this.branches().length && this.source === MISSIONS[0].source) {
+        if (
+          !this.cpu.trace.length &&
+          !this.branches().length &&
+          this.source === MISSIONS[0].source &&
+          !this.pc.stepCount() &&
+          !Object.values(this.memoryLesson.progress()).some(Boolean) &&
+          this.bufferStage() === 0
+        ) {
           localStorage.removeItem(AUTOSAVE_KEY);
           return;
         }

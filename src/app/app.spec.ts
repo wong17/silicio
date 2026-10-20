@@ -29,7 +29,7 @@ describe('SILICIO / shell y consola', () => {
     fixture.detectChanges();
     const nav = (fixture.nativeElement as HTMLElement).querySelector('nav.links')!;
     const links = [...nav.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-    expect(links).toEqual(['/8086', '/memory', '/machine', '/apple']);
+    expect(links).toEqual(['/8086', '/memory', '/machine', '/soc']);
     expect(nav.textContent).not.toContain('Cronoscopio');
   });
 

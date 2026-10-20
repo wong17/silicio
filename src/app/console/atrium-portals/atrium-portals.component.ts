@@ -2,6 +2,7 @@ import { Component, effect, input, OnDestroy, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CHAPTERS } from '../../content/experiences';
 import type { Section } from '../../world/scene-inputs';
+import { pathOf } from '../../content/routes';
 
 /** Entry cards for the five experiences, shown on the atrium before any station is opened. */
 @Component({
@@ -11,6 +12,7 @@ import type { Section } from '../../world/scene-inputs';
   styleUrl: './atrium-portals.component.scss',
 })
 export class AtriumPortalsComponent implements OnDestroy {
+  readonly pathOf = pathOf;
   readonly experiences = CHAPTERS;
   /** Renders a station to a picture; null falls back to the numbered card without one. */
   readonly thumbnailer = input<((section: Section) => Promise<Blob | null>) | null>(null);
