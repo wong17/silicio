@@ -89,6 +89,8 @@ export class LabSession {
   readonly breakpoints = signal<ReadonlySet<number>>(new Set());
   /** Step of the cycle (0–6) being explained for the instruction on screen; undefined shows the confirmed state. */
   readonly explaining = signal<number | undefined>(undefined);
+  /** Switches of the 8255 trainer (port B); they survive a restart so the student can run again with the same ones. */
+  readonly switches = signal(0);
   /** The student's guess for the mission on screen, kept to compare with the result. */
   readonly prediction = signal('');
   readonly bus = signal('address');
@@ -514,6 +516,8 @@ export class LabSession {
 
   chooseMission(index: number): void {
     this.missionIndex.set(index);
+    const switches = this.missions[index].switches;
+    if (switches !== undefined) this.switches.set(switches);
     this.prediction.set('');
     this.breakpoints.set(new Set());
     this.source = this.missions[index].source;
@@ -525,6 +529,7 @@ export class LabSession {
     this.error.set('');
     try {
       this.cpu.load(this.source);
+      if (this.switches()) this.cpu.setSwitches(this.switches());
       this.laboratoryFacade.beginSession();
       this.loadedSource.set(this.source);
       this.explaining.set(undefined);
@@ -659,6 +664,13 @@ export class LabSession {
       if (!next.delete(line)) next.add(line);
       return next;
     });
+  }
+
+  /** Moves the switches of the trainer; the next `IN` from port B reads them. */
+  setSwitches(value: number): void {
+    this.switches.set(value & 255);
+    this.cpu.setSwitches(value & 255);
+    this.revision.update((n) => n + 1);
   }
 
   /** Types into the emulated keyboard; an instruction waiting for a key can then go on. */

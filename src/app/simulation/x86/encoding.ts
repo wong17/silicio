@@ -142,6 +142,21 @@ export function encode(op: string, ops: Operand[]): number[] {
       if (!isRm(ops[0])) throw Error(op + ' necesita un registro o una posición de memoria');
       return [sizeOfPair(ops[0]) === 8 ? 0xf6 : 0xf7, ...modrm(GROUP3_FIELDS[op], ops[0])];
     }
+    case 'IN':
+    case 'OUT': {
+      expect(op, ops, 2);
+      const [first, second] = ops;
+      const acc = op === 'IN' ? first : second;
+      const port = op === 'IN' ? second : first;
+      if (acc.kind !== 'register' || acc.size !== 8 || acc.name !== 'AL')
+        throw Error(op + ' usa AL: los puertos del 8255 didáctico son de 8 bits');
+      if (port.kind === 'register' && port.name === 'DX') return [op === 'IN' ? 0xec : 0xee];
+      if (port.kind === 'immediate') {
+        if (port.value < 0 || port.value > 255) throw Error('Un puerto inmediato va de 0 a 255; para uno mayor usa DX');
+        return [op === 'IN' ? 0xe4 : 0xe6, port.value];
+      }
+      throw Error('El puerto es un número de 0 a 255 o el registro DX');
+    }
     case 'LEA': {
       expect(op, ops, 2);
       const [d, s] = ops;
@@ -188,7 +203,7 @@ export function encode(op: string, ops: Operand[]): number[] {
       return encodeMov(ops);
     default: {
       const group = (ALU_OPS as readonly string[]).indexOf(op);
-      if (group < 0) throw Error('Instrucción no admitida: ' + op);
+      if (group < 0) throw Error('Instrucción no admitida: ' + op + ' (fuera del subconjunto de SILICIO)');
       return encodeAlu(op, group, ops);
     }
   }

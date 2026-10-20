@@ -7,6 +7,7 @@ describe('programas del curso (§4.4) sin interfaz', () => {
     const cpu = new Cpu8086();
     cpu.load(program.source);
     if (program.keys) cpu.type(program.keys);
+    if (program.switches !== undefined) cpu.setSwitches(program.switches);
     let steps = 0;
     while (!cpu.halted && steps++ < 20000) {
       const r = cpu.execute();
@@ -14,6 +15,7 @@ describe('programas del curso (§4.4) sin interfaz', () => {
     }
     expect(cpu.halted).toBe(true);
     const { expect: want } = program;
+    for (const [port, value] of Object.entries(want.ports ?? {})) expect(cpu.io.ports?.[Number(port)], 'puerto ' + port).toBe(value);
     if (want.screen !== undefined) expect(cpu.io.screen).toBe(want.screen);
     if (want.screenEndsWith !== undefined) expect(cpu.io.screen.endsWith(want.screenEndsWith)).toBe(true);
     for (const [name, value] of Object.entries(want.registers ?? {}))

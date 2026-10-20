@@ -1,5 +1,6 @@
 import { hex, physicalAddress, type Instruction, type Operand, type Snapshot, type Trace } from '../simulation/cpu8086';
 import { readRegister } from '../simulation/x86/executor';
+import { PPI_PORT_A, PPI_PORT_C, PPI_CONTROL, digitOf, portName } from '../simulation/x86/ppi8255';
 import type { LearningEvent } from './learning-event';
 
 /** The seven steps of the instruction cycle as the course teaches them (§4.3). */
@@ -110,6 +111,12 @@ function changesOf(trace: Trace): Change[] {
   }
   if (before.io.screen !== after.io.screen)
     out.push({ label: 'Pantalla', before: '«' + before.io.screen.slice(-12) + '»', after: '«' + after.io.screen.slice(-12) + '»' });
+  for (const port of [PPI_PORT_A, PPI_PORT_C, PPI_CONTROL]) {
+    const was = before.io.ports?.[port];
+    const now = after.io.ports?.[port];
+    if (was !== now)
+      out.push({ label: 'Puerto ' + hex(port, 2) + 'h', before: was === undefined ? '—' : h(was, 2), after: now === undefined ? '—' : h(now, 2) });
+  }
   if (before.io.keyboard.length !== after.io.keyboard.length)
     out.push({ label: 'Teclado', before: before.io.keyboard.length + ' tecla(s)', after: after.io.keyboard.length + ' tecla(s)' });
   return out;
@@ -171,6 +178,16 @@ function explain(trace: Trace): string {
       return i.text + ' apila la dirección de retorno ' + h(a ?? 0) + ' y salta a ' + h(i.target ?? after.registers.IP) + '.';
     case 'RET':
       return 'RET recupera ' + h(after.registers.IP) + ' de la pila y vuelve a esa dirección; SP queda en ' + h(after.registers.SP) + '.';
+    case 'IN': {
+      const port = operation?.operands[0] ?? 0;
+      return i.text + ' lee el puerto ' + h(port, 2) + ' ' + portName(port) + ' y deja AL=' + (operation?.result ?? 0) + '.';
+    }
+    case 'OUT': {
+      const port = operation?.operands[0] ?? 0;
+      const value = operation?.operands[1] ?? 0;
+      const shown = port === PPI_PORT_C && digitOf(value) !== undefined ? ' (el display muestra ' + digitOf(value) + ')' : '';
+      return i.text + ' escribe ' + h(value, 2) + ' en el puerto ' + h(port, 2) + ' ' + portName(port) + '.' + shown;
+    }
     case 'INT': {
       const ah = (before.registers.AX >>> 8) & 255;
       if (i.operands[0].kind === 'immediate' && i.operands[0].value === 0x20) return 'INT 20h termina el programa.';
@@ -233,6 +250,8 @@ function storeText(trace: Trace, changes: Change[]): string {
 
 function eventKind(trace: Trace): LearningEvent['kind'] {
   const i = trace.instruction;
+  if (i.op === 'IN') return 'input';
+  if (i.op === 'OUT') return 'output';
   if (i.op === 'INT') {
     if (trace.before.io.keyboard.length > trace.after.io.keyboard.length) return 'input';
     if (trace.before.io.screen !== trace.after.io.screen) return 'output';
@@ -244,6 +263,7 @@ function eventKind(trace: Trace): LearningEvent['kind'] {
 function eventRole(trace: Trace): LearningEvent['role'] {
   const i = trace.instruction;
   if (JUMPS.has(i.op) || ['CALL', 'RET', 'HLT', 'INT', 'NOP'].includes(i.op)) return 'control';
+  if (i.op === 'IN' || i.op === 'OUT') return 'transfer';
   if (trace.writes.length) return 'storage';
   if (['MOV', 'PUSH', 'POP', 'XCHG', 'LEA'].includes(i.op)) return 'transfer';
   return 'processing';

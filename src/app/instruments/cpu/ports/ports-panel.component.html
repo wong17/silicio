@@ -1,0 +1,64 @@
+<section class="ports" aria-label="Puertos del 8255 didáctico">
+  <p class="state" aria-live="polite">
+    @if (configured()) {
+      8255 configurado: A y C salidas, B entrada (palabra de control {{ h(control()) }}).
+    } @else {
+      8255 sin configurar. Escribe <strong>82h</strong> en el puerto de control <strong>A3h</strong> con OUT.
+    }
+  </p>
+
+  <div class="group" role="group" aria-label="Puerto A: LEDs">
+    <p class="kicker">Puerto A · A0h · LEDs <span>{{ h(a()) }}</span></p>
+    <ul class="leds">
+      @for (bit of bits; track bit) {
+        <li [class.on]="on(a(), bit)" [attr.aria-label]="'LED ' + bit + (on(a(), bit) ? ' encendido' : ' apagado')">
+          <span class="lamp" aria-hidden="true"></span>
+          <small>{{ bit }}</small>
+        </li>
+      }
+    </ul>
+  </div>
+
+  <div class="group" role="group" aria-label="Puerto B: interruptores">
+    <p class="kicker">Puerto B · A1h · interruptores <span>{{ h(b()) }}</span></p>
+    <ul class="switches">
+      @for (bit of bits; track bit) {
+        <li>
+          <button
+            type="button"
+            role="switch"
+            [attr.aria-checked]="on(b(), bit)"
+            [attr.aria-label]="'Interruptor ' + bit"
+            [class.on]="on(b(), bit)"
+            (click)="toggle(bit)"
+          >
+            <span class="knob" aria-hidden="true"></span>
+          </button>
+          <small>{{ bit }}</small>
+        </li>
+      }
+    </ul>
+  </div>
+
+  <div class="group" role="group" aria-label="Puerto C: display de siete segmentos">
+    <p class="kicker">Puerto C · A2h · siete segmentos <span>{{ h(c()) }}</span></p>
+    <svg class="seven" viewBox="0 0 70 110" role="img" [attr.aria-label]="'Display: ' + (digit() ?? (lit().length ? 'segmentos ' + lit().join(' ') : 'apagado'))">
+      <polygon class="seg" [class.on]="segmentOn('a')" points="12,6 58,6 52,14 18,14" />
+      <polygon class="seg" [class.on]="segmentOn('b')" points="60,8 60,50 52,46 52,16" />
+      <polygon class="seg" [class.on]="segmentOn('c')" points="60,58 60,100 52,94 52,62" />
+      <polygon class="seg" [class.on]="segmentOn('d')" points="12,102 58,102 52,94 18,94" />
+      <polygon class="seg" [class.on]="segmentOn('e')" points="10,58 18,62 18,94 10,100" />
+      <polygon class="seg" [class.on]="segmentOn('f')" points="10,8 18,16 18,46 10,50" />
+      <polygon class="seg" [class.on]="segmentOn('g')" points="14,54 20,50 50,50 56,54 50,58 20,58" />
+      <circle class="seg dp" [class.on]="segmentOn('dp')" cx="64" cy="102" r="4" />
+    </svg>
+    <p class="digit">{{ digit() ? 'Muestra ' + digit() : 'Patrón sin dígito decimal' }}</p>
+  </div>
+
+  <dl class="table">
+    <div><dt>A0h · A</dt><dd>{{ h(ports()?.[160]) }}</dd></div>
+    <div><dt>A1h · B</dt><dd>{{ h(ports()?.[161] ?? (session.switches() ? session.switches() : undefined)) }}</dd></div>
+    <div><dt>A2h · C</dt><dd>{{ h(ports()?.[162]) }}</dd></div>
+    <div><dt>A3h · control</dt><dd>{{ h(control()) }}</dd></div>
+  </dl>
+</section>

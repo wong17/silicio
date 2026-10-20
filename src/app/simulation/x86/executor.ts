@@ -1,4 +1,5 @@
 import { interrupt } from './dos-services';
+import { readPort, writePort } from './ppi8255';
 import { registerIndex } from './encoding';
 import {
   BYTE_REGISTERS,
@@ -234,6 +235,23 @@ export function execute(m: Machine, i: Instruction): Outcome {
       if (out.kind === 'halt') {
         m.halted = true;
         return done(out.reason);
+      }
+      return done();
+    }
+    case 'IN':
+    case 'OUT': {
+      const portOperand = op === 'IN' ? src : dst;
+      const port = portOperand.kind === 'immediate' ? portOperand.value : regs.DX;
+      if (op === 'IN') {
+        const value = readPort(m.io.ports, port);
+        operation.operands = [port];
+        operation.result = value;
+        writeRegister(regs, 'AL', 8, value);
+      } else {
+        const value = regs.AX & 255;
+        operation.operands = [port, value];
+        operation.result = value;
+        m.io = { ...m.io, ports: writePort(m.io.ports, port, value) };
       }
       return done();
     }

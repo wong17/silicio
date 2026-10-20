@@ -114,7 +114,7 @@ export function parseOperand(raw: string, ctx: SymbolContext): Operand {
   let text = raw.trim();
   if (!text) throw Error('Falta un operando');
   if (/^[A-Za-z]{2}\s*:/.test(text) && !/^[A-Za-z_]\w*\s*:\s*$/.test(text))
-    throw Error('Los prefijos de segmento (' + text.slice(0, 2).toUpperCase() + ':) están fuera del subconjunto');
+    throw Error('Los prefijos de segmento (' + text.slice(0, 2).toUpperCase() + ':) están fuera del subconjunto de SILICIO');
   let size: Size | undefined;
   const ptr = text.match(/^(BYTE|WORD)\s+PTR\s+(.*)$/i);
   if (ptr) {

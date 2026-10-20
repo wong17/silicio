@@ -90,9 +90,9 @@ export const COURSE_MAP: readonly CourseTopic[] = [
   {
     topic: 'Conexión con periféricos: 8255 y 8259',
     source: 'Actividades 2 y 3',
-    where: 'Puertos del 8255 en el banco 8086 e interrupción del teclado en el PC moderno.',
+    where: 'Puertos del 8255 en el banco 8086 (misión 18) e interrupción del teclado en el PC moderno.',
     station: '8086',
-    status: 'Próximamente',
+    status: 'Ampliándose',
   },
   {
     topic: 'Von Neumann frente a Harvard',
@@ -121,5 +121,5 @@ export const EMU8086_EQUIVALENCES: readonly { emu: string; silicio: string; stat
   { emu: 'Variables', silicio: 'Variables dentro de Programa: nombre, dirección, tipo y valor', status: 'Disponible' },
   { emu: 'Stack', silicio: 'Pila contextual al usar PUSH, POP, CALL y RET', status: 'Próximamente' },
   { emu: 'Emulator screen', silicio: 'Pantalla de 80×25 con teclado (INT 21h)', status: 'Disponible' },
-  { emu: 'Virtual devices', silicio: 'Puertos del 8255 didáctico', status: 'Próximamente' },
+  { emu: 'Virtual devices', silicio: 'Puertos 8255: LEDs, interruptores y siete segmentos (panel 2D; piezas 3D en el banco: pendiente)', status: 'Ampliándose' },
 ];

@@ -81,7 +81,7 @@ describe('ida y vuelta: assemble → bytes → decode', () => {
     'AND AX,0F0Fh', 'OR AL,CL', 'XOR [BX],AX', 'TEST AX,8000h', 'TEST AL,BL',
     'INC AX', 'INC BL', 'DEC WORD PTR [BX]', 'NEG BX', 'NOT AL', 'MUL BL', 'MUL CX', 'IMUL WORD PTR [SI]', 'DIV CL', 'DIV CX', 'IDIV BX',
     'CBW', 'CWD', 'SHL AX,1', 'SHL BL,CL', 'SHR AX,CL', 'SAR BX,1', 'ROL AL,1', 'ROR WORD PTR [BX],CL',
-    'INT 21h', 'INT 20h', 'NOP', 'HLT', 'RET',
+    'INT 21h', 'INT 20h', 'NOP', 'HLT', 'RET', 'IN AL,0A1h', 'IN AL,DX', 'OUT 0A0h,AL', 'OUT DX,AL',
   ];
   it.each(samples)('%s', (source) => {
     const program = assemble(source + '\nHLT');

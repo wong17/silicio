@@ -21,6 +21,7 @@ export function panelsFor(section: Section): PanelSpec[] {
       { id: 'state', title: 'Estado', zone: 'bottom', open: true },
       // The screen opens by itself with the first INT 21h; until then it is one choice in «Paneles».
       { id: 'screen', title: 'Pantalla', zone: 'right', open: false, weight: 1 },
+      { id: 'ports', title: 'Puertos 8255', zone: 'right', open: false, weight: 1 },
       ...SECONDARY,
     ];
   if (section === 'atrium')

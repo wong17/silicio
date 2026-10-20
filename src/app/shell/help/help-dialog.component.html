@@ -181,6 +181,11 @@
             vale lo mismo que CS (1000h). Con .MODEL SMALL los datos van en DS = 2000h y MOV AX,@DATA lo carga.
           </p>
           <p>
+            8255 didáctico: IN AL y OUT con un puerto de 0 a 255 o con DX. Los puertos están en A0h (A, LEDs), A1h (B,
+            interruptores), A2h (C, siete segmentos) y A3h (control). Antes de usarlo escribe 82h en A3h: A y C quedan
+            como salidas y B como entrada. Los interruptores se mueven en el panel Puertos 8255.
+          </p>
+          <p>
             La Pantalla es de 80 × 25 caracteres y el teclado es el campo de la Pantalla. INT 21h se explica como servicio
             del sistema: en un PC real apila FLAGS, CS e IP y salta por el vector de 0000:0084h; aquí el servicio está
             simulado. Una división entre 0, o con un cociente que no cabe, detiene el programa con un error de división y

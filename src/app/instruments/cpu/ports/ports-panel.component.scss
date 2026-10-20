@@ -1,0 +1,137 @@
+@use '../../../shared/console-kit' as kit;
+
+.ports {
+  @include kit.module;
+}
+
+.state {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: kit.$dim;
+  strong {
+    color: kit.$amber-soft;
+  }
+}
+
+.group {
+  display: grid;
+  gap: 8px;
+}
+
+.kicker {
+  @include kit.kicker;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  span {
+    color: kit.$amber-soft;
+    font-family: kit.$mono;
+  }
+}
+
+.leds,
+.switches {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  li {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+  }
+  small {
+    font: 11px kit.$mono;
+    color: kit.$dim;
+  }
+}
+
+.lamp {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #4a2320;
+  background: #2a1513;
+}
+.leds li.on .lamp {
+  border-color: #ff8a78;
+  background: #ff4d3a;
+  box-shadow: 0 0 12px #ff4d3a;
+}
+
+.switches button {
+  position: relative;
+  width: 100%;
+  min-width: 36px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid kit.$edge-strong;
+  border-radius: 8px;
+  background: #1e2526;
+  cursor: pointer;
+  @include kit.focus-ring;
+  .knob {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: 5px;
+    height: 16px;
+    border-radius: 4px;
+    background: #6d756f;
+  }
+  &.on {
+    border-color: kit.$amber;
+    .knob {
+      bottom: auto;
+      top: 5px;
+      background: kit.$amber;
+    }
+  }
+}
+
+.seven {
+  width: 84px;
+  height: auto;
+  padding: 8px;
+  border: 1px solid #2d3533;
+  border-radius: 8px;
+  background: #0b0f10;
+  .seg {
+    fill: #2a1513;
+    stroke: #3b1e1b;
+    stroke-width: 0.5;
+  }
+  .seg.on {
+    fill: #ff4d3a;
+    filter: drop-shadow(0 0 3px #ff4d3a);
+  }
+}
+
+.digit {
+  margin: 0;
+  font-size: 14px;
+  color: kit.$dim;
+}
+
+.table {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  div {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid #22292a;
+    font-size: 13px;
+  }
+  dt {
+    color: kit.$dim;
+  }
+  dd {
+    margin: 0;
+    font-family: kit.$mono;
+  }
+}

@@ -142,7 +142,7 @@ export function readSession(text: string): Session {
   const state = snapshot(raw.state),
     baseline = raw.baseline ? snapshot(raw.baseline) : undefined;
   const missionIndex =
-    Number.isInteger(raw.missionIndex) && raw.missionIndex >= 0 && raw.missionIndex < 17
+    Number.isInteger(raw.missionIndex) && raw.missionIndex >= 0 && raw.missionIndex < 18
       ? raw.missionIndex
       : 0;
   return { version: 1, source: raw.source, state, trace, cursor, missionIndex, baseline };

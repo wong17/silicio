@@ -63,7 +63,7 @@ export function interrupt(vector: number, m: Machine, port: MemoryPort): DosOutc
       return { kind: 'halt', reason: 'int21-4c' };
     default:
       throw Error(
-        'INT 21h con AH=' + hex(ah, 2) + 'h está fuera del subconjunto (admite 01h, 02h, 09h, 0Ah y 4Ch)',
+        'INT 21h con AH=' + hex(ah, 2) + 'h está fuera del subconjunto de SILICIO (admite 01h, 02h, 09h, 0Ah y 4Ch)',
       );
   }
 }

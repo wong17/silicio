@@ -69,6 +69,8 @@ export interface LabMission {
   level: MissionLevel;
   /** Keys the example types, in order. */
   keys?: string;
+  /** Switches of the 8255 trainer the example sets. */
+  switches?: number;
   predict?: { question: string; answer: string };
   observe?: string;
   /** Missions 01–09: expected AX. */
@@ -81,7 +83,7 @@ export interface LabMission {
 export const MISSION_LEVELS: readonly { level: MissionLevel; numbers: readonly number[] }[] = [
   { level: 'Fundamentos', numbers: [1, 2, 3, 6, 8] },
   { level: 'Control de flujo', numbers: [4, 5, 12, 14, 15] },
-  { level: 'Entrada y salida', numbers: [10, 11, 13, 16] },
+  { level: 'Entrada y salida', numbers: [10, 11, 13, 16, 18] },
   { level: 'Pila, procedimientos y macros', numbers: [7, 9, 17] },
 ];
 const levelOf = (n: number): MissionLevel => MISSION_LEVELS.find((l) => l.numbers.includes(n))!.level;
@@ -129,6 +131,12 @@ const COURSE_TEXT: Record<number, { goal: string; question: string; answer: stri
     answer: '80',
     observe: 'DIV BL deja el cociente en AL y el resto en AH; MOV AH,0 deja solo el cociente.',
   },
+  18: {
+    goal: 'Configura el 8255 (palabra de control 82h en el puerto A3h), lee los interruptores del puerto B (A1h) y cópialos a los LEDs del puerto A (A0h). Cambia los interruptores y ejecuta otra vez.',
+    question: 'Con los interruptores 01011010, ¿qué LEDs quedan encendidos?',
+    answer: '01011010',
+    observe: 'IN lleva al registro lo que hay en las patillas del puerto; OUT lo deja en el latch que alimenta los LEDs. El 8255 debe configurarse antes de usarse.',
+  },
   17: {
     goal: 'Una macro escribe un mensaje; se usa dos veces. En el listado verás cómo se expande en el mismo texto.',
     question: '¿Qué texto aparecerá en la Pantalla?',
@@ -155,24 +163,26 @@ const COURSE: LabMission[] = COURSE_PROGRAMS.map((p) => {
     goal: t.goal,
     level: levelOf(p.mission),
     keys: p.keys,
+    switches: p.switches,
     predict: { question: t.question, answer: t.answer },
     observe: t.observe,
     expect: p.expect,
   };
 });
 
-/** Missions 01–17 in the order of their number. */
+/** Missions 01–18 in the order of their number. */
 export const LAB_MISSIONS: readonly LabMission[] = [...BASE, ...COURSE];
 
 /** True when the final state satisfies what the mission asks for (screen text, registers or a variable). */
 export function meetsExpectation(
   e: CourseExpectation,
-  state: { registers: Record<string, number>; memory: Record<number, number>; io: { screen: string } },
+  state: { registers: Record<string, number>; memory: Record<number, number>; io: { screen: string; ports?: Readonly<Record<number, number>> } },
   data: readonly { name: string; address: number; type: 'byte' | 'word' }[],
 ): boolean {
   if (e.screen !== undefined && state.io.screen !== e.screen) return false;
   if (e.screenEndsWith !== undefined && !state.io.screen.endsWith(e.screenEndsWith)) return false;
   for (const [name, value] of Object.entries(e.registers ?? {})) if (state.registers[name] !== value) return false;
+  for (const [port, value] of Object.entries(e.ports ?? {})) if (state.io.ports?.[Number(port)] !== value) return false;
   if (e.variable) {
     const symbol = data.find((d) => d.name.toLowerCase() === e.variable!.name.toLowerCase());
     if (!symbol) return false;

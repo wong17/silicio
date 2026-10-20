@@ -1,6 +1,7 @@
 import { assemble } from './x86/assembler';
 import { decode } from './x86/decoder';
 import { execute } from './x86/executor';
+import { setSwitches } from './x86/ppi8255';
 import { keyCodes } from './x86/text-screen';
 import {
   REGISTER_NAMES,
@@ -95,6 +96,10 @@ export class Cpu8086 {
   /** Keys typed at the emulated keyboard; the program reads them with INT 21h. */
   type(text: string): void {
     this.io = { ...this.io, keyboard: [...this.io.keyboard, ...keyCodes(text)] };
+  }
+  /** Positions of the eight switches of the 8255 trainer, read by `IN` from port B. */
+  setSwitches(value: number): void {
+    this.io = { ...this.io, ports: setSwitches(this.io.ports, value) };
   }
   readWord(segment: number, offset: number): number {
     const a = physicalAddress(segment, offset);

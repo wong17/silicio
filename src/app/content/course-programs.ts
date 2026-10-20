@@ -8,6 +8,8 @@ export interface CourseExpectation {
   /** Last characters of the screen, for programs that echo what was typed. */
   screenEndsWith?: string;
   registers?: Readonly<Record<string, number>>;
+  /** Values the 8255 ports hold at the end (LEDs on port A, display on port C). */
+  ports?: Readonly<Record<number, number>>;
   /** Value of a DB/DW variable, read with its declared type. */
   variable?: { name: string; value: number };
 }
@@ -18,6 +20,8 @@ export interface CourseProgram {
   source: string;
   /** Keys typed at the keyboard, in order. */
   keys?: string;
+  /** Switches of the 8255 trainer set before the run. */
+  switches?: number;
   expect: CourseExpectation;
 }
 
@@ -188,5 +192,17 @@ imprimir despedida
 MOV AH, 4Ch
 INT 21h`,
     expect: { screen: 'Hola Adios' },
+  },
+  {
+    mission: 18,
+    title: 'LEDs según los interruptores',
+    source: `ORG 100h
+MOV AL, 82h     ; palabra de control: A y C salidas, B entrada
+OUT 0A3h, AL
+IN AL, 0A1h     ; lee los interruptores
+OUT 0A0h, AL    ; los copia a los LEDs
+HLT`,
+    switches: 0x5a,
+    expect: { ports: { 0xa0: 0x5a } },
   },
 ];

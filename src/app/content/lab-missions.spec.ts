@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { Cpu8086 } from '../simulation/cpu8086';
 import { LAB_MISSIONS, MISSION_LEVELS, meetsExpectation } from './missions';
 
-describe('misiones 01–17', () => {
+describe('misiones 01–18', () => {
   it('cada misión está exactamente en un nivel y la numeración es continua', () => {
-    expect(LAB_MISSIONS.map((m) => m.number)).toEqual(Array.from({ length: 17 }, (_, i) => i + 1));
+    expect(LAB_MISSIONS.map((m) => m.number)).toEqual(Array.from({ length: 18 }, (_, i) => i + 1));
     const listed = MISSION_LEVELS.flatMap((l) => [...l.numbers]).sort((a, b) => a - b);
-    expect(listed).toEqual(Array.from({ length: 17 }, (_, i) => i + 1));
+    expect(listed).toEqual(Array.from({ length: 18 }, (_, i) => i + 1));
     for (const m of LAB_MISSIONS) expect(MISSION_LEVELS.find((l) => l.level === m.level)!.numbers).toContain(m.number);
   });
 
@@ -14,7 +14,7 @@ describe('misiones 01–17', () => {
     const by = (level: string) => MISSION_LEVELS.find((l) => l.level === level)!.numbers;
     expect(by('Fundamentos')).toEqual([1, 2, 3, 6, 8]);
     expect(by('Control de flujo')).toEqual([4, 5, 12, 14, 15]);
-    expect(by('Entrada y salida')).toEqual([10, 11, 13, 16]);
+    expect(by('Entrada y salida')).toEqual([10, 11, 13, 16, 18]);
     expect(by('Pila, procedimientos y macros')).toEqual([7, 9, 17]);
   });
 
@@ -22,6 +22,7 @@ describe('misiones 01–17', () => {
     const cpu = new Cpu8086();
     cpu.load(mission.source);
     if (mission.keys) cpu.type(mission.keys);
+    if (mission.switches !== undefined) cpu.setSwitches(mission.switches);
     let n = 0;
     while (!cpu.halted && n++ < 20000) cpu.execute();
     expect(meetsExpectation(mission.expect!, cpu.snapshot(), cpu.program!.data)).toBe(true);

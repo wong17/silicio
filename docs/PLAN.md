@@ -711,11 +711,11 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Modificar:** simulation/x86/encoding.ts, decoder.ts, executor.ts (IN/OUT); content/missions.ts.
 **Consume:** T04.
 
-- [ ] Fijar puertos didácticos documentados en Ayuda: A = LEDs, B = interruptores, C = siete segmentos, registro de control.
-- [ ] Tests: `OUT` al puerto A enciende los LEDs del patrón; `IN` desde B lee el estado de los interruptores de la escena o del panel 2D; puerto no configurado da error explicado.
-- [ ] Misión 18: encender LEDs según interruptores.
+- [x] Fijar puertos didácticos documentados en Ayuda: A = LEDs, B = interruptores, C = siete segmentos, registro de control.
+- [x] Tests: `OUT` al puerto A enciende los LEDs del patrón; `IN` desde B lee el estado de los interruptores de la escena o del panel 2D; puerto no configurado da error explicado.
+- [x] Misión 18: encender LEDs según interruptores.
 
-**Puerta:** el mismo efecto en 2D y 3D; sin WebGL se opera desde el panel.
+**Puerta:** el mismo efecto en 2D y 3D; sin WebGL se opera desde el panel. *Estado: panel 2D y motor completos; las piezas 3D (LEDs, interruptores, display) en el banco siguen pendientes.*
 
 ### T05 — Memoria por actividades
 

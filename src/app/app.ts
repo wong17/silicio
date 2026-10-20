@@ -34,6 +34,7 @@ import { PieceInspectorComponent } from './console/piece-inspector/piece-inspect
 import { HelpDialogComponent } from './shell/help/help-dialog.component';
 import { PhasesComponent } from './instruments/cpu/phases/phases.component';
 import { ScreenPanelComponent } from './instruments/cpu/screen/screen-panel.component';
+import { PortsPanelComponent } from './instruments/cpu/ports/ports-panel.component';
 import { SimulationTransportComponent } from './shell/transport/simulation-transport.component';
 import { SimulationCoordinator } from './laboratory/controllers/simulation-coordinator';
 import { experienceOf } from './laboratory/controllers/simulation-controller';
@@ -85,6 +86,7 @@ const NARROW = '(max-width: 899px)';
     HelpDialogComponent,
     PhasesComponent,
     ScreenPanelComponent,
+    PortsPanelComponent,
     SimulationTransportComponent,
     RegisterPanelComponent,
     AluPanelComponent,
@@ -148,6 +150,7 @@ export class App implements AfterViewInit, OnDestroy {
   private readonly portalsPanel = viewChild.required<TemplateRef<unknown>>('portalsPanel');
   private readonly instrumentsPanel = viewChild.required<TemplateRef<unknown>>('instrumentsPanel');
   private readonly screenPanel = viewChild.required<TemplateRef<unknown>>('screenPanel');
+  private readonly portsPanel = viewChild.required<TemplateRef<unknown>>('portsPanel');
   /** Content of each desk panel; the workspace places it, the shell only says what it contains. */
   readonly panelTemplates = computed<Record<string, TemplateRef<unknown>>>(() => ({
     program: this.programPanel(),
@@ -156,6 +159,7 @@ export class App implements AfterViewInit, OnDestroy {
     portals: this.portalsPanel(),
     instruments: this.instrumentsPanel(),
     screen: this.screenPanel(),
+    ports: this.portsPanel(),
   }));
   private navigation?: Subscription;
   private context?: gsap.Context;
@@ -184,6 +188,14 @@ export class App implements AfterViewInit, OnDestroy {
         this.screenSeen = has;
       });
     });
+    // The trainer opens with the first IN or OUT, and when a mission brings its own switches.
+    effect(() => {
+      const has = this.session.io().ports !== undefined || (this.session.switches() !== 0 && this.session.section() === '8086');
+      untracked(() => {
+        if (has && !this.portsSeen && this.session.section() === '8086') this.ws.open('ports', false);
+        this.portsSeen = has;
+      });
+    });
     // A hidden tab never keeps the clock going.
     this.visibility = () => document.hidden && this.coordinator.pause();
     document.addEventListener('visibilitychange', this.visibility);
@@ -201,6 +213,7 @@ export class App implements AfterViewInit, OnDestroy {
   private urlTimer?: ReturnType<typeof setTimeout>;
   private visibility: () => void;
   private screenSeen = false;
+  private portsSeen = false;
 
   private route(): void {
     const id = this.router.url.split('?')[0].split('/')[1] as Section;

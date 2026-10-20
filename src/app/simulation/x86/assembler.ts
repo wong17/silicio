@@ -17,7 +17,7 @@ const OUT_OF_SUBSET = new Set([
   'MOVSB', 'MOVSW', 'LODSB', 'LODSW', 'STOSB', 'STOSW', 'CMPSB', 'CMPSW', 'SCASB', 'SCASW',
   'REP', 'REPE', 'REPNE', 'REPZ', 'REPNZ', 'LOOPE', 'LOOPNE', 'LOOPZ', 'LOOPNZ', 'JCXZ', 'JP', 'JNP',
   'JPE', 'JPO', 'IRET', 'CLI', 'STI', 'CLD', 'STD', 'CLC', 'STC', 'CMC', 'LAHF', 'SAHF', 'PUSHF',
-  'POPF', 'XLAT', 'IN', 'OUT', 'LDS', 'LES', 'RCL', 'RCR', 'AAA', 'AAS', 'AAD', 'AAM', 'DAA', 'DAS',
+  'POPF', 'XLAT', 'LDS', 'LES', 'RCL', 'RCR', 'AAA', 'AAS', 'AAD', 'AAM', 'DAA', 'DAS',
   'WAIT', 'ESC', 'LOCK',
 ]);
 const ALIASES: Readonly<Record<string, string>> = {
@@ -109,6 +109,7 @@ function settle(op: string, operands: Operand[]): Operand[] {
   return operands.map((o, index) => {
     if (o.kind !== 'immediate') return o;
     if (op === 'INT') return { ...o, size: 8 as Size };
+    if (op === 'IN' || op === 'OUT') return { ...o, size: 8 as Size };
     if (/^(SHL|SHR|SAR|ROL|ROR)$/.test(op) && index === 1) return o;
     const size = widthOf(operands[1 - index] ?? o) ?? known ?? 16;
     const v = o.value;
@@ -167,7 +168,7 @@ function layout(lines: SourceLine[], previous: Map<string, Symbol>): Layout {
       const bare = text.match(/^(DB|DW)\b\s*(.*)$/i);
       if (named && named[2].toUpperCase() === 'ENDP') continue;
       if (named && named[2].toUpperCase() === 'PROC') {
-        if (/\bFAR\b/i.test(named[3])) throw Error('PROC FAR está fuera del subconjunto (solo llamadas cercanas)');
+        if (/\bFAR\b/i.test(named[3])) throw Error('PROC FAR está fuera del subconjunto de SILICIO (solo llamadas cercanas)');
         const key = named[1].toUpperCase();
         if (symbols.has(key)) throw Error('Etiqueta duplicada: ' + key);
         symbols.set(key, { name: named[1], value: codeAt, kind: 'code' });
@@ -202,11 +203,11 @@ function layout(lines: SourceLine[], previous: Map<string, Symbol>): Layout {
       if (!m) throw Error('Sintaxis inválida');
       let op = m[1].toUpperCase();
       op = ALIASES[op] ?? op;
-      if ((op === 'JMP' || op === 'CALL') && /\bFAR\b|\d\s*:\s*\d/i.test(m[2]) && op === 'JMP') throw Error('Los saltos lejanos están fuera del subconjunto');
+      if ((op === 'JMP' || op === 'CALL') && /\bFAR\b|\d\s*:\s*\d/i.test(m[2]) && op === 'JMP') throw Error('Los saltos lejanos están fuera del subconjunto de SILICIO');
       if (/^F[A-Z0-9]+$/.test(op))
-        throw Error('Instrucción no admitida: ' + op + ' (el coprocesador está fuera del subconjunto)');
+        throw Error('Instrucción no admitida: ' + op + ' (el coprocesador está fuera del subconjunto de SILICIO)');
       if (OUT_OF_SUBSET.has(op))
-        throw Error('Instrucción no admitida: ' + op + ' (fuera del subconjunto del curso)');
+        throw Error('Instrucción no admitida: ' + op + ' (fuera del subconjunto de SILICIO)');
       const args = m[2] ? splitTopLevel(m[2]) : [];
       const isJump = SHORT_JUMPS.has(op) || NEAR_JUMPS.has(op);
       let size: number;

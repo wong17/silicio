@@ -127,6 +127,12 @@ export function decode(memory: Record<number, number>, segment: number, address:
     if (field !== 0) unsupported();
     op = 'MOV';
     operands = [operand, imm(size)];
+  } else if (opcode === 0xe4 || opcode === 0xe6 || opcode === 0xec || opcode === 0xee) {
+    const input = opcode === 0xe4 || opcode === 0xec;
+    const port: Operand = opcode >= 0xec ? register(2) : imm(8);
+    const al = register(0, 8);
+    op = input ? 'IN' : 'OUT';
+    operands = input ? [al, port] : [port, al];
   } else if (opcode === 0xcd) {
     op = 'INT';
     operands = [{ kind: 'immediate', value: next(), size: 8 }];
