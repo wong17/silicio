@@ -755,12 +755,12 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Modificar:** machine-board.model.ts, piece-definitions.ts, laboratory/piece-descriptions.ts, station-builder.ts, laboratory/controllers/machine-controller.ts.
 **Consume:** T06.
 
-- [ ] Equipo cerrado/abierto con todos los componentes pedidos.
-- [ ] Selección bidireccional entre pieza/instrumento/paso.
-- [ ] Paquetes con origen/destino/valor desde eventos; líneas de dirección, dato y control visibles por transferencia; función del evento con icono y texto.
-- [ ] Monitor desde salida del modelo; actualizar textura solo al cambiar contenido.
-- [ ] Test: equivalencia 2D/3D y resultado con animación desactivada.
-- [ ] Verificar geometría, cámara, recursos y coste frente a T00.
+- [x] Equipo cerrado/abierto con todos los componentes pedidos.
+- [x] Selección bidireccional entre pieza/instrumento/paso.
+- [x] Paquetes con origen/destino/valor desde eventos; líneas de dirección, dato y control visibles por transferencia; función del evento con icono y texto.
+- [x] Monitor desde salida del modelo; actualizar textura solo al cambiar contenido.
+- [x] Test: equivalencia 2D/3D y resultado con animación desactivada.
+- [ ] Verificar geometría, cámara, recursos y coste frente a T00. *(geometría verificada con pruebas de disposición; revisión visual en navegador, cámara y coste en GPU pendientes para T11)*
 
 **Puerta:** seguir teclado/archivo hasta salida, distinguir RAM de SSD y señalar dónde se atiende la interrupción.
 

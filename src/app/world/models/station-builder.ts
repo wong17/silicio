@@ -4,7 +4,7 @@ import { WorkshopGeometry } from './workshop-geometry';
 import { BENCH } from './bench-layout';
 import { CLASSIC_BOARD_BASE } from './intel-2164a-memory.model';
 import { KINGSTON_BOARD_BASE } from './kingston-dimm.model';
-import { MachineBoardModel, MACHINE_BOARD_BASE } from './machine-board.model';
+import { PcBoardModel, PC_BOARD_BASE } from './pc-board.model';
 import { ChronoscopeModel, CHRONOSCOPE_BASE, type ChronoscopeRig } from './chronoscope.model';
 import { ElectronicsWorkshop } from '../electronics-workshop';
 import { MemoryModels } from './memory-models';
@@ -171,9 +171,9 @@ export class StationBuilder extends WorkshopGeometry {
       timeline = rig;
       datum = CHRONOSCOPE_BASE;
     } else {
-      // La máquina: a board with three chips, copper buses, and the status lamps that run with the bus.
-      new MachineBoardModel(this.tools).build(root, parts, (fn) => this.tools.animate(fn, 'subject'));
-      datum = MACHINE_BOARD_BASE;
+      // La máquina: a whole PC, board and case, with the keyboard and the monitor outside it.
+      new PcBoardModel(this.tools).build(root, parts, (fn) => this.tools.animate(fn, 'subject'));
+      datum = PC_BOARD_BASE;
     }
     const packet = new THREE.Mesh(
       this.tools.track(new THREE.SphereGeometry(0.095, 16, 8)),

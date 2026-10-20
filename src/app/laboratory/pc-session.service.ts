@@ -29,6 +29,8 @@ export class PcSession {
   /** Events of the last step, in the order they happened. */
   readonly events = signal<readonly PcEvent[]>([]);
   readonly waiting = signal(false);
+  /** Transfer of the last step being followed one by one (grain «transfer»), or undefined for the whole step. */
+  readonly focus = signal<number | undefined>(undefined);
   readonly message = signal('');
   readonly revision = signal(0);
 
@@ -45,6 +47,7 @@ export class PcSession {
     this.past.update((h) => [...h.slice(-(HISTORY_LIMIT - 1)), this.state()]);
     this.state.set(next);
     this.events.set(events);
+    this.focus.set(undefined);
     this.waiting.set(false);
     this.revision.update((n) => n + 1);
   }
@@ -72,6 +75,39 @@ export class PcSession {
     return out.kind === 'executed' || out.kind === 'halted';
   }
 
+  /**
+   * Grain «transfer»: shows the transfers of one instruction one after another without running it again.
+   * After the last one, the next call runs the following instruction and starts at its first transfer.
+   */
+  nextTransfer(): boolean {
+    const total = this.events().length;
+    const at = this.focus();
+    if (at !== undefined && at < total - 1) {
+      this.focus.set(at + 1);
+      return true;
+    }
+    const moved = this.step();
+    if (moved && this.events().length) this.focus.set(0);
+    return moved;
+  }
+
+  backTransfer(): boolean {
+    const at = this.focus();
+    if (at !== undefined && at > 0) {
+      this.focus.set(at - 1);
+      return true;
+    }
+    if (!this.back()) return false;
+    const total = this.events().length;
+    this.focus.set(undefined);
+    return total >= 0;
+  }
+
+  /** Chooses one transfer of the last step to follow; undefined goes back to the whole step. */
+  follow(index: number | undefined): void {
+    this.focus.set(index !== undefined && index >= 0 && index < this.events().length ? index : undefined);
+  }
+
   /** Undoes one step, restoring RAM, SSD, queues and monitor exactly as they were. */
   back(): boolean {
     const past = this.past();
@@ -79,6 +115,7 @@ export class PcSession {
     this.state.set(past[past.length - 1]);
     this.past.set(past.slice(0, -1));
     this.events.set([]);
+    this.focus.set(undefined);
     this.waiting.set(false);
     this.message.set('');
     this.revision.update((n) => n + 1);

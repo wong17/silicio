@@ -82,7 +82,7 @@ describe('adaptadores de simulación sobre LabSession', () => {
   it('PC: el primer paso enciende, luego cada instrucción; Atrás y Reiniciar restauran la máquina', async () => {
     coordinator.activate('machine');
     session.pc.choose('suma-archivo');
-    expect(coordinator.transport()).toMatchObject({ status: 'ready', step: 0, canNext: true, canBack: false, units: ['instruction'] });
+    expect(coordinator.transport()).toMatchObject({ status: 'ready', step: 0, canNext: true, canBack: false, units: ['instruction', 'transfer'] });
     await coordinator.step();
     expect(session.pc.powered()).toBe(true);
     expect(session.pc.state().pc).toBe(0);

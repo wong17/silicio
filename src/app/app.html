@@ -171,6 +171,15 @@
   <app-signal-panel />
 </ng-template>
 
+<ng-template #pcProgramPanel>
+  <app-pc-program />
+  <app-station-mission />
+</ng-template>
+
+<ng-template #pcComponentsPanel>
+  <app-pc-components />
+</ng-template>
+
 <ng-template #operationPanel>
   <app-memory-operation />
   <app-station-mission />
@@ -203,9 +212,6 @@
     }
     @case ('apple') {
       <app-apple-panel />
-    }
-    @case ('machine') {
-      <app-machine-instrument />
     }
   }
   <app-station-mission />

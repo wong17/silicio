@@ -4,6 +4,11 @@ import type { AdvanceUnit, SimulationController, TransportState } from './simula
 export interface PcHost {
   step(): boolean;
   back(): boolean;
+  nextTransfer(): boolean;
+  backTransfer(): boolean;
+  /** Transfer on show (0-based) and how many the last step had. */
+  readonly focus: () => number | undefined;
+  readonly eventCount: () => number;
   resetExercise(): void;
   readonly canBack: () => boolean;
   readonly stepCount: () => number;
@@ -24,21 +29,26 @@ export class PcController implements SimulationController {
     const fault = !waiting && !!this.host.message();
     return {
       status: waiting ? 'waiting-input' : fault ? 'error' : halted ? 'finished' : this.host.stepCount() === 0 ? 'ready' : 'paused',
-      units: ['instruction'],
-      canNext: !halted && !waiting,
+      units: ['instruction', 'transfer'],
+      canNext: (!halted || (this.host.focus() ?? 0) < this.host.eventCount() - 1) && !waiting,
       canBack: this.host.canBack(),
       step: this.host.stepCount(),
       ...(waiting ? { reason: 'Esperando teclado' } : {}),
-      ...(!this.host.powered() && !halted && !waiting ? { detail: 'Apagado: el primer paso enciende el PC' } : {}),
+      ...(this.host.focus() !== undefined ? { detail: 'Siguiendo la transferencia ' + (this.host.focus()! + 1) + ' de ' + this.host.eventCount() } : {}),
+      ...(!this.host.powered() && !halted && !waiting && this.host.focus() === undefined ? { detail: 'Apagado: el primer paso enciende el PC' } : {}),
     };
   }
 
-  async next(_unit: AdvanceUnit): Promise<void> {
-    this.host.step();
+  async next(unit: AdvanceUnit): Promise<void> {
+    if (unit === 'transfer') this.host.nextTransfer();
+    else {
+      this.host.step();
+    }
   }
 
-  async back(_unit: AdvanceUnit): Promise<void> {
-    this.host.back();
+  async back(unit: AdvanceUnit): Promise<void> {
+    if (unit === 'transfer') this.host.backTransfer();
+    else this.host.back();
   }
 
   async restart(): Promise<void> {

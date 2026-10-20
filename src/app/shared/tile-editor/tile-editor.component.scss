@@ -1,0 +1,28 @@
+.tile {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 3px;
+  input {
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 2px;
+    border: 1px solid #46514d;
+    border-radius: 4px;
+    text-align: center;
+    font: 500 13px 'IBM Plex Mono', monospace;
+    &.bad {
+      border-color: #ff8a78;
+      box-shadow: 0 0 0 2px rgba(255, 138, 120, 0.5);
+    }
+    &:focus-visible {
+      outline: 2px solid #f0d29c;
+      outline-offset: 1px;
+    }
+  }
+}
+
+.error {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #ffb4a8;
+}

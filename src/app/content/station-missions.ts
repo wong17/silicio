@@ -12,8 +12,9 @@ export interface MissionContext {
   bufferCompleted: boolean;
   bufferVersion: number;
   separateMemory: boolean;
-  machineStage: number;
-  machineOutput: number;
+  /** Text on the PC's monitor and the content of resultado.txt on its SSD. */
+  pcMonitor: string;
+  pcResultFile: string;
 }
 
 export interface StationMission {
@@ -59,10 +60,10 @@ export const STATION_MISSIONS: readonly StationMission[] = [
   {
     id: 'M05',
     station: 'machine',
-    title: 'Un dato hasta la salida',
-    goal: 'Sigue el dato 0007h: léelo de la RAM, súmale 5, escríbelo de vuelta y llévalo a la salida.',
-    hint: 'Son ocho pasos; en cada uno se enciende un solo bus. El valor final en la salida es 000Ch.',
-    check: (c) => c.machineStage === 8 && c.machineOutput === 12,
+    title: 'Un archivo hasta el monitor',
+    goal: 'Ejecuta «Sumar un archivo»: los valores 1, 2, 3 y 4 van del SSD a la RAM, la CPU los suma y el 10 llega al monitor y a resultado.txt.',
+    hint: 'Elige el ejercicio, enciende el PC y pulsa Ejecutar. Abre el SSD y la RAM para ver dónde está cada dato en cada momento.',
+    check: (c) => c.pcMonitor === '10' && c.pcResultFile === '10',
   },
 ];
 

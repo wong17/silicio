@@ -34,7 +34,7 @@ export const CHECKPOINTS: Record<
       'CPU y GPU pueden compartir almacenamiento; una dependencia debe completarse antes de que otra unidad use su resultado.',
   },
   machine: {
-    question: '¿Qué bus transporta el valor leído de RAM?',
+    question: '¿Qué línea del bus lleva la palabra que se lee de la RAM?',
     options: ['Direcciones', 'Datos', 'Control'],
     correct: 1,
     explanation:

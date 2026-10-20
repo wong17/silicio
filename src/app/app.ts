@@ -42,11 +42,12 @@ import { RegisterPanelComponent } from './instruments/cpu/register/register-pane
 import { AluPanelComponent } from './instruments/cpu/alu/alu-panel.component';
 import { ProgramPanelComponent } from './instruments/cpu/program/program-panel.component';
 import { TracePanelComponent } from './instruments/cpu/trace/trace-panel.component';
+import { PcProgramComponent } from './instruments/machine/program/pc-program.component';
+import { PcComponentsComponent } from './instruments/machine/components/pc-components.component';
 import { MemoryOperationComponent } from './instruments/memory/operation/memory-operation.component';
 import { MemoryResultComponent } from './instruments/memory/result/memory-result.component';
 import { ApplePanelComponent } from './instruments/apple/apple/apple-panel.component';
 import { SignalPanelComponent } from './instruments/signal/signal/signal-panel.component';
-import { MachineInstrumentComponent } from './instruments/machine/machine-instrument.component';
 import { WorkspaceComponent } from './shell/workspace/workspace.component';
 import { PanelsMenuComponent } from './shell/workspace/panels-menu.component';
 import { OccludesDirective } from './shell/workspace/occludes.directive';
@@ -95,7 +96,8 @@ const NARROW = '(max-width: 899px)';
     MemoryResultComponent,
     ApplePanelComponent,
     SignalPanelComponent,
-    MachineInstrumentComponent,
+    PcProgramComponent,
+    PcComponentsComponent,
     WorkspaceComponent,
     PanelsMenuComponent,
     OccludesDirective,
@@ -150,6 +152,8 @@ export class App implements AfterViewInit, OnDestroy {
   private readonly screenPanel = viewChild.required<TemplateRef<unknown>>('screenPanel');
   private readonly portsPanel = viewChild.required<TemplateRef<unknown>>('portsPanel');
   private readonly operationPanel = viewChild.required<TemplateRef<unknown>>('operationPanel');
+  private readonly pcProgramPanel = viewChild.required<TemplateRef<unknown>>('pcProgramPanel');
+  private readonly pcComponentsPanel = viewChild.required<TemplateRef<unknown>>('pcComponentsPanel');
   private readonly resultPanel = viewChild.required<TemplateRef<unknown>>('resultPanel');
   /** Content of each desk panel; the workspace places it, the shell only says what it contains. */
   readonly panelTemplates = computed<Record<string, TemplateRef<unknown>>>(() => ({
@@ -161,6 +165,8 @@ export class App implements AfterViewInit, OnDestroy {
     screen: this.screenPanel(),
     ports: this.portsPanel(),
     operation: this.operationPanel(),
+    'pc-program': this.pcProgramPanel(),
+    'pc-components': this.pcComponentsPanel(),
     result: this.resultPanel(),
   }));
   private navigation?: Subscription;
@@ -234,7 +240,7 @@ export class App implements AfterViewInit, OnDestroy {
       section === 'apple'
         ? 'performance'
         : section === 'machine'
-          ? 'cpu'
+          ? 'lid'
           : section === '8086'
             ? 'alu'
             : section === 'memory'

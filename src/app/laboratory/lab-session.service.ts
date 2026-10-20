@@ -5,6 +5,7 @@ import { joinWord, splitWord } from '../simulation/memory-lesson';
 import { Cpu8086Controller } from './controllers/cpu8086-controller';
 import { PcController } from './controllers/pc-controller';
 import { PcSession } from './pc-session.service';
+import { pcSceneActivity } from './pc-activity';
 import { MemoryLessonController } from './controllers/memory-controller';
 import { SocController } from './controllers/soc-controller';
 import { Cpu8086, hex, physicalAddress, REGISTER_NAMES, Registers, Snapshot, Trace } from '../simulation/cpu8086';
@@ -22,7 +23,6 @@ import { BufferExperiment, LaboratoryFacade } from './laboratory.facade';
 import type { CameraView, PieceAnchor, ScreenAnchor } from '../world/scene-inputs';
 import { IDLE_ACTIVITY, PHASES, projectActivity, projectBufferActivity, projectMemory, type Phase, type StationActivity } from './station-activity';
 import { CacheLesson } from '../simulation/cache-lesson';
-import { MachineExperiment, machineActivity } from '../instruments/machine-experiment';
 import { describePiece, type PieceOption } from './piece-descriptions';
 
 export type Tab = 'state' | 'program' | 'trace';
@@ -46,9 +46,6 @@ export { INSTRUMENT_PARTS };
  * Session state shared by the console instruments, the 3D bench and the toolbar. The 8086 core and
  * its worker stay outside Angular; this service only projects and commands them.
  */
-/** Bus line that carries the value at each stage of the conceptual machine; empty when nothing moves. */
-const MACHINE_CHANNELS = ['', 'address', 'control', 'data', 'data', 'address', 'control', 'data', 'control'];
-
 /** Message for a DIV/IDIV that cannot complete; the 8086 would raise INT 0. */
 const divisionFault = (line: number) =>
   'Error de división (línea ' + line + '): el divisor es 0 o el cociente no cabe. El 8086 real lanzaría INT 0.';
@@ -197,13 +194,10 @@ export class LabSession {
       bufferCompleted: view.completed,
       bufferVersion: view.version,
       separateMemory: this.separateMemory(),
-      machineStage: this.machineStage(),
-      machineOutput: this.machineStage() >= 8 ? this.machine.output : 0,
+      pcMonitor: this.pc.state().monitor.text,
+      pcResultFile: this.pc.fileText('resultado.txt') ?? '',
     };
   });
-  /** The conceptual machine: one experiment, shared by its panel and the board scene. */
-  readonly machine = new MachineExperiment();
-  readonly machineStage = signal(0);
   readonly activity = computed<StationActivity>(() => {
     if (this.section() === 'apple') {
       const view = this.bufferView();
@@ -219,13 +213,13 @@ export class LabSession {
       );
     }
     if (this.section() === 'machine') {
-      this.machineStage();
+      this.pc.revision();
       return {
         ...IDLE_ACTIVITY,
         sessionId: this.laboratory().sessionId,
-        revision: this.machineStage(),
-        phase: this.machineStage() ? 'execute' : 'idle',
-        machine: machineActivity(this.machine),
+        revision: this.pc.stepCount(),
+        phase: this.pc.powered() ? 'execute' : 'idle',
+        pc: pcSceneActivity(this.pc.state(), this.pc.events(), this.pc.focus()),
       };
     }
     if (this.section() === 'memory') {
@@ -419,6 +413,10 @@ export class LabSession {
       new PcController({
         step: () => this.pc.step(),
         back: () => this.pc.back(),
+        nextTransfer: () => this.pc.nextTransfer(),
+        backTransfer: () => this.pc.backTransfer(),
+        focus: () => this.pc.focus(),
+        eventCount: () => this.pc.events().length,
         resetExercise: () => this.pc.resetExercise(),
         canBack: () => this.pc.canBack(),
         stepCount: () => this.pc.stepCount(),
@@ -936,23 +934,6 @@ export class LabSession {
         ? new CacheLesson()
         : new CacheLesson(this.cpu.trace.flatMap((t) => t.reads).slice(0, 24));
     this.cacheRevision.update((n) => n + 1);
-  }
-
-  advanceMachine(): void {
-    this.machine.advance();
-    this.machineStage.set(this.machine.stage);
-    this.transferBus(MACHINE_CHANNELS[this.machineStage()] || 'address');
-  }
-
-  resetMachine(): void {
-    this.machine.reset();
-    this.machineStage.set(0);
-  }
-
-  transferBus(id: string): void {
-    this.bus.set(id);
-    this.activePart.set(id === 'control' ? 'io' : id === 'data' ? 'ram' : 'cpu');
-    this.tick.update((n) => n + 1);
   }
 
   setReduced(value: boolean): void {

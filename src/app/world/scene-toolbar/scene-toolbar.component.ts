@@ -106,7 +106,7 @@ export class SceneToolbarComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   visible(tool: SceneTool): boolean {
-    return !tool.chipOnly || this.section === '8086' || this.section === 'apple' || (this.section === 'memory' && this.dimm);
+    return !tool.chipOnly || this.section === '8086' || this.section === 'apple' || this.section === 'machine' || (this.section === 'memory' && this.dimm);
   }
 
   pressed(tool: SceneTool): boolean | null {
@@ -138,6 +138,7 @@ export class SceneToolbarComponent {
 
   label(tool: SceneTool): string {
     if (tool.command === 'drop' && !this.holding) return 'Sin herramienta en la mano';
+    if (tool.command === 'explode' && this.section === 'machine') return 'Abrir o cerrar el equipo';
     return tool.label;
   }
 

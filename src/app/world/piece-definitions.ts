@@ -18,10 +18,25 @@ const names: Record<string, [string, string]> = {
     'Procesador',
     'Busca instrucciones y transforma datos siguiendo las operaciones del programa.',
   ],
+  'cpu-pc': ['Contador de programa (PC)', 'Guarda la dirección de la siguiente instrucción. Avanza una palabra en cada paso, o salta con BRANCH.'],
+  'cpu-ir': ['Registro de instrucción (IR)', 'Recibe la instrucción que llegó por MDR; la unidad de control la interpreta desde aquí.'],
+  'cpu-mar': ['Registro de dirección de memoria (MAR)', 'Pone la dirección en el bus de direcciones antes de leer o escribir. En el 8086 su papel lo cumple el latch de dirección.'],
+  'cpu-mdr': ['Registro de datos de memoria (MDR)', 'Guarda la palabra que entra o sale de la memoria. En el 8086 su papel lo cumple el búfer de datos del bus.'],
+  'cpu-regs': ['Registros R0–R3', 'Cuatro registros de 32 bits para operandos y resultados. Los flags Z, N, C y V describen el último resultado.'],
+  'control-unit': ['Unidad de control', 'Interpreta la instrucción, ordena cada transferencia y atiende las interrupciones al terminar una instrucción.'],
+  rom: ['ROM · cargador', 'Memoria que no cambia: guarda el cargador que, al encender, copia el programa del SSD a la RAM y salta a él.'],
   ram: [
-    'Memoria de trabajo',
-    'Almacena palabras que pueden leerse o escribirse usando una dirección.',
+    'Memoria RAM',
+    'Memoria de trabajo, volátil: se borra al apagar. Sus regiones son programa, entrada, trabajo y pantalla. Programa y datos comparten la misma RAM.',
   ],
+  'memory-controller': ['Controlador de memoria', 'Traduce la dirección y las señales de lectura o escritura del procesador en accesos a la RAM.'],
+  'keyboard-controller': ['Controlador del teclado', 'Guarda las teclas hasta que el procesador las lee; puede pedir una interrupción.'],
+  'interrupt-controller': ['Controlador de interrupciones', 'Recibe la solicitud del teclado y avisa al procesador, que la atiende al terminar la instrucción en curso.'],
+  'storage-controller': ['Controlador de almacenamiento', 'Mueve bloques entre el SSD y la RAM sin que cada palabra pase por un registro del procesador.'],
+  'display-engine': ['Motor de pantalla', 'Convierte el contenido de la RAM de pantalla en la imagen o el texto del monitor.'],
+  ssd: ['SSD', 'Almacenamiento persistente: sus archivos sobreviven al apagado. Importar un archivo lo copia aquí; leerlo lo lleva a la RAM.'],
+  keyboard: ['Teclado', 'Tu teclado real: cada tecla viaja al controlador del teclado y, según el programa, al procesador.'],
+  monitor: ['Monitor', 'Muestra la salida del modelo, derivada de la RAM de pantalla.'],
   io: [
     'Entrada y salida',
     'Comunica el sistema con dispositivos. Control distingue la operación que se solicita.',
@@ -231,6 +246,23 @@ const SHORT_NAMES: Record<string, string> = {
   gpu: 'GPU',
   neural: 'Motor neuronal',
   unified: 'Memoria unificada',
+  'cpu-pc': 'PC',
+  'cpu-ir': 'IR',
+  'cpu-mar': 'MAR',
+  'cpu-mdr': 'MDR',
+  'cpu-regs': 'R0–R3',
+  'control-unit': 'Control',
+  rom: 'ROM',
+  ram: 'RAM',
+  ssd: 'SSD',
+  'memory-controller': 'Ctrl. memoria',
+  'keyboard-controller': 'Ctrl. teclado',
+  'interrupt-controller': 'Interrupciones',
+  'storage-controller': 'Ctrl. almacenam.',
+  'display-engine': 'Motor pantalla',
+  keyboard: 'Teclado',
+  monitor: 'Monitor',
+  cpu: 'Procesador',
 };
 
 export function pieceDefinition(id: string, experience: string): PieceDefinition {
@@ -244,6 +276,10 @@ export function pieceDefinition(id: string, experience: string): PieceDefinition
   if (id.startsWith('dimm-chip-')) name = 'FBGA1G×8 · chip ' + id.slice(10);
   if (id.startsWith('cell-')) name = 'Byte lógico ' + id.slice(5);
   if (id.startsWith('frame-')) name = 'Estado ' + id.slice(6);
+  if (experience === 'machine') {
+    if (id === 'lid') [name, description] = ['Caja del PC', 'La caja cubre la placa. Ábrela para ver el procesador, la memoria, los controladores y el SSD; el teclado y el monitor quedan fuera.'];
+    if (id === 'alu') description = 'Suma, resta y compara palabras de 32 bits, y fija los flags Z, N, C y V.';
+  }
   if (id.startsWith('tool')) {
     name = 'Destornillador ' + 'ABC'[id === 'tool' ? 0 : Number(id.slice(5))];
     description =
@@ -348,7 +384,12 @@ export function accessibleCatalog(
       'unified',
       'memory-packages',
     ];
-  else if (experience === 'machine') ids = ['cpu', 'ram', 'io'];
+  else if (experience === 'machine')
+    ids = [
+      'lid', 'cpu', 'cpu-pc', 'cpu-ir', 'cpu-mar', 'cpu-mdr', 'cpu-regs', 'alu', 'control-unit', 'rom', 'ram',
+      'memory-controller', 'keyboard-controller', 'interrupt-controller', 'storage-controller', 'display-engine',
+      'ssd', 'keyboard', 'monitor',
+    ];
   else
     ids = [
       'chrono-base',

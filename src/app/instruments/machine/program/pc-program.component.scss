@@ -1,0 +1,175 @@
+@use '../../../shared/console-kit' as kit;
+
+.pc-program {
+  @include kit.module;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.kicker {
+  @include kit.kicker;
+}
+
+.teaches,
+.note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: kit.$dim;
+  strong {
+    color: kit.$amber-soft;
+  }
+}
+
+select,
+input[type='text'],
+textarea {
+  min-height: 44px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 15px;
+}
+textarea {
+  padding: 8px 10px;
+  font-family: kit.$mono;
+}
+
+.power {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  .lamp {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #2f3a35;
+    &.on {
+      background: kit.$green;
+      box-shadow: 0 0 10px kit.$green;
+    }
+  }
+  button {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+  .ghost {
+    margin-left: auto;
+  }
+}
+
+.listing {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid #2d3533;
+  border-radius: 8px;
+  scrollbar-width: thin;
+  li {
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 10px;
+    border-bottom: 1px solid #22292a;
+    position: relative;
+  }
+  li.current {
+    background: linear-gradient(90deg, rgba(215, 172, 111, 0.18), transparent);
+  }
+  li.current::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: kit.$amber;
+  }
+  code {
+    font: 12px kit.$mono;
+    color: kit.$amber-soft;
+  }
+  span {
+    font: 13px kit.$mono;
+  }
+  small {
+    font: 11px kit.$mono;
+    color: kit.$dim;
+  }
+}
+
+input.waiting {
+  border-color: kit.$amber;
+  box-shadow: 0 0 0 2px rgba(215, 172, 111, 0.35);
+}
+
+.files {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  button {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 4px 10px;
+    align-items: baseline;
+    width: 100%;
+    min-height: 44px;
+    padding: 6px 10px;
+    text-align: left;
+    &[aria-pressed='true'] {
+      border-color: kit.$amber;
+      background: kit.$amber-deep;
+    }
+    strong {
+      font: 600 13px kit.$mono;
+    }
+    small {
+      color: kit.$dim;
+    }
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: kit.$dim;
+      font-size: 13px;
+    }
+  }
+}
+
+.import {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed #3a4340;
+  border-radius: 8px;
+  button {
+    justify-self: start;
+    min-height: 44px;
+    padding: 0 12px;
+  }
+}
+
+.upload {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  color: kit.$dim;
+  input {
+    min-height: 44px;
+  }
+}
+
+.message {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #ff8a78;
+  border-radius: 6px;
+  color: #ffb4a8;
+  font-size: 14px;
+}

@@ -1,0 +1,20 @@
+<div class="tile" role="group" [attr.aria-label]="label()">
+  @for (c of cells(); track c.index) {
+    <input
+      type="text"
+      inputmode="numeric"
+      maxlength="3"
+      [class.bad]="!c.valid"
+      [style.background]="'rgb(' + c.gray + ',' + c.gray + ',' + c.gray + ')'"
+      [style.color]="ink(c.gray)"
+      [value]="c.text"
+      [disabled]="disabled()"
+      [attr.aria-label]="'Fila ' + c.row + ', columna ' + c.col + ', gris de 0 a 255'"
+      [attr.aria-invalid]="!c.valid"
+      (input)="edit(c.index, $any($event.target).value)"
+    />
+  }
+</div>
+@if (invalid()) {
+  <p class="error" role="alert">{{ invalid() }} celda(s) sin un número de 0 a 255: el mosaico no cambia hasta corregirlas.</p>
+}

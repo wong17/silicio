@@ -1,0 +1,110 @@
+<section class="pc-program" aria-label="Programa y entradas del PC">
+  <div class="field">
+    <label class="kicker" for="pc-exercise">Ejercicio</label>
+    <select id="pc-exercise" [ngModel]="pc.programId()" (ngModelChange)="choose($event)">
+      @for (p of pc.programs; track p.id) {
+        <option [value]="p.id">{{ p.title }}</option>
+      }
+    </select>
+    <p class="teaches">{{ pc.program().teaches }}</p>
+  </div>
+
+  <div class="power" role="group" aria-label="Alimentación del PC">
+    <span class="lamp" [class.on]="pc.powered()" aria-hidden="true"></span>
+    <strong>{{ pc.powered() ? (pc.halted() ? 'Encendido · detenido' : 'Encendido') : 'Apagado' }}</strong>
+    <button type="button" (click)="powerOn()" [disabled]="pc.powered()">Encender y arrancar</button>
+    <button type="button" (click)="pc.shutDown()" [disabled]="!pc.powered()">Apagar</button>
+    <button type="button" class="ghost" (click)="restart()">Reiniciar ejercicio</button>
+  </div>
+  <p class="note">
+    Apagar borra la RAM, los registros y la pantalla, pero el SSD conserva sus archivos. Reiniciar el ejercicio devuelve
+    también los archivos a como empezó.
+  </p>
+
+  <div class="field">
+    <p class="kicker">Programa · {{ listing().where }}</p>
+    <ol class="listing">
+      @for (l of listing().lines; track l.address) {
+        <li [class.current]="pc.powered() && pc.state().pc === l.address">
+          <code>{{ l.address.toString(16).toUpperCase().padStart(4, '0') }}</code>
+          <span>{{ l.text }}</span>
+          <small>{{ l.word.toString(16).toUpperCase().padStart(8, '0') }}</small>
+        </li>
+      }
+    </ol>
+  </div>
+
+  <div class="field">
+    <label class="kicker" for="pc-keys">Teclado</label>
+    <input
+      id="pc-keys"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Escribe aquí: cada tecla va al controlador"
+      [class.waiting]="pc.waiting()"
+      (keydown)="onKey($event)"
+      (input)="onInput($event)"
+    />
+    <p class="note" aria-live="polite">
+      @if (pc.waiting()) {
+        <strong>Esperando teclado.</strong> El programa se detiene hasta que escribas.
+      } @else if (queue().length) {
+        En el controlador: {{ queue().join(' ') }}
+      } @else {
+        Sin teclas en el controlador.
+      }
+    </p>
+    @if (pc.program().keys) {
+      <button type="button" (click)="typeSample()">Teclear el ejemplo «Hola»</button>
+    }
+  </div>
+
+  <div class="field">
+    <p class="kicker">Archivos del SSD</p>
+    <ul class="files">
+      @for (f of files(); track f.name) {
+        <li>
+          <button type="button" [attr.aria-pressed]="selectedFile() === f.name" (click)="select(f.name)">
+            <strong>{{ f.name }}</strong>
+            <small>{{ f.bytes }} bytes</small>
+            <span>{{ f.preview }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+
+    <div class="import">
+      <p class="kicker">Traer una copia al SSD · {{ selectedFile() }}</p>
+      @if (editable.includes($any(selectedFile()))) {
+        @if (isTile()) {
+          <app-tile-editor [values]="tileValues()" (changed)="saveTile($event)" />
+        } @else {
+          <textarea
+            rows="3"
+            spellcheck="false"
+            [attr.aria-label]="'Contenido de ' + selectedFile()"
+            [attr.maxlength]="selectedFile() === 'nota.txt' ? maxText : null"
+            [ngModel]="fileText()"
+            (ngModelChange)="draft.set($event)"
+          ></textarea>
+          <p class="note">
+            {{ selectedFile() === 'datos.csv' ? 'Hasta 1024 enteros decimales con signo, separados por comas o saltos de línea.' : 'Hasta ' + maxText + ' caracteres por envío.' }}
+          </p>
+          <button type="button" (click)="saveText()">Guardar copia en el SSD</button>
+        }
+        <label class="upload">
+          <span>o importar un archivo .{{ selectedFile().endsWith('.csv') ? 'csv' : 'txt' }} (hasta 64 KiB)</span>
+          <input type="file" [accept]="selectedFile().endsWith('.csv') ? '.csv,text/csv' : '.txt,text/plain'" (change)="upload($event)" />
+        </label>
+      } @else {
+        <p class="note">Este archivo lo escribe el programa; no se importa.</p>
+      }
+      <p class="note">Importar solo copia al SSD. Leerlo a la RAM lo hace el programa con READ_FILE.</p>
+    </div>
+  </div>
+
+  @if (pc.message(); as message) {
+    <p class="message" role="alert">{{ message }}</p>
+  }
+</section>

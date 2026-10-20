@@ -11,8 +11,8 @@ const idle: MissionContext = {
   bufferCompleted: false,
   bufferVersion: 0,
   separateMemory: false,
-  machineStage: 0,
-  machineOutput: 0,
+  pcMonitor: '',
+  pcResultFile: '',
 };
 
 describe('misiones por estación', () => {
@@ -48,9 +48,10 @@ describe('misiones por estación', () => {
     expect(m.check({ ...done, bufferCompleted: false })).toBe(false);
   });
 
-  it('machine_needs_the_value_in_the_output', () => {
+  it('machine_needs_the_sum_on_the_monitor_and_in_the_file', () => {
     const m = missionFor('machine')!;
-    expect(m.check({ ...idle, machineStage: 8, machineOutput: 12 })).toBe(true);
-    expect(m.check({ ...idle, machineStage: 7, machineOutput: 0 })).toBe(false);
+    expect(m.check({ ...idle, pcMonitor: '10', pcResultFile: '10' })).toBe(true);
+    expect(m.check({ ...idle, pcMonitor: '10', pcResultFile: '' })).toBe(false);
+    expect(m.check({ ...idle, pcMonitor: '9', pcResultFile: '9' })).toBe(false);
   });
 });
