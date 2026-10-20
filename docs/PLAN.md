@@ -737,15 +737,15 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Sustituir como motor activo:** instruments/machine-experiment.ts; conservar 7+5 como fixture si aporta valor.
 **Consume:** T03. **Produce:** snapshots/eventos para T07.
 
-- [ ] Fijar mapa RAM, ROM, registros PC/IR/MAR/MDR y semántica de operaciones de §6; implementar los cuatro fixtures, incluyendo el mosaico compartido con el SoC.
-- [ ] Tests: Hola→monitor; CSV 1,2,3,4→10→resultado.txt; editar/guardar/apagar/recuperar HOLA; inversión de los 64 valores del mosaico.
-- [ ] Tests de ciclo: en cada operación, MAR toma el valor de PC antes de la lectura, IR recibe el contenido de MDR y PC avanza; cada evento tiene `role`.
-- [ ] Tests de arranque: tras encender, RAM contiene el programa copiado del SSD, PC apunta a su inicio y ROM no cambia.
-- [ ] Tests de interrupción: con tres teclas, la variante por interrupción avanza el contador de fondo y la de sondeo no; ambas muestran «Hola» igual; la interrupción se atiende al final de la instrucción en curso y restaura PC y flags.
-- [ ] Tests: límite/exceso de archivo, UTF-8 inválido, CSV inválido, overflow, espera de teclado.
-- [ ] Implementar entrada, importación SSD, cargador RAM y servicios visibles.
-- [ ] Probar retroceso RAM/SSD/colas/pantalla y repetición idéntica del registro de entradas.
-- [ ] Probar distinción entre reset de fixture y apagado.
+- [x] Fijar mapa RAM, ROM, registros PC/IR/MAR/MDR y semántica de operaciones de §6; implementar los cuatro fixtures, incluyendo el mosaico compartido con el SoC.
+- [x] Tests: Hola→monitor; CSV 1,2,3,4→10→resultado.txt; editar/guardar/apagar/recuperar HOLA; inversión de los 64 valores del mosaico.
+- [x] Tests de ciclo: en cada operación, MAR toma el valor de PC antes de la lectura, IR recibe el contenido de MDR y PC avanza; cada evento tiene `role`.
+- [x] Tests de arranque: tras encender, RAM contiene el programa copiado del SSD, PC apunta a su inicio y ROM no cambia.
+- [x] Tests de interrupción: con tres teclas, la variante por interrupción avanza el contador de fondo y la de sondeo no; ambas muestran «Hola» igual; la interrupción se atiende al final de la instrucción en curso y restaura PC y flags.
+- [x] Tests: límite/exceso de archivo, UTF-8 inválido, CSV inválido, overflow, espera de teclado.
+- [x] Implementar entrada, importación SSD, cargador RAM y servicios visibles.
+- [x] Probar retroceso RAM/SSD/colas/pantalla y repetición idéntica del registro de entradas.
+- [x] Probar distinción entre reset de fixture y apagado.
 
 **Puerta:** datos cambian resultados; ejecución completa sin Three.js.
 

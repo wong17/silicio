@@ -79,13 +79,58 @@ describe('adaptadores de simulación sobre LabSession', () => {
     expect(coordinator.running()).toBe(false);
   });
 
-  it('PC: recorre las ocho transferencias y reinicia', async () => {
+  it('PC: el primer paso enciende, luego cada instrucción; Atrás y Reiniciar restauran la máquina', async () => {
     coordinator.activate('machine');
-    session.resetMachine();
-    for (let n = 1; n <= 8; n++) await coordinator.step();
-    expect(coordinator.transport()).toMatchObject({ status: 'finished', step: 8, canNext: false, units: ['transfer'] });
+    session.pc.choose('suma-archivo');
+    expect(coordinator.transport()).toMatchObject({ status: 'ready', step: 0, canNext: true, canBack: false, units: ['instruction'] });
+    await coordinator.step();
+    expect(session.pc.powered()).toBe(true);
+    expect(session.pc.state().pc).toBe(0);
+    await coordinator.step();
+    await coordinator.step();
+    expect(session.pc.state().pc).toBe(0x1000);
+    expect(session.pc.state().ram.program[0]).not.toBe(0);
+    await coordinator.back();
+    expect(session.pc.state().pc).toBe(1);
+    expect(session.pc.state().ram.program[0]).not.toBe(0);
+    await coordinator.back();
+    expect(session.pc.state().pc).toBe(0);
+    expect(session.pc.state().ram.program[0]).toBe(0);
     await coordinator.restart();
     expect(coordinator.transport()).toMatchObject({ status: 'ready', step: 0 });
+    expect(session.pc.powered()).toBe(false);
+  });
+
+  it('PC: Ejecutar recorre el programa hasta HALT y el resultado llega al monitor y al SSD', async () => {
+    coordinator.activate('machine');
+    session.pc.choose('suma-archivo');
+    coordinator.run();
+    await vi.advanceTimersByTimeAsync(450 * 300);
+    expect(session.pc.halted()).toBe(true);
+    expect(coordinator.running()).toBe(false);
+    expect(session.pc.state().monitor.text).toBe('10');
+    expect(session.pc.fileText('resultado.txt')).toBe('10');
+    expect(coordinator.transport()!.status).toBe('finished');
+  });
+
+  it('PC: esperar el teclado detiene Ejecutar sin reanudarlo solo; escribir la tecla permite seguir', async () => {
+    coordinator.activate('machine');
+    session.pc.choose('hola-sondeo');
+    coordinator.run();
+    await vi.advanceTimersByTimeAsync(450 * 60);
+    expect(coordinator.running()).toBe(true);
+    session.pc.type('Hola\n');
+    await vi.advanceTimersByTimeAsync(450 * 200);
+    expect(session.pc.halted()).toBe(true);
+    expect(session.pc.state().monitor.text.trim()).toBe('Hola');
+  });
+
+  it('PC: una entrada rechazada se explica y no cambia la máquina', () => {
+    session.pc.choose('suma-archivo');
+    const before = JSON.stringify(session.pc.state());
+    session.pc.importText('datos.csv', '1,2,x');
+    expect(session.pc.message()).toContain('Valor inválido');
+    expect(JSON.stringify(session.pc.state())).toBe(before);
   });
 
   it('SoC: las tres etapas de la dependencia CPU → GPU → CPU', async () => {

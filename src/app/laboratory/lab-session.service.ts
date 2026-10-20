@@ -3,7 +3,8 @@ import { SimulationCoordinator } from './controllers/simulation-coordinator';
 import { MemoryLessonService, STEPS_OF } from './memory-lesson.service';
 import { joinWord, splitWord } from '../simulation/memory-lesson';
 import { Cpu8086Controller } from './controllers/cpu8086-controller';
-import { MachineController } from './controllers/machine-controller';
+import { PcController } from './controllers/pc-controller';
+import { PcSession } from './pc-session.service';
 import { MemoryLessonController } from './controllers/memory-controller';
 import { SocController } from './controllers/soc-controller';
 import { Cpu8086, hex, physicalAddress, REGISTER_NAMES, Registers, Snapshot, Trace } from '../simulation/cpu8086';
@@ -57,6 +58,8 @@ export class LabSession {
   private readonly zone = inject(NgZone);
   private readonly coordinator = inject(SimulationCoordinator);
   readonly memoryLesson = inject(MemoryLessonService);
+  /** The PC exercise of «La máquina». */
+  readonly pc = inject(PcSession);
   readonly cpu = new Cpu8086();
   readonly missions = LAB_MISSIONS;
   readonly registerNames = REGISTER_LIST;
@@ -413,11 +416,16 @@ export class LabSession {
       }),
     );
     this.coordinator.register(
-      new MachineController({
-        stage: () => this.machineStage(),
-        lastStage: 8,
-        advance: () => this.advanceMachine(),
-        reset: () => this.resetMachine(),
+      new PcController({
+        step: () => this.pc.step(),
+        back: () => this.pc.back(),
+        resetExercise: () => this.pc.resetExercise(),
+        canBack: () => this.pc.canBack(),
+        stepCount: () => this.pc.stepCount(),
+        halted: () => this.pc.halted(),
+        powered: () => this.pc.powered(),
+        waiting: () => this.pc.waiting(),
+        message: () => this.pc.message(),
       }),
     );
     this.coordinator.register(
