@@ -1,0 +1,150 @@
+<section class="operation" aria-label="Operación de memoria">
+  <ol class="levels" aria-label="Nivel de la jerarquía de memoria en el que trabaja la actividad">
+    @for (level of levels; track level) {
+      <li [class.here]="working().includes(level)" [attr.aria-current]="working().includes(level) ? 'step' : null">
+        {{ level }}
+      </li>
+    }
+  </ol>
+
+  <div class="tabs" role="tablist" aria-label="Actividades de memoria">
+    @for (a of activities; track a.id) {
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="lesson.activity() === a.id"
+        [class.active]="lesson.activity() === a.id"
+        (click)="choose(a.id)"
+      >
+        {{ a.label }}
+      </button>
+    }
+  </div>
+  <p class="question">{{ current().question }}</p>
+
+  <div class="origin" role="group" aria-label="Origen de los datos">
+    <span class="kicker">Datos de</span>
+    <button type="button" [attr.aria-pressed]="lesson.origin() === 'exercise'" (click)="lesson.startExercise()">
+      Ejercicio
+    </button>
+    <button type="button" [attr.aria-pressed]="lesson.origin() === 'session'" (click)="lesson.useSession()">
+      Sesión 8086
+    </button>
+    <button type="button" disabled aria-disabled="true" title="Disponible con el PC conceptual">PC actual</button>
+  </div>
+  <p class="origin-note" role="status">
+    @switch (lesson.origin()) {
+      @case ('exercise') {
+        Bytes propios del ejercicio: no cambian el programa del 8086.
+      }
+      @case ('session') {
+        Lees la memoria del programa del 8086, en su paso actual. Editarla pausa la ejecución y conserva el retroceso.
+      }
+      @default {
+        La RAM del PC se consulta desde el capítulo La máquina.
+      }
+    }
+  </p>
+
+  @switch (lesson.activity()) {
+    @case ('store') {
+      <div class="form">
+        <label>
+          <span class="kicker">Palabra (hex)</span>
+          <input aria-label="Palabra hexadecimal" [ngModel]="lesson.value()" (ngModelChange)="lesson.value.set($event)" maxlength="4" />
+        </label>
+        <label>
+          <span class="kicker">Segmento</span>
+          <input aria-label="Segmento hexadecimal" [(ngModel)]="session.segmentText" (change)="session.setAddress()" maxlength="4" />
+        </label>
+        <label>
+          <span class="kicker">Offset</span>
+          <input aria-label="Offset hexadecimal" [(ngModel)]="session.offsetText" (change)="session.setAddress()" maxlength="4" />
+        </label>
+        <label>
+          <span class="kicker">Formato</span>
+          <select [attr.aria-label]="'Formato de la palabra'" (change)="setFormat($event)">
+            @for (f of formats; track f.id) {
+              <option [value]="f.id" [selected]="f.id === lesson.format()">{{ f.label }}</option>
+            }
+          </select>
+        </label>
+      </div>
+      <p class="hint">
+        Paso {{ lesson.step() }} de 3: escribir el byte bajo, escribir el byte alto y leer la palabra.
+      </p>
+    }
+    @case ('addresses') {
+      <div class="form">
+        <label class="wide">
+          <span class="kicker">Modo de direccionamiento</span>
+          <select aria-label="Modo de direccionamiento" [ngModel]="lesson.mode()" (ngModelChange)="lesson.mode.set($event)">
+            @for (m of lesson.modes; track m.id) {
+              <option [value]="m.id">{{ m.label }}</option>
+            }
+          </select>
+        </label>
+        @if (lesson.origin() === 'session') {
+          <p class="from-session">
+            Registros de la sesión:
+            @for (r of uses(); track r) {
+              <code>{{ r }} = {{ h(sessionRegisters()[r]) }}h</code>
+            }
+            <code>DS = {{ h(sessionRegisters().DS) }}h</code>
+            <code>SS = {{ h(sessionRegisters().SS) }}h</code>
+          </p>
+        } @else {
+          @for (r of uses(); track r) {
+            <label>
+              <span class="kicker">{{ r }} (hex)</span>
+              @switch (r) {
+                @case ('BX') { <input [attr.aria-label]="'BX hexadecimal'" [ngModel]="lesson.regBX()" (ngModelChange)="lesson.regBX.set($event)" maxlength="4" /> }
+                @case ('BP') { <input [attr.aria-label]="'BP hexadecimal'" [ngModel]="lesson.regBP()" (ngModelChange)="lesson.regBP.set($event)" maxlength="4" /> }
+                @case ('SI') { <input [attr.aria-label]="'SI hexadecimal'" [ngModel]="lesson.regSI()" (ngModelChange)="lesson.regSI.set($event)" maxlength="4" /> }
+                @case ('DI') { <input [attr.aria-label]="'DI hexadecimal'" [ngModel]="lesson.regDI()" (ngModelChange)="lesson.regDI.set($event)" maxlength="4" /> }
+              }
+            </label>
+          }
+          <label>
+            <span class="kicker">DS (hex)</span>
+            <input aria-label="DS hexadecimal" [ngModel]="lesson.segDS()" (ngModelChange)="lesson.segDS.set($event)" maxlength="4" />
+          </label>
+          <label>
+            <span class="kicker">SS (hex)</span>
+            <input aria-label="SS hexadecimal" [ngModel]="lesson.segSS()" (ngModelChange)="lesson.segSS.set($event)" maxlength="4" />
+          </label>
+        }
+        <label>
+          <span class="kicker">Desplazamiento (hex)</span>
+          <input aria-label="Desplazamiento hexadecimal" [ngModel]="lesson.displacement()" (ngModelChange)="lesson.displacement.set($event)" maxlength="4" />
+        </label>
+      </div>
+      @if (!built()) {
+        <p class="error" role="alert">Escribe cada campo en hexadecimal, de uno a cuatro dígitos.</p>
+      }
+      <button type="button" class="link" (click)="lesson.useExample()">Cargar el ejemplo [BX+SI+4]</button>
+      <p class="hint">Paso {{ lesson.step() }} de 4: modo, dirección efectiva, segmento y dirección física.</p>
+    }
+    @case ('cache') {
+      <p class="hint">
+        Predice cada lectura de la secuencia de accesos en la tabla de Resultado: ¿acierto o fallo en cuatro líneas?
+      </p>
+    }
+    @case ('ram') {
+      <ol class="ram-steps">
+        @for (s of ramSteps; track $index; let i = $index) {
+          <li [class.shown]="i < lesson.step()">{{ i < lesson.step() ? s : 'Paso ' + (i + 1) + ' por revelar' }}</li>
+        }
+      </ol>
+    }
+  }
+
+  @if (lesson.activity() !== 'cache') {
+    <div class="actions">
+      <button type="button" class="primary" [disabled]="atEnd()" (click)="nextStep()">
+        {{ atEnd() ? 'Completado' : 'Siguiente paso' }}
+      </button>
+      <button type="button" (click)="restart()">Reiniciar</button>
+    </div>
+  }
+</section>

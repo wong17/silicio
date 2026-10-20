@@ -1,5 +1,7 @@
 import { Injectable, NgZone, computed, effect, inject, signal, untracked } from '@angular/core';
 import { SimulationCoordinator } from './controllers/simulation-coordinator';
+import { MemoryLessonService, STEPS_OF } from './memory-lesson.service';
+import { joinWord, splitWord } from '../simulation/memory-lesson';
 import { Cpu8086Controller } from './controllers/cpu8086-controller';
 import { MachineController } from './controllers/machine-controller';
 import { MemoryLessonController } from './controllers/memory-controller';
@@ -54,6 +56,7 @@ const divisionFault = (line: number) =>
 export class LabSession {
   private readonly zone = inject(NgZone);
   private readonly coordinator = inject(SimulationCoordinator);
+  readonly memoryLesson = inject(MemoryLessonService);
   readonly cpu = new Cpu8086();
   readonly missions = LAB_MISSIONS;
   readonly registerNames = REGISTER_LIST;
@@ -230,7 +233,7 @@ export class LabSession {
         revision: this.revision(),
         phase: 'execute',
         memory: {
-          ...projectMemory(this.segment(), this.offset(), (a) => this.cpu.memory[a] ?? 0, {
+          ...projectMemory(this.segment(), this.offset(), (a) => this.memoryByte(a), {
             segment: this.cpu.registers.SS,
             pointer: this.cpu.registers.SP,
           }),
@@ -330,12 +333,64 @@ export class LabSession {
       : { segment: (this.segment() + 1) % 65536, offset: this.offset() - 16 },
   );
   readonly physical = computed(() => physicalAddress(this.segment(), this.offset()));
+
+  /** One byte of the memory the activity works on: the exercise's own bytes, or the 8086 as it is shown. */
+  memoryByte(address: number): number {
+    this.memoryLesson.revision();
+    if (this.memoryLesson.origin() === 'exercise' && this.section() === 'memory')
+      return this.memoryLesson.exercise.byte(address);
+    return this.shownState().memory[address & 0xfffff] ?? 0;
+  }
+
+  /** The word at the address on screen (low byte first). */
+  readonly wordAtAddress = computed(() => {
+    const at = this.physical();
+    return joinWord(this.memoryByte(at), this.memoryByte(at + 1));
+  });
+
+  /** One step of the open exercise: write a low byte, a high byte and read the word; or reveal an address step. */
+  advanceMemory(): void {
+    const m = this.memoryLesson;
+    if (m.activity() === 'store') {
+      const value = parseInt(m.value(), 16);
+      if (Number.isNaN(value)) {
+        this.error.set('Escribe la palabra en hexadecimal (hasta cuatro dígitos).');
+        return;
+      }
+      const { low, high } = splitWord(value);
+      const at = this.physical();
+      const step = m.progress().store;
+      if (step === 0) this.writeMemoryByte(at, low);
+      else if (step === 1) this.writeMemoryByte(at + 1, high);
+      this.activePart.set('cell-' + ((at + step) & 31));
+    }
+    m.advance();
+  }
+
+  private resetMemoryLesson(): void {
+    const m = this.memoryLesson;
+    if (m.activity() === 'store' && m.origin() === 'exercise') m.exercise.clear();
+    m.reset();
+  }
+
+  /** Writes one byte in the memory the activity works on. In the 8086 session this is an explicit edit: it pauses. */
+  private writeMemoryByte(address: number, value: number): void {
+    if (this.memoryLesson.origin() === 'exercise') {
+      const word = this.memoryLesson.exercise;
+      word.writeByte(address, value);
+      this.memoryLesson.revision.update((n) => n + 1);
+      return;
+    }
+    this.pause();
+    this.cpu.memory[address & 0xfffff] = value & 255;
+    this.revision.update((n) => n + 1);
+  }
   readonly cells = computed(() => {
     this.revision();
     const base = this.physical() & ~31;
     return Array.from({ length: 32 }, (_, index) => ({
       address: base + index,
-      value: this.cpu.memory[base + index] ?? 0,
+      value: this.memoryByte(base + index),
     }));
   });
 
@@ -375,9 +430,14 @@ export class LabSession {
     );
     this.coordinator.register(
       new MemoryLessonController({
-        revealed: () => (this.cacheRevision(), this.cacheLesson.revealed),
-        total: () => (this.cacheRevision(), this.cacheLesson.total),
-        reset: () => this.resetCache(),
+        step: () => (this.memoryLesson.activity() === 'cache' ? (this.cacheRevision(), this.cacheLesson.revealed) : this.memoryLesson.step()),
+        total: () => (this.memoryLesson.activity() === 'cache' ? (this.cacheRevision(), this.cacheLesson.total) : STEPS_OF[this.memoryLesson.activity()]),
+        waiting: () =>
+          this.memoryLesson.activity() === 'cache' && (this.cacheRevision(), this.cacheLesson.total > 0 && !this.cacheLesson.complete)
+            ? 'Predice acierto o fallo'
+            : undefined,
+        advance: () => this.advanceMemory(),
+        reset: () => this.resetMemoryLesson(),
       }),
     );
     this.cpu.load(this.source);

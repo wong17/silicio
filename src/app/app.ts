@@ -42,9 +42,8 @@ import { RegisterPanelComponent } from './instruments/cpu/register/register-pane
 import { AluPanelComponent } from './instruments/cpu/alu/alu-panel.component';
 import { ProgramPanelComponent } from './instruments/cpu/program/program-panel.component';
 import { TracePanelComponent } from './instruments/cpu/trace/trace-panel.component';
-import { MemoryPanelComponent } from './instruments/memory/memory/memory-panel.component';
-import { CachePanelComponent } from './instruments/memory/cache/cache-panel.component';
-import { DimmPanelComponent } from './instruments/memory/dimm/dimm-panel.component';
+import { MemoryOperationComponent } from './instruments/memory/operation/memory-operation.component';
+import { MemoryResultComponent } from './instruments/memory/result/memory-result.component';
 import { ApplePanelComponent } from './instruments/apple/apple/apple-panel.component';
 import { SignalPanelComponent } from './instruments/signal/signal/signal-panel.component';
 import { MachineInstrumentComponent } from './instruments/machine/machine-instrument.component';
@@ -92,9 +91,8 @@ const NARROW = '(max-width: 899px)';
     AluPanelComponent,
     ProgramPanelComponent,
     TracePanelComponent,
-    MemoryPanelComponent,
-    CachePanelComponent,
-    DimmPanelComponent,
+    MemoryOperationComponent,
+    MemoryResultComponent,
     ApplePanelComponent,
     SignalPanelComponent,
     MachineInstrumentComponent,
@@ -151,6 +149,8 @@ export class App implements AfterViewInit, OnDestroy {
   private readonly instrumentsPanel = viewChild.required<TemplateRef<unknown>>('instrumentsPanel');
   private readonly screenPanel = viewChild.required<TemplateRef<unknown>>('screenPanel');
   private readonly portsPanel = viewChild.required<TemplateRef<unknown>>('portsPanel');
+  private readonly operationPanel = viewChild.required<TemplateRef<unknown>>('operationPanel');
+  private readonly resultPanel = viewChild.required<TemplateRef<unknown>>('resultPanel');
   /** Content of each desk panel; the workspace places it, the shell only says what it contains. */
   readonly panelTemplates = computed<Record<string, TemplateRef<unknown>>>(() => ({
     program: this.programPanel(),
@@ -160,6 +160,8 @@ export class App implements AfterViewInit, OnDestroy {
     instruments: this.instrumentsPanel(),
     screen: this.screenPanel(),
     ports: this.portsPanel(),
+    operation: this.operationPanel(),
+    result: this.resultPanel(),
   }));
   private navigation?: Subscription;
   private context?: gsap.Context;
@@ -179,6 +181,11 @@ export class App implements AfterViewInit, OnDestroy {
     effect(() => {
       const view = experienceOf(this.session.section());
       untracked(() => (view ? this.coordinator.changeView(view) : this.coordinator.pause()));
+    });
+    // The module on the bench follows the open memory exercise: DDR4 only for «Cómo se organiza la RAM».
+    effect(() => {
+      const ram = this.session.memoryLesson.activity() === 'ram';
+      if (this.session.section() === 'memory') untracked(() => this.session.memoryModel.set(ram ? 'dimm' : 'classic'));
     });
     // The screen opens with the first INT 21h of a program (and again after a restart cleared it).
     effect(() => {

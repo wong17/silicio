@@ -210,7 +210,7 @@ describe('SILICIO / shell y consola', () => {
   it('dimm_gallery_does_not_present_8086_banks_or_addresses', () => {
     const { fixture, session } = create();
     session.section.set('memory');
-    session.memoryModel.set('dimm');
+    session.memoryLesson.select('ram');
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('.address')).toBeNull();

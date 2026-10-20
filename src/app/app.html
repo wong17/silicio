@@ -171,6 +171,15 @@
   <app-signal-panel />
 </ng-template>
 
+<ng-template #operationPanel>
+  <app-memory-operation />
+  <app-station-mission />
+</ng-template>
+
+<ng-template #resultPanel>
+  <app-memory-result />
+</ng-template>
+
 <ng-template #portsPanel>
   <app-ports-panel />
 </ng-template>
@@ -191,30 +200,6 @@
   @switch (session.section()) {
     @case ('time') {
       <app-trace-panel />
-    }
-    @case ('memory') {
-      <div class="model-switch" role="group" aria-label="Modelo de memoria">
-        <button
-          type="button"
-          [attr.aria-pressed]="session.memoryModel() === 'classic'"
-          (click)="session.memoryModel.set('classic'); session.part('bank-even')"
-        >
-          2164A / 8086
-        </button>
-        <button
-          type="button"
-          [attr.aria-pressed]="session.memoryModel() === 'dimm'"
-          (click)="session.memoryModel.set('dimm'); session.part('dimm')"
-        >
-          DDR4 / galería
-        </button>
-      </div>
-      @if (session.memoryModel() === 'classic') {
-        <app-memory-panel />
-        <app-cache-panel />
-      } @else {
-        <app-dimm-panel />
-      }
     }
     @case ('apple') {
       <app-apple-panel />

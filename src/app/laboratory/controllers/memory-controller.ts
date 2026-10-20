@@ -1,15 +1,19 @@
 import type { AdvanceUnit, SimulationController, TransportState } from './simulation-controller';
 
 export interface MemoryLessonHost {
-  /** Reads of the cache sequence already revealed, and how many there are. */
-  readonly revealed: () => number;
+  /** Steps of the open activity already revealed, and how many there are. */
+  readonly step: () => number;
   readonly total: () => number;
+  /** Set while the activity waits for the student's own answer (the cache predictions). */
+  readonly waiting: () => string | undefined;
+  advance(): void;
   reset(): void;
 }
 
 /**
- * Adapter of the memory exercise. Its steps are the student's own predictions («Acierto»/«Fallo»), which stay
- * next to the data, so the transport never advances it: it shows the wait and offers to start over.
+ * Adapter of the memory exercises. Their steps are small accesses (write a byte, build an address, reveal a
+ * chip); the cache predictions are the student's own steps and stay next to the data, so the transport
+ * explains the wait instead of advancing past them.
  */
 export class MemoryLessonController implements SimulationController {
   readonly id = 'memory-lesson' as const;
@@ -17,24 +21,27 @@ export class MemoryLessonController implements SimulationController {
 
   state(): TransportState {
     const total = this.host.total();
-    const revealed = this.host.revealed();
-    const done = total === 0 || revealed >= total;
+    const step = this.host.step();
+    const waiting = this.host.waiting();
+    const done = total === 0 || step >= total;
     return {
-      status: done ? (total === 0 ? 'ready' : 'finished') : 'waiting-input',
+      status: waiting ? 'waiting-input' : done ? (total === 0 ? 'ready' : 'finished') : step === 0 ? 'ready' : 'paused',
       units: ['access'],
-      canNext: false,
+      canNext: !waiting && !done,
       canBack: false,
-      step: revealed,
-      ...(!done ? { reason: 'Predice acierto o fallo' } : {}),
+      step,
+      ...(waiting ? { reason: waiting } : {}),
     };
   }
 
   async next(_unit: AdvanceUnit): Promise<void> {
-    throw Error('Predice la lectura con «Acierto» o «Fallo»: cada predicción es el siguiente paso.');
+    const waiting = this.host.waiting();
+    if (waiting) throw Error('Predice la lectura con «Acierto» o «Fallo»: cada predicción es el siguiente paso.');
+    this.host.advance();
   }
 
   async back(): Promise<void> {
-    /* predictions cannot be taken back */
+    /* each access of the exercise is final until it is restarted */
   }
 
   async restart(): Promise<void> {

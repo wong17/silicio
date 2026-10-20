@@ -723,11 +723,11 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Modificar:** memory-panel, cache-panel, dimm-panel, simulation/cache-lesson.ts, station-activity.ts, world/models/memory-activity.ts.
 **Consume:** T01/T03, instrumentos existentes.
 
-- [ ] Tests: 1234h ↔ [34h,12h]; `[BX+SI+4]` con BX=0010h, SI=0002h → EA 0016h → física 10016h con DS=1000h; alias 1000:0020 = 1001:0010; ventanas distintas para 10020h y 30020h.
-- [ ] Implementar §5, recorrido operación/resultado, franja de orientación y origen de datos visible. Memoria abierta desde 8086/PC mantiene sus direcciones y paso; volver no reinicia.
-- [ ] Test: Ejercicio no modifica 8086; Sesión lo pausa y conserva retroceso.
-- [ ] Conservar tests y resultados actuales de caché 4/8 líneas; explicación por acceso.
-- [ ] DDR4 usa datos propios; verificar distinción ancho/ráfaga y modelo físico.
+- [x] Tests: 1234h ↔ [34h,12h]; `[BX+SI+4]` con BX=0010h, SI=0002h → EA 0016h → física 10016h con DS=1000h; alias 1000:0020 = 1001:0010; ventanas distintas para 10020h y 30020h.
+- [x] Implementar §5, recorrido operación/resultado, franja de orientación y origen de datos visible. Memoria abierta desde 8086/PC mantiene sus direcciones y paso; volver no reinicia.
+- [x] Test: Ejercicio no modifica 8086; Sesión lo pausa y conserva retroceso.
+- [x] Conservar tests y resultados actuales de caché 4/8 líneas; explicación por acceso.
+- [x] DDR4 usa datos propios; verificar distinción ancho/ráfaga y modelo físico.
 
 **Puerta:** alumno comprende dirección y bytes sin requisito previo de segmentación.
 

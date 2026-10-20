@@ -99,8 +99,9 @@ describe('adaptadores de simulación sobre LabSession', () => {
     expect(session.bufferView().completed).toBe(false);
   });
 
-  it('Memoria: las predicciones son el paso; el transporte lo explica y no ofrece Play', async () => {
+  it('Memoria (caché): las predicciones son el paso; el transporte lo explica y no ofrece Play', async () => {
     coordinator.activate('memory-lesson');
+    session.memoryLesson.select('cache');
     await coordinator.restart();
     const t = coordinator.transport()!;
     expect(t).toMatchObject({ status: 'waiting-input', canNext: false, reason: 'Predice acierto o fallo', units: ['access'] });
@@ -109,6 +110,53 @@ describe('adaptadores de simulación sobre LabSession', () => {
     session.predictCache(true);
     expect(coordinator.transport()!.step).toBe(1);
     await expect(coordinator.active()!.next('access')).rejects.toThrow('Predice');
+  });
+
+  it('Memoria (guardar y leer): tres pasos escriben el byte bajo, el alto y leen la palabra, solo en el ejercicio', async () => {
+    session.source = 'ADD AX, [10]\nHLT';
+    session.load();
+    coordinator.activate('memory-lesson');
+    session.section.set('memory');
+    session.memoryLesson.select('store');
+    session.memoryLesson.value.set('1234');
+    session.segment.set(0x1000);
+    session.offset.set(0x20);
+    const before = JSON.stringify(session.state());
+    await coordinator.restart();
+    expect(coordinator.transport()).toMatchObject({ status: 'ready', step: 0, canNext: true });
+    await coordinator.step();
+    expect(session.memoryLesson.exercise.byte(0x10020)).toBe(0x34);
+    expect(session.memoryLesson.exercise.byte(0x10021)).toBe(0);
+    await coordinator.step();
+    expect(session.memoryLesson.exercise.byte(0x10021)).toBe(0x12);
+    await coordinator.step();
+    expect(session.wordAtAddress()).toBe(0x1234);
+    expect(coordinator.transport()).toMatchObject({ status: 'finished', canNext: false, step: 3 });
+    expect(JSON.stringify(session.state())).toBe(before);
+    await coordinator.restart();
+    expect(session.memoryLesson.exercise.byte(0x10020)).toBe(0);
+  });
+
+  it('Memoria: la sesión 8086 se consulta sin pausarla y editarla la pausa pero conserva el retroceso', async () => {
+    session.source = 'MOV AX, 5\nNOP\nHLT';
+    session.load();
+    coordinator.changeView('8086');
+    await coordinator.step();
+    coordinator.changeView('memory');
+    expect(session.memoryLesson.origin()).toBe('session');
+    expect(coordinator.activeId()).toBe('8086');
+    session.section.set('memory');
+    session.memoryLesson.select('store');
+    session.segment.set(0x2000);
+    session.offset.set(0x40);
+    session.memoryLesson.value.set('00ab');
+    session.advanceMemory();
+    session.advanceMemory();
+    expect(session.state().memory[0x20040]).toBe(0xab);
+    expect(session.trace()).toHaveLength(1);
+    await coordinator.back();
+    expect(session.cursor()).toBe(-1);
+    expect(coordinator.activeId()).toBe('8086');
   });
 });
 

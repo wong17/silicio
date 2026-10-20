@@ -1,8 +1,7 @@
 import type { Section } from '../../world/scene-inputs';
 import type { PanelSpec } from './workspace-layout';
 
-const INSTRUMENT_TITLES: Record<Exclude<Section, '8086' | 'atrium'>, string> = {
-  memory: 'Memoria',
+const INSTRUMENT_TITLES: Record<Exclude<Section, '8086' | 'atrium' | 'memory'>, string> = {
   time: 'Cronoscopio',
   apple: 'Memoria compartida',
   machine: 'Sistema',
@@ -22,6 +21,12 @@ export function panelsFor(section: Section): PanelSpec[] {
       // The screen opens by itself with the first INT 21h; until then it is one choice in «Paneles».
       { id: 'screen', title: 'Pantalla', zone: 'right', open: false, weight: 1 },
       { id: 'ports', title: 'Puertos 8255', zone: 'right', open: false, weight: 1 },
+      ...SECONDARY,
+    ];
+  if (section === 'memory')
+    return [
+      { id: 'operation', title: 'Operación', zone: 'bottom', open: true },
+      { id: 'result', title: 'Resultado', zone: 'bottom', open: true },
       ...SECONDARY,
     ];
   if (section === 'atrium')

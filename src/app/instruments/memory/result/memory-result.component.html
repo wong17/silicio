@@ -1,0 +1,92 @@
+<section class="result" aria-label="Resultado de memoria">
+  @switch (lesson.activity()) {
+    @case ('cache') {
+      <app-cache-panel />
+    }
+    @case ('ram') {
+      <app-dimm-panel />
+    }
+    @default {
+      @if (lesson.activity() === 'addresses') {
+        <div class="steps" aria-live="polite">
+          <p class="kicker">Dirección por pasos</p>
+          @if (built(); as b) {
+            <ol>
+              @for (s of b.steps; track s.title; let i = $index) {
+                <li [class.shown]="i < revealed()">
+                  <strong>{{ i + 1 }}. {{ s.title }}</strong>
+                  @if (i < revealed()) {
+                    <span>{{ s.text }}</span>
+                  } @else {
+                    <span class="hidden">Calcula este paso y pulsa «Siguiente paso».</span>
+                  }
+                </li>
+              }
+            </ol>
+            @if (revealed() >= 4) {
+              <p class="physical">
+                <span class="kicker">Física</span>
+                <strong>{{ h(b.physical, 5) }}<small>h</small></strong>
+                <span class="where">Ventana {{ b.window.index + 1 }} de 8 (base {{ h(b.window.base, 5) }}h) · la placa muestra 128 KiB</span>
+              </p>
+            }
+          } @else {
+            <p class="hidden">Completa los campos de la Operación.</p>
+          }
+        </div>
+      }
+
+      <p class="alias">
+        {{ h(session.segment()) }}:{{ h(session.offset()) }} → <b>{{ h(physical(), 5) }}h</b>
+        @if (alias(); as a) {
+          · alias {{ h(a.segment) }}:{{ h(a.offset) }} → <b>{{ h(physical(), 5) }}h</b>
+        }
+        · ventana {{ window().index + 1 }} de 8
+      </p>
+
+      <div class="lanes">
+        <div class="lane" [class.written]="lesson.activity() !== 'store' || stored() >= 1">
+          <small>{{ h(physical(), 5) }}</small>
+          <strong>{{ h(low(), 2) }}</strong>
+          <span>byte bajo · dirección menor</span>
+        </div>
+        <div class="lane" [class.written]="lesson.activity() !== 'store' || stored() >= 2">
+          <small>{{ h(physical() + 1, 5) }}</small>
+          <strong>{{ h(high(), 2) }}</strong>
+          <span>byte alto · dirección siguiente</span>
+        </div>
+        <div class="word" aria-live="polite">
+          <span class="kicker">Palabra reconstruida</span>
+          <strong>{{ lesson.activity() === 'store' && stored() < 3 ? '· · · ·' : formatted() }}</strong>
+        </div>
+      </div>
+
+      <p class="bank">
+        Dirección {{ bank() }}: {{ cycles() === 1 ? 'un ciclo del modelo (ambos bancos a la vez)' : 'dos ciclos del modelo (la palabra cruza dos filas de bancos)' }}.
+        <button type="button" (click)="session.part(bank() === 'par' ? 'bank-even' : 'bank-odd')">
+          Ver banco {{ bank() }}
+        </button>
+      </p>
+
+      <div class="grid" role="group" aria-label="Ventana de 32 bytes">
+        @for (c of session.cells(); track c.address) {
+          <button
+            type="button"
+            class="cell"
+            [class.selected]="c.address === physical() || c.address === physical() + 1"
+            [style.--heat]="heat(c.value)"
+            [attr.data-tip]="h(c.address, 5) + 'h' + (names().get(c.address) ? ' · ' + names().get(c.address) : '')"
+            [attr.aria-label]="'Dirección ' + h(c.address, 5) + ', byte ' + h(c.value, 2) + (names().get(c.address) ? ', variable ' + names().get(c.address) : '')"
+            (click)="session.selectCell(c.address)"
+          >
+            <small>{{ h(c.address % 256, 2) }}</small>
+            <b>{{ h(c.value, 2) }}</b>
+            @if (names().get(c.address); as n) {
+              <em>{{ n }}</em>
+            }
+          </button>
+        }
+      </div>
+    }
+  }
+</section>
