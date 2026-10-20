@@ -23,7 +23,8 @@ describe('laboratory projection', () => {
     b.advance();
     expect(b.view.input.id).toBe('B0');
     expect(b.view.output.id).toBe('B1');
-    expect(b.view.output.values).toEqual([2, 4, 6, 8]);
+    expect(b.view.output.values).toHaveLength(64);
+    expect(b.view.output.values[0]).toBe(255);
     expect(b.view.completed).toBe(true);
   });
   it('cpu_waits_for_completion_signal', () => {

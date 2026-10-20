@@ -770,11 +770,11 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Modificar:** laboratory.facade.ts y lab-session.service.ts para extraer BufferExperiment; instruments/apple/; world/models/apple-activity.ts; laboratory/controllers/soc-controller.ts.
 **Consume:** T03, T04a (bytes de `ADD AX,[10]` y `ADD [10],AX`).
 
-- [ ] Tests CISC/RISC: ambos dan AX/R2 = 12 con 7 y 5; recuentos de §7 (1 frente a 2 instrucciones y 4 frente a 8 bytes; 1 frente a 3 y 4 frente a 12 al guardar); mismos accesos de datos.
-- [ ] Tests mosaico: 0→255, 255→0, 128→127 y 64 valores; salida idéntica, 0/128 bytes de copias explícitas y espera antes de completar.
-- [ ] Edición, fases, salida visible y comparación. Probar transferencia del mosaico PC→SoC y vuelta al PC conservando paso, datos y resultado; un artefacto de otro tipo se rechaza sin alterar la sesión.
-- [ ] Mantener unidades/fuentes como exploración secundaria.
-- [ ] Evaluar comprensión antes de dar por completa esta estación.
+- [x] Tests CISC/RISC: ambos dan AX/R2 = 12 con 7 y 5; recuentos de §7 (1 frente a 2 instrucciones y 4 frente a 8 bytes; 1 frente a 3 y 4 frente a 12 al guardar); mismos accesos de datos.
+- [x] Tests mosaico: 0→255, 255→0, 128→127 y 64 valores; salida idéntica, 0/128 bytes de copias explícitas y espera antes de completar.
+- [x] Edición, fases, salida visible y comparación. Probar transferencia del mosaico PC→SoC y vuelta al PC conservando paso, datos y resultado; un artefacto de otro tipo se rechaza sin alterar la sesión.
+- [x] Mantener unidades/fuentes como exploración secundaria.
+- [ ] Evaluar comprensión antes de dar por completa esta estación. *(requiere la prueba con estudiantes de T11; hasta entonces la estación no se declara terminada)*
 
 **Puerta:** entrada controlable, comparación CISC/RISC y sincronización explicadas; si falla, no se presenta como ejercicio terminado.
 

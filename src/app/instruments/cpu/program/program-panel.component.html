@@ -15,6 +15,9 @@
       }
     </select>
     <p class="goal">{{ mission().goal }}</p>
+    @if (mission().number === 1) {
+      <button type="button" class="link-button" (click)="compareInSoc()">Comparar esta suma con un RISC en el SoC</button>
+    }
     @if (mission().observe; as observe) {
       <details class="observe">
         <summary>Qué observar</summary>

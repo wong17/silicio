@@ -1,6 +1,6 @@
-<section class="apple" aria-label="Apple M5 base y dependencia de buffer">
+<section class="apple" aria-label="SoC moderno: comparación de arquitecturas y memoria unificada">
   <header class="head">
-    <p class="kicker">Apple M5 · variante base</p>
+    <p class="kicker">Apple M5 · caso de estudio</p>
     <a
       class="source"
       href="https://www.apple.com/newsroom/2025/10/apple-unleashes-m5-the-next-big-leap-in-ai-performance-for-apple-silicon/"
@@ -10,26 +10,67 @@
     >
   </header>
 
-  <div class="floor" role="group" aria-label="Unidades publicadas del M5">
-    @for (u of units; track u.id) {
-      <button
-        type="button"
-        class="unit"
-        [style.grid-area]="u.area"
-        [style.--unit]="u.color"
-        [class.selected]="session.activePart() === u.id"
-        [attr.aria-pressed]="session.activePart() === u.id"
-        [attr.data-tip]="u.label"
-        (click)="session.part(u.id)"
-      >
-        <small>{{ u.label }}</small>
-        <b>{{ u.count }}</b>
-      </button>
+  <div class="activity">
+    <p class="kicker">1 · CISC frente a RISC, la misma tarea</p>
+    <div class="tabs" role="group" aria-label="Tarea a comparar">
+      <button type="button" [attr.aria-pressed]="task() === 'sum'" (click)="setTask('sum')">Sumar y dejar en el registro</button>
+      <button type="button" [attr.aria-pressed]="task() === 'store'" (click)="setTask('store')">Sumar y guardar en memoria</button>
+    </div>
+    <p class="note">
+      {{ comparison().title }}: AX = {{ accumulator() }} y la palabra de [10] = {{ word() }}.
+      <button type="button" class="link" (click)="receiveTask()">Recibir la misión 01 del 8086</button>
+    </p>
+    @if (received()) {
+      <p class="note" role="status">{{ received() }}</p>
     }
+    <div class="compare">
+      <div class="side">
+        <h3>8086 · CISC</h3>
+        @for (t of comparison().cisc.text; track t) { <code>{{ t }}</code> }
+        <small>{{ comparison().cisc.encoding?.join(' ') }}</small>
+        <dl>
+          <div><dt>Instrucciones</dt><dd>{{ comparison().cisc.instructions }}</dd></div>
+          <div><dt>Bytes</dt><dd>{{ comparison().cisc.bytes }}</dd></div>
+          <div><dt>Lecturas de datos</dt><dd>{{ comparison().cisc.dataReads }}</dd></div>
+          <div><dt>Escrituras de datos</dt><dd>{{ comparison().cisc.dataWrites }}</dd></div>
+          <div class="result"><dt>Resultado</dt><dd>{{ comparison().cisc.result }}</dd></div>
+        </dl>
+      </div>
+      <div class="side">
+        <h3>RISC didáctico · carga/almacenamiento</h3>
+        @for (t of comparison().risc.text; track t) { <code>{{ t }}</code> }
+        <small>instrucciones de 4 bytes; R0 hace el papel de DS</small>
+        <dl>
+          <div><dt>Instrucciones</dt><dd>{{ comparison().risc.instructions }}</dd></div>
+          <div><dt>Bytes</dt><dd>{{ comparison().risc.bytes }}</dd></div>
+          <div><dt>Lecturas de datos</dt><dd>{{ comparison().risc.dataReads }}</dd></div>
+          <div><dt>Escrituras de datos</dt><dd>{{ comparison().risc.dataWrites }}</dd></div>
+          <div class="result"><dt>Resultado</dt><dd>{{ comparison().risc.result }}</dd></div>
+        </dl>
+      </div>
+    </div>
+    <p class="note verdict" role="status">
+      {{ comparison().same ? 'El resultado es el mismo' : 'Los resultados difieren' }}
+      y el tráfico de datos {{ comparison().sameDataTraffic ? 'también' : 'no' }}: cambia cómo se expresa el trabajo
+      (longitud variable frente a fija, operandos de memoria frente a carga y almacenamiento). El RISC es didáctico, de
+      estilo ARM; no son codificaciones de AArch64.
+    </p>
   </div>
 
   <div class="dependency">
-    <p class="kicker">Una dependencia real</p>
+    <p class="kicker">2 · Memoria unificada con una imagen</p>
+    <div class="tabs" role="group" aria-label="Organización de la memoria">
+      <button type="button" [attr.aria-pressed]="mode() === 'shared'" (click)="setMode('shared')">Memoria compartida</button>
+      <button type="button" [attr.aria-pressed]="mode() === 'separate'" (click)="setMode('separate')">Memorias separadas</button>
+    </div>
+
+    <p class="kicker">Entrada <span appTerm="B0">B0</span> · mosaico de 8 × 8 (0–255)</p>
+    <app-tile-editor [values]="tile()" (changed)="editTile($event)" />
+    <p class="note">
+      <button type="button" class="link" (click)="receiveTile()">Recibir el mosaico del PC</button>
+      <button type="button" class="link" (click)="backToPc()">Volver al PC</button>
+    </p>
+
     <ol class="stages" aria-label="Etapas del buffer">
       @for (s of session.bufferStages; track s; let i = $index) {
         <li [class.current]="session.bufferStage() === i" [class.done]="session.bufferStage() > i">
@@ -37,28 +78,55 @@
         </li>
       }
     </ol>
-    <div class="buffers">
-      <div>
-        <span><span appTerm="B0">B0</span> · entrada</span>
-        <code>{{ session.bufferView().input.values.join(' · ') }}</code>
+
+    <p class="kicker">Salida <span appTerm="B1">B1</span> · versión {{ session.bufferView().version }} · 255 − valor</p>
+    @if (session.bufferView().completed) {
+      <div class="image" role="img" aria-label="Imagen invertida de 8 por 8">
+        @for (g of result(); track $index) {
+          <span [style.background]="'rgb(' + g + ',' + g + ',' + g + ')'" [attr.title]="'' + g"></span>
+        }
       </div>
-      <div [class.ready]="session.bufferView().completed">
-        <span><span appTerm="B1">B1</span> · versión {{ session.bufferView().version }}</span>
-        <code>
-          {{
-            session.bufferView().completed
-              ? session.bufferView().output.values.join(' · ')
-              : 'esperando finalización'
-          }}
-        </code>
-      </div>
-    </div>
-    <label class="check">
-      <input type="checkbox" [checked]="session.separateMemory()" (change)="session.separateMemory.set($any($event.target).checked)" />
-      Memoria separada (referencia conceptual)
-    </label>
+      <p class="note">Celda 1: {{ tile()[0] }} → {{ result()[0] }} · celda 2: {{ tile()[1] }} → {{ result()[1] }}</p>
+    } @else {
+      <p class="note">Esperando la señal de fin de la GPU: <span appTerm="B1">B1</span> todavía no es válido.</p>
+    }
     <p class="note">
-      La GPU duplica cada elemento. <span appTerm="B0">B0</span> y <span appTerm="B1">B1</span> conservan identidad; la CPU recibe B1 solo al terminar.
+      <button type="button" class="link" (click)="session.readBufferEarly()">La CPU lee B1 ahora</button>
+    </p>
+    @if (notice()) {
+      <p class="note warn" role="status">{{ notice() }}</p>
+    }
+
+    <dl class="copies">
+      <div><dt>Copias explícitas al dispositivo</dt><dd>{{ copies().toDevice }} bytes</dd></div>
+      <div><dt>Copias explícitas de vuelta</dt><dd>{{ copies().fromDevice }} bytes</dd></div>
+    </dl>
+    <p class="note">
+      {{ mode() === 'shared'
+        ? 'Memoria compartida: la GPU se enlaza al mismo buffer, sin esas copias; sí hay una dependencia y una señal de fin.'
+        : 'Memorias separadas: 64 bytes van al dispositivo y 64 vuelven. Es una referencia conceptual, no una medida.' }}
     </p>
   </div>
+
+  <details class="units">
+    <summary>Unidades publicadas del M5</summary>
+    <div class="floor" role="group" aria-label="Unidades publicadas del M5">
+      @for (u of units; track u.id) {
+        <button
+          type="button"
+          class="unit"
+          [style.grid-area]="u.area"
+          [style.--unit]="u.color"
+          [class.selected]="session.activePart() === u.id"
+          [attr.aria-pressed]="session.activePart() === u.id"
+          [attr.data-tip]="u.label"
+          (click)="session.part(u.id)"
+        >
+          <small>{{ u.label }}</small>
+          <b>{{ u.count }}</b>
+        </button>
+      }
+    </div>
+    <p class="note">Modelo conceptual: no simula el hardware real ni mide su rendimiento.</p>
+  </details>
 </section>

@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { COURSE_PROGRAMS } from '../../content/course-programs';
 import { LabSession } from '../lab-session.service';
+import { LessonContext } from '../lesson-context.service';
+import { createArtifact } from '../../simulation/learning-artifact';
 import { SimulationCoordinator } from './simulation-coordinator';
 
 describe('adaptadores de simulación sobre LabSession', () => {
@@ -333,5 +335,33 @@ describe('grano fase, puntos de interrupción y teclado', () => {
     expect(session.io().screen).toBe('Hola mundo');
     await coordinator.back();
     expect(session.io().screen).toBe('');
+  });
+});
+
+describe('de un modelo a otro mediante artefactos', () => {
+  it('el mosaico del PC llega al SoC sin reescribirlo y el PC conserva su paso y sus datos', async () => {
+    const session = TestBed.inject(LabSession);
+    const lesson = TestBed.inject(LessonContext);
+    session.pc.choose('imagen-inversa');
+    for (let n = 0; n < 3000 && !session.pc.halted(); n++) session.pc.step();
+    const before = JSON.stringify(session.pc.state());
+    const artifact = session.pc.imageArtifact()!;
+    lesson.offer(artifact);
+    const tile = lesson.receive('tile-image', 'soc');
+    session.setBufferTile(tile.pixels);
+    session.nextBuffer();
+    session.nextBuffer();
+    expect(session.bufferView().output.values).toEqual(artifact.payload.result);
+    expect(JSON.stringify(session.pc.state())).toBe(before);
+  });
+
+  it('un artefacto de otro tipo se rechaza sin cambiar el SoC', () => {
+    const session = TestBed.inject(LabSession);
+    const lesson = TestBed.inject(LessonContext);
+    lesson.offer(createArtifact('word-task', '8086', { accumulator: 7, word: 5 }));
+    const before = JSON.stringify(session.bufferView());
+    expect(() => lesson.receive('tile-image', 'soc')).toThrow();
+    expect(JSON.stringify(session.bufferView())).toBe(before);
+    expect(lesson.receive('word-task', 'soc')).toEqual({ accumulator: 7, word: 5 });
   });
 });

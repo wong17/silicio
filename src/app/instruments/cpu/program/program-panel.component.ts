@@ -4,6 +4,9 @@ import { LabSession } from '../../../laboratory/lab-session.service';
 import { SimulationCoordinator } from '../../../laboratory/controllers/simulation-coordinator';
 import { LAB_MISSIONS, MISSION_LEVELS } from '../../../content/missions';
 import { hex, type DataSymbol } from '../../../simulation/cpu8086';
+import { Router } from '@angular/router';
+import { LessonContext } from '../../../laboratory/lesson-context.service';
+import { createArtifact } from '../../../simulation/learning-artifact';
 
 /** Mission selector, numbered editor with breakpoints, the listing the instruction pointer walks and the variables. */
 @Component({
@@ -15,6 +18,8 @@ import { hex, type DataSymbol } from '../../../simulation/cpu8086';
 export class ProgramPanelComponent {
   readonly session = inject(LabSession);
   private readonly coordinator = inject(SimulationCoordinator);
+  private readonly lesson = inject(LessonContext);
+  private readonly router = inject(Router);
   /** Editing on a narrow screen asks the shell to show the instrument column. */
   readonly editorFocus = output<void>();
   readonly levels = MISSION_LEVELS.map((l) => ({
@@ -67,6 +72,13 @@ export class ProgramPanelComponent {
       else parts.push(hex((memory[(base + n * 2) & 0xfffff] ?? 0) | ((memory[(base + n * 2 + 1) & 0xfffff] ?? 0) << 8)));
     }
     return parts.join(' ') + (v.length > count ? ' …' : '');
+  }
+
+  /** Mission 01 goes to the SoC chapter as a task (AX and the word at [10]), without retyping it. */
+  compareInSoc(): void {
+    const regs = this.session.cpu.registers;
+    this.lesson.offer(createArtifact('word-task', '8086', { accumulator: this.session.trace()[0]?.before.registers.AX ?? regs.AX, word: this.session.cpu.readWord(regs.DS, 10) }));
+    void this.router.navigateByUrl('/apple');
   }
 
   assembleAndContinue(): void {

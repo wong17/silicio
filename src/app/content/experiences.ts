@@ -43,7 +43,7 @@ export const EXPERIENCES: readonly Experience[] = [
   {
     id: 'apple',
     number: '04',
-    title: 'Apple Silicon',
+    title: 'SoC',
     subtitle: 'Un territorio compartido',
     summary: 'Abre un sistema en un chip y sigue un buffer entre CPU y GPU.',
     accent: '#a0b4bf',

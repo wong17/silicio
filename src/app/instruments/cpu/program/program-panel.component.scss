@@ -266,3 +266,14 @@ textarea {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.link-button {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: kit.$amber-soft;
+  text-decoration: underline;
+  cursor: pointer;
+}

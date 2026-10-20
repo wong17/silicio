@@ -242,8 +242,12 @@ export class LabSession {
   });
   readonly lastReads = computed(() => this.laboratory().accesses.some((a) => a.kind === 'read'));
   readonly lastWrites = computed(() => this.laboratory().accesses.some((a) => a.kind === 'write'));
+  /** Bumped when the mosaic or the memory mode changes, so the views of the experiment follow. */
+  readonly bufferRevision = signal(0);
+  readonly bufferNotice = signal('');
   readonly bufferView = computed(() => {
     this.bufferStage();
+    this.bufferRevision();
     return this.bufferExperiment.view;
   });
   readonly comparison = computed(() => {
@@ -890,9 +894,41 @@ export class LabSession {
     this.revision.update((n) => n + 1);
   }
 
-  resetBuffer(): void {
-    this.bufferExperiment.view = { ...this.bufferExperiment.view, stage: 0, completed: false, output: { id: 'B1', values: [] } };
+  /** Shared or separate memory: changing it restarts the dependency, since the copies differ. */
+  setBufferMode(mode: 'shared' | 'separate'): void {
+    this.bufferExperiment.setMode(mode);
+    this.separateMemory.set(mode === 'separate');
     this.bufferStage.set(0);
+    this.bufferNotice.set('');
+    this.bufferRevision.update((n) => n + 1);
+  }
+
+  /** A new mosaic for the dependency (typed here or received from the PC). Throws if it is not 64 values of 0–255. */
+  setBufferTile(values: readonly number[]): void {
+    this.bufferExperiment.setInput(values);
+    this.bufferStage.set(0);
+    this.bufferNotice.set('');
+    this.bufferRevision.update((n) => n + 1);
+    this.tick.update((n) => n + 1);
+  }
+
+  /** The CPU asks for B1 before the GPU said it was done: the answer is a wait, not a value. */
+  readBufferEarly(): void {
+    const r = this.bufferExperiment.readOutput();
+    this.bufferNotice.set(r.kind === 'waiting' ? r.reason : 'B1 es válido: la CPU ya puede recibir la imagen.');
+  }
+
+  get bufferCopies() {
+    this.bufferRevision();
+    this.bufferStage();
+    return this.bufferExperiment.copies;
+  }
+
+  resetBuffer(): void {
+    this.bufferExperiment.reset();
+    this.bufferStage.set(0);
+    this.bufferNotice.set('');
+    this.bufferRevision.update((n) => n + 1);
     this.activePart.set('performance');
     this.tick.update((n) => n + 1);
   }

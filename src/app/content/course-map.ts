@@ -22,10 +22,10 @@ export const COURSE_MAP: readonly CourseTopic[] = [
   {
     topic: 'Arquitectura y organización; procesamiento, memoria, E/S e interconexión',
     source: 'Actividad 1 · Trabajo 1 (AMC II)',
-    where: 'La máquina: direcciones, datos y control entre CPU, memoria y salida.',
+    where: 'La máquina: cada transferencia lleva dirección, dato y control, y una de las cuatro funciones del computador.',
     station: 'machine',
     piece: 'cpu',
-    status: 'Ampliándose',
+    status: 'Disponible',
   },
   {
     topic: 'Estructura del CPU: registros, unidad de control, ALU y buses',
@@ -97,17 +97,17 @@ export const COURSE_MAP: readonly CourseTopic[] = [
   {
     topic: 'Von Neumann frente a Harvard',
     source: 'Actividad 2 · Trabajo 3 (AMC II)',
-    where: 'PC moderno: programa y datos en la misma RAM.',
+    where: 'PC moderno: programa y datos comparten la misma RAM, en regiones distintas.',
     station: 'machine',
-    status: 'Próximamente',
+    status: 'Disponible',
   },
   {
     topic: 'CISC frente a RISC; SoC y memoria unificada',
     source: 'Guía básica de la CPU · Investigación Apple M5',
-    where: 'Apple Silicon: buffer compartido entre CPU y GPU; la comparación CISC/RISC llega con el capítulo SoC.',
+    where: 'SoC: la misma tarea en CISC y en RISC, y un buffer compartido entre CPU y GPU con una imagen de 8×8.',
     station: 'apple',
     piece: 'performance',
-    status: 'Ampliándose',
+    status: 'Disponible',
   },
 ];
 
