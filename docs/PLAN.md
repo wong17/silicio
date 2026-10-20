@@ -784,12 +784,12 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Modificar:** shell/tour/, content/tour.ts, console/station-mission/, shared/term.directive.ts, Ayuda.
 **Consume:** T04/T05/T07/T08.
 
-- [ ] Integrar Driver.js diferido con versión/licencia fijadas; recorrido inicial de hasta cinco pasos por experiencia.
-- [ ] Recorrido «De EMU8086 a SILICIO»: escribir, ensamblar, paso, registros, Pantalla.
-- [ ] Abrir panel antes de resaltar y esperar render; restaurar foco/limpiar al navegar.
-- [ ] Lecciones avanzan por condiciones del estado, no por contar clics.
-- [ ] Tests: cancelar/repetir, ruta nueva, anclaje ausente, reduced-motion.
-- [ ] Equivalente textual, glosario y explicación fuera del tour; no superponer guía y modo exposición.
+- [x] Integrar Driver.js diferido con versión/licencia fijadas; recorrido inicial de hasta cinco pasos por experiencia.
+- [x] Recorrido «De EMU8086 a SILICIO»: escribir, ensamblar, paso, registros, Pantalla.
+- [x] Abrir panel antes de resaltar y esperar render; restaurar foco/limpiar al navegar.
+- [x] Lecciones avanzan por condiciones del estado, no por contar clics.
+- [x] Tests: cancelar/repetir, ruta nueva, anclaje ausente, reduced-motion.
+- [x] Equivalente textual, glosario y explicación fuera del tour; no superponer guía y modo exposición.
 
 **Puerta:** primer ejercicio resoluble con guía y también sin ella; salida disponible siempre.
 

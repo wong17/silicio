@@ -7,7 +7,7 @@
     }
   </ol>
 
-  <div class="tabs" role="tablist" aria-label="Actividades de memoria">
+  <div class="tabs" data-guide="memory-tabs" role="tablist" aria-label="Actividades de memoria">
     @for (a of activities; track a.id) {
       <button
         type="button"
@@ -141,7 +141,7 @@
 
   @if (lesson.activity() !== 'cache') {
     <div class="actions">
-      <button type="button" class="primary" [disabled]="atEnd()" (click)="nextStep()">
+      <button type="button" class="primary" data-guide="memory-next" [disabled]="atEnd()" (click)="nextStep()">
         {{ atEnd() ? 'Completado' : 'Siguiente paso' }}
       </button>
       <button type="button" (click)="restart()">Reiniciar</button>

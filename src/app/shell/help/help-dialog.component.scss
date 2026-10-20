@@ -342,3 +342,33 @@ kbd {
     clip: rect(0 0 0 0);
   }
 }
+
+.guides {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  > li {
+    display: grid;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid #2d3533;
+    border-radius: 8px;
+    ol {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 14px;
+      line-height: 1.5;
+      li {
+        padding: 0;
+        border: 0;
+      }
+    }
+    button {
+      justify-self: start;
+      min-height: 44px;
+      padding: 0 12px;
+    }
+  }
+}

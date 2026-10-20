@@ -59,7 +59,7 @@
 
   <div class="dependency">
     <p class="kicker">2 · Memoria unificada con una imagen</p>
-    <div class="tabs" role="group" aria-label="Organización de la memoria">
+    <div class="tabs" data-guide="soc-mode" role="group" aria-label="Organización de la memoria">
       <button type="button" [attr.aria-pressed]="mode() === 'shared'" (click)="setMode('shared')">Memoria compartida</button>
       <button type="button" [attr.aria-pressed]="mode() === 'separate'" (click)="setMode('separate')">Memorias separadas</button>
     </div>

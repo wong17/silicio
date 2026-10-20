@@ -51,6 +51,28 @@
             <li>Con <strong>Paneles</strong> eliges qué instrumentos ves y si van abajo, a la derecha o flotando.</li>
             <li>La barra bajo la escena mueve la cámara, abre el chip y muestra Piezas, Mapa y Gráficos.</li>
           </ol>
+          <h4>Guías por acciones</h4>
+          <p class="note">
+            Cada guía te pide hacer algo y avanza cuando lo haces. Puedes salir con Esc o con la cruz en cualquier
+            momento; todo lo que sigue es también el texto de cada guía, por si prefieres leerla.
+          </p>
+          <ul class="guides">
+            @for (p of paths; track p.id) {
+              <li>
+                <strong>{{ p.title }}</strong>
+                <span>{{ p.goal }}</span>
+                <ol>
+                  @for (st of p.steps; track st.id) {
+                    <li><b>{{ st.title }}.</b> {{ st.text }}</li>
+                  }
+                </ol>
+                <button type="button" (click)="startGuide(p.id)">Empezar esta guía</button>
+              </li>
+            }
+          </ul>
+          @if (guide.notice()) {
+            <p class="note" role="status">{{ guide.notice() }}</p>
+          }
           <button type="button" class="primary" (click)="startTour()">Iniciar modo exposición</button>
           <p class="note">El modo exposición recorre las estaciones en ocho minutos. Se avanza con las flechas y se sale con Esc.</p>
         }

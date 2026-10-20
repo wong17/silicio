@@ -1,8 +1,9 @@
-<section class="program" aria-label="Programa ensamblador">
+<section class="program" data-guide="program-panel" aria-label="Programa ensamblador">
   <div class="field">
     <label class="kicker" for="mission">Experimento</label>
     <select
       id="mission"
+      data-guide="mission-select"
       [ngModel]="session.missionIndex()"
       (ngModelChange)="session.chooseMission(+$event)"
     >
@@ -41,7 +42,7 @@
 
   <div class="field">
     <label class="kicker" for="program">Código fuente</label>
-    <div class="editor">
+    <div class="editor" data-guide="editor">
       <ol class="gutter" #gutter aria-label="Líneas del programa">
         @for (n of lineNumbers(); track n) {
           <li [class.current]="n === session.nextLine()" [class.error]="n === errorLine()">
@@ -76,7 +77,7 @@
         <button type="button" (click)="assembleAndContinue()">Ensamblar y continuar</button>
       </p>
     }
-    <button type="button" class="compile" (click)="session.intent('load')">
+    <button type="button" class="compile" data-guide="assemble" (click)="session.intent('load')">
       Ensamblar y reiniciar
     </button>
   </div>

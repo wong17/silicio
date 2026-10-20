@@ -116,7 +116,7 @@
     </p>
   </div>
 
-  <div class="block output" [class.selected]="selectedIs('monitor', 'display-engine')">
+  <div class="block output" data-guide="pc-monitor" [class.selected]="selectedIs('monitor', 'display-engine')">
     <p class="kicker">Monitor</p>
     @switch (activity().monitor.mode) {
       @case ('image') {

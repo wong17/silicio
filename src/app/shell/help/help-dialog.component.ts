@@ -5,6 +5,8 @@ import { COURSE_MAP, EMU8086_EQUIVALENCES, type CourseTopic } from '../../conten
 import { GLOSSARY, searchGlossary } from '../../content/glossary';
 import { LabSession, type Quality } from '../../laboratory/lab-session.service';
 import { TermDirective } from '../../shared/term.directive';
+import { LearningGuide } from '../guidance/learning-guide.service';
+import { LEARNING_PATHS } from '../../content/learning-paths';
 
 type HelpSection = 'start' | 'course' | 'emu' | 'glossary' | 'shortcuts' | 'session' | 'preferences' | 'scope';
 
@@ -22,6 +24,8 @@ type HelpSection = 'start' | 'course' | 'emu' | 'glossary' | 'shortcuts' | 'sess
 export class HelpDialogComponent {
   readonly session = inject(LabSession);
   private readonly router = inject(Router);
+  readonly guide = inject(LearningGuide);
+  readonly paths = LEARNING_PATHS;
   /** Asks the shell to start the exhibition mode. */
   readonly tour = output<void>();
 
@@ -117,6 +121,12 @@ export class HelpDialogComponent {
   openTopic(topic: CourseTopic): void {
     this.hide();
     void this.router.navigate(['/', topic.station], { queryParams: topic.piece ? { pieza: topic.piece } : {} });
+  }
+
+  /** Starts a guide by actions; the dialog closes so the highlight is not behind it. */
+  startGuide(id: string): void {
+    this.hide();
+    void this.guide.start(id);
   }
 
   startTour(): void {

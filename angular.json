@@ -33,7 +33,12 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              {
+                "input": "node_modules/driver.js/dist/driver.css",
+                "bundleName": "driver",
+                "inject": false
+              }
             ]
           },
           "configurations": {

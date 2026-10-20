@@ -1,7 +1,7 @@
 <section class="pc-program" aria-label="Programa y entradas del PC">
   <div class="field">
     <label class="kicker" for="pc-exercise">Ejercicio</label>
-    <select id="pc-exercise" [ngModel]="pc.programId()" (ngModelChange)="choose($event)">
+    <select id="pc-exercise" data-guide="pc-exercise" [ngModel]="pc.programId()" (ngModelChange)="choose($event)">
       @for (p of pc.programs; track p.id) {
         <option [value]="p.id">{{ p.title }}</option>
       }
@@ -9,7 +9,7 @@
     <p class="teaches">{{ pc.program().teaches }}</p>
   </div>
 
-  <div class="power" role="group" aria-label="Alimentación del PC">
+  <div class="power" data-guide="pc-power" role="group" aria-label="Alimentación del PC">
     <span class="lamp" [class.on]="pc.powered()" aria-hidden="true"></span>
     <strong>{{ pc.powered() ? (pc.halted() ? 'Encendido · detenido' : 'Encendido') : 'Apagado' }}</strong>
     <button type="button" (click)="powerOn()" [disabled]="pc.powered()">Encender y arrancar</button>
