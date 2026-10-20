@@ -52,13 +52,6 @@
   </ol>
   <p class="result" aria-live="polite">{{ steps[stage()] }}</p>
 
-  <div class="actions">
-    <button type="button" class="primary" (click)="advance()">
-      {{ stage() === 8 ? 'Repetir recorrido' : 'Avanzar transferencia' }}
-    </button>
-    <button type="button" (click)="reset()">Reiniciar</button>
-  </div>
-
   <div class="parts" role="group" aria-label="Ver en el banco">
     <button type="button" (click)="session.part('cpu')">CPU</button>
     <button type="button" (click)="session.part('ram')">RAM</button>

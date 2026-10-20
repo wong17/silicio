@@ -1,0 +1,179 @@
+@use '../../shared/console-kit' as kit;
+
+// One bar under the navigation. It wraps onto two lines when the window is narrow, never clipping a control.
+:host {
+  display: block;
+  min-width: 0;
+  background: #14181a;
+  border-bottom: 1px solid #2b3330;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 14px;
+  min-height: 52px;
+  padding: 4px 12px;
+}
+
+.goal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+  color: kit.$ink;
+  font-size: 14px;
+  strong {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
+
+.controls {
+  display: flex;
+  gap: 6px;
+}
+
+.control {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid kit.$edge-strong;
+  border-radius: 8px;
+  background: #1e2526;
+  color: kit.$ink;
+  cursor: pointer;
+  svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  &:hover:not(:disabled) {
+    background: #283031;
+    border-color: #5d6a65;
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  &.primary {
+    border-color: kit.$amber;
+    background: kit.$amber-deep;
+    color: kit.$amber-soft;
+  }
+  @include kit.focus-ring;
+  @include kit.tooltip;
+}
+
+.options {
+  display: flex;
+  gap: 8px;
+  select {
+    min-height: 44px;
+    padding: 0 10px;
+    border: 1px solid kit.$edge-strong;
+    border-radius: 8px;
+    background: #1e2526;
+    color: kit.$ink;
+    font: inherit;
+    font-size: 14px;
+  }
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  min-width: 0;
+}
+
+.led {
+  @include kit.led(kit.$amber, 10px);
+  flex: none;
+  &.run {
+    background: kit.$green;
+    box-shadow: 0 0 8px kit.$green;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  &.wait {
+    background: kit.$amber;
+    box-shadow: 0 0 8px kit.$amber;
+  }
+  &.halt {
+    background: kit.$red;
+    box-shadow: 0 0 8px kit.$red;
+  }
+}
+
+.label {
+  @include kit.kicker;
+  color: kit.$ink;
+}
+
+.count {
+  @include kit.readout;
+  color: kit.$dim;
+  font-size: 12px;
+}
+
+.reason {
+  color: #f0d29c;
+  font-size: 14px;
+}
+
+.back-to-step {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid kit.$amber;
+  border-radius: 8px;
+  background: transparent;
+  color: kit.$amber-soft;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  @include kit.focus-ring;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (max-width: 799px) {
+  .bar {
+    gap: 4px 8px;
+    padding: 4px 8px;
+    justify-content: flex-start;
+  }
+  .control {
+    width: 44px;
+  }
+}

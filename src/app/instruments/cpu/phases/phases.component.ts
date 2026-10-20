@@ -2,13 +2,13 @@ import { Component, computed, inject } from '@angular/core';
 import { LabSession } from '../../../laboratory/lab-session.service';
 import { PHASE_LABEL, PHASES, type Phase } from '../../../laboratory/station-activity';
 
-/** Step, back and run controls for the 8086 timeline, with the machine state as a LED. */
+/** The four phases of the instruction on screen, with a sentence on what the machine does in each. */
 @Component({
-  selector: 'app-transport',
-  templateUrl: './transport.component.html',
-  styleUrl: './transport.component.scss',
+  selector: 'app-phases',
+  templateUrl: './phases.component.html',
+  styleUrl: './phases.component.scss',
 })
-export class TransportComponent {
+export class PhasesComponent {
   readonly session = inject(LabSession);
   readonly phases = PHASES.map((id) => ({ id, label: PHASE_LABEL[id] }));
   readonly summary = computed(() => {

@@ -1,4 +1,9 @@
 import { Injectable, NgZone, computed, effect, inject, signal, untracked } from '@angular/core';
+import { SimulationCoordinator } from './controllers/simulation-coordinator';
+import { Cpu8086Controller } from './controllers/cpu8086-controller';
+import { MachineController } from './controllers/machine-controller';
+import { MemoryLessonController } from './controllers/memory-controller';
+import { SocController } from './controllers/soc-controller';
 import { Cpu8086, hex, physicalAddress, REGISTER_NAMES, Registers, Snapshot, Trace } from '../simulation/cpu8086';
 import { readSession } from '../simulation/session-codec';
 import { MISSIONS } from '../content/missions';
@@ -37,6 +42,9 @@ export { INSTRUMENT_PARTS };
  * Session state shared by the console instruments, the 3D bench and the toolbar. The 8086 core and
  * its worker stay outside Angular; this service only projects and commands them.
  */
+/** Bus line that carries the value at each stage of the conceptual machine; empty when nothing moves. */
+const MACHINE_CHANNELS = ['', 'address', 'control', 'data', 'data', 'address', 'control', 'data', 'control'];
+
 /** Message for a DIV/IDIV that cannot complete; the 8086 would raise INT 0. */
 const divisionFault = (line: number) =>
   'Error de división (línea ' + line + '): el divisor es 0 o el cociente no cabe. El 8086 real lanzaría INT 0.';
@@ -44,6 +52,7 @@ const divisionFault = (line: number) =>
 @Injectable({ providedIn: 'root' })
 export class LabSession {
   private readonly zone = inject(NgZone);
+  private readonly coordinator = inject(SimulationCoordinator);
   readonly cpu = new Cpu8086();
   readonly missions = MISSIONS;
   readonly registerNames = REGISTER_LIST;
@@ -64,7 +73,8 @@ export class LabSession {
   readonly reduced = signal(false);
   readonly quality = signal<Quality>('balanced');
   readonly sound = signal(false);
-  readonly running = signal(false);
+  /** The single clock lives in the coordinator; this is its running flag for the scene and the console. */
+  readonly running = this.coordinator.running.asReadonly();
   readonly error = signal('');
   /** INT 21h service that is waiting for a key; the step is not taken until the key arrives. */
   readonly waitingInput = signal<0x01 | 0x0a | undefined>(undefined);
@@ -292,6 +302,41 @@ export class LabSession {
   });
 
   constructor() {
+    this.coordinator.register(
+      new Cpu8086Controller({
+        step: () => this.step(),
+        back: () => this.back(),
+        load: () => this.load(),
+        cancelStep: () => this.cancelStep(),
+        halted: () => this.state().halted,
+        cursor: () => this.cursor(),
+        waitingInput: () => this.waitingInput(),
+        error: () => this.error(),
+      }),
+    );
+    this.coordinator.register(
+      new MachineController({
+        stage: () => this.machineStage(),
+        lastStage: 8,
+        advance: () => this.advanceMachine(),
+        reset: () => this.resetMachine(),
+      }),
+    );
+    this.coordinator.register(
+      new SocController({
+        stage: () => this.bufferStage(),
+        lastStage: 2,
+        advance: () => this.nextBuffer(),
+        reset: () => this.resetBuffer(),
+      }),
+    );
+    this.coordinator.register(
+      new MemoryLessonController({
+        revealed: () => (this.cacheRevision(), this.cacheLesson.revealed),
+        total: () => (this.cacheRevision(), this.cacheLesson.total),
+        reset: () => this.resetCache(),
+      }),
+    );
     this.cpu.load(this.source);
     this.loadedSource.set(this.source);
     effect(() => {
@@ -309,7 +354,7 @@ export class LabSession {
     try {
       this.engineWorker = new Worker(new URL('../simulation/cpu8086.worker', import.meta.url));
       this.engineWorker.onmessage = ({ data }) => {
-        this.laboratoryFacade.complete(data.generation, () =>
+        const applied = this.laboratoryFacade.complete(data.generation, () =>
           this.zone.run(() => {
             if (data.error) {
               this.error.set(data.error);
@@ -322,10 +367,7 @@ export class LabSession {
               this.pause();
               return;
             }
-            if (data.waiting !== undefined) {
-              this.pause();
-              return;
-            }
+            if (data.waiting !== undefined) return;
             if (data.event) {
               this.archiveFuture();
               this.cpu.restore(data.event.after);
@@ -334,6 +376,8 @@ export class LabSession {
             }
           }),
         );
+        void applied;
+        this.settleStep();
       };
       this.engineWorker.onerror = () => {
         this.pause();
@@ -420,8 +464,8 @@ export class LabSession {
   }
 
   intent(command: 'step' | 'run' | 'pause' | 'load' | 'back'): void {
-    if (command === 'step') this.step();
-    else if (command === 'run') this.run();
+    if (command === 'step') void this.coordinator.step();
+    else if (command === 'run') this.coordinator.toggle();
     else if (command === 'pause') this.pause();
     else if (command === 'load') this.load();
     else this.back();
@@ -450,34 +494,45 @@ export class LabSession {
     }
   }
 
-  step(): void {
+  /** Resolves when the step has been applied, answered with a wait or an error, or discarded by a pause. */
+  step(): Promise<void> {
     if (this.source !== this.loadedSource()) {
       this.error.set('Compila el programa editado antes de ejecutarlo.');
       this.pause();
-      return;
+      return Promise.resolve();
     }
     this.error.set('');
     if (this.engineWorker) {
       const generation = this.laboratoryFacade.request();
-      if (generation === undefined) return;
+      if (generation === undefined) return this.stepAnswer ?? Promise.resolve();
+      const answer = new Promise<void>((resolve) => (this.stepResolve = resolve));
+      this.stepAnswer = answer;
       this.engineWorker.postMessage({
         generation,
         state: this.cpu.snapshot(),
         instructions: this.cpu.instructions,
       });
-      return;
+      return answer;
     }
     try {
       this.archiveFuture();
       const result = this.cpu.execute();
       this.waitingInput.set(result.kind === 'waiting-input' ? result.service : undefined);
       if (result.kind === 'fault') throw Error(divisionFault(result.line));
-      if (result.kind === 'waiting-input') this.pause();
-      else if ('trace' in result && result.trace) this.commitStep(result.trace);
+      if (result.kind !== 'waiting-input' && 'trace' in result && result.trace) this.commitStep(result.trace);
     } catch (e) {
       this.error.set((e as Error).message);
       this.pause();
     }
+    return Promise.resolve();
+  }
+
+  private stepResolve?: () => void;
+  private stepAnswer?: Promise<void>;
+  private settleStep(): void {
+    this.stepResolve?.();
+    this.stepResolve = undefined;
+    this.stepAnswer = undefined;
   }
 
   private commitStep(event: Trace): void {
@@ -519,29 +574,16 @@ export class LabSession {
     this.phase.set(phase);
   }
 
-  run(): void {
-    if (this.running()) {
-      this.pause();
-      return;
-    }
-    if (this.state().halted) return;
-    this.running.set(true);
-    let count = 0;
-    this.timer = setInterval(() => {
-      if (count++ >= 2048) {
-        this.error.set('Pausa automática: límite de 2048 pasos. Inspecciona el bucle.');
-        this.pause();
-        return;
-      }
-      this.step();
-    }, 450);
-  }
-  private timer?: ReturnType<typeof setInterval>;
-
+  /** Stops the clock; the coordinator also calls `cancelStep` on the engine it owns. */
   pause(): void {
-    clearInterval(this.timer);
+    this.coordinator.pause();
+    this.cancelStep();
+  }
+
+  /** Drops the step still being answered by the worker, if any. */
+  cancelStep(): void {
     this.laboratoryFacade.cancel();
-    this.running.set(false);
+    this.settleStep();
   }
 
   restore(index: number): void {
@@ -644,6 +686,13 @@ export class LabSession {
     this.revision.update((n) => n + 1);
   }
 
+  resetBuffer(): void {
+    this.bufferExperiment.view = { ...this.bufferExperiment.view, stage: 0, completed: false, output: { id: 'B1', values: [] } };
+    this.bufferStage.set(0);
+    this.activePart.set('performance');
+    this.tick.update((n) => n + 1);
+  }
+
   nextBuffer(): void {
     this.bufferExperiment.advance();
     const next = this.bufferExperiment.view.stage;
@@ -686,6 +735,7 @@ export class LabSession {
   advanceMachine(): void {
     this.machine.advance();
     this.machineStage.set(this.machine.stage);
+    this.transferBus(MACHINE_CHANNELS[this.machineStage()] || 'address');
   }
 
   resetMachine(): void {

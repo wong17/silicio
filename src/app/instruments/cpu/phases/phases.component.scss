@@ -1,0 +1,46 @@
+@use '../../../shared/console-kit' as kit;
+
+.phases {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  ol {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 44px;
+    padding: 6px;
+    font-size: 13px;
+    &[aria-pressed='true'] {
+      border-color: #d7ac6f;
+      background: kit.$amber-deep;
+      color: #f0d29c;
+    }
+  }
+  .n {
+    font: 600 11px 'IBM Plex Mono', monospace;
+    opacity: 0.7;
+  }
+  .summary {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #a4aaa0;
+  }
+}
+
+@media (max-width: 899px) {
+  .phases ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

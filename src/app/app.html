@@ -9,6 +9,10 @@
     <app-help-dialog (tour)="sceneCommand('tour')" />
   </app-experience-nav>
 
+  @if (session.section() !== 'atrium') {
+    <app-simulation-transport class="transport-bar" />
+  }
+
   <div class="mobile-modes" role="group" aria-label="Distribución del laboratorio">
     @for (m of modes; track m.id) {
       <button type="button" [attr.aria-pressed]="layout() === m.id" (click)="setLayout(m.id)">
@@ -149,7 +153,7 @@
 </main>
 
 <ng-template #programPanel>
-  <app-transport />
+  <app-phases />
   <app-program-panel (editorFocus)="editorFocus()" />
   <app-station-mission />
 </ng-template>
@@ -178,7 +182,6 @@
 <ng-template #instrumentsPanel>
   @switch (session.section()) {
     @case ('time') {
-      <app-transport />
       <app-trace-panel />
     }
     @case ('memory') {

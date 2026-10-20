@@ -32,7 +32,10 @@ import { AtriumPortalsComponent } from './console/atrium-portals/atrium-portals.
 import { SceneHudComponent } from './world/scene-hud/scene-hud.component';
 import { PieceInspectorComponent } from './console/piece-inspector/piece-inspector.component';
 import { HelpDialogComponent } from './shell/help/help-dialog.component';
-import { TransportComponent } from './instruments/cpu/transport/transport.component';
+import { PhasesComponent } from './instruments/cpu/phases/phases.component';
+import { SimulationTransportComponent } from './shell/transport/simulation-transport.component';
+import { SimulationCoordinator } from './laboratory/controllers/simulation-coordinator';
+import { experienceOf } from './laboratory/controllers/simulation-controller';
 import { RegisterPanelComponent } from './instruments/cpu/register/register-panel.component';
 import { AluPanelComponent } from './instruments/cpu/alu/alu-panel.component';
 import { ProgramPanelComponent } from './instruments/cpu/program/program-panel.component';
@@ -79,7 +82,8 @@ const NARROW = '(max-width: 899px)';
     StationMissionComponent,
     PieceInspectorComponent,
     HelpDialogComponent,
-    TransportComponent,
+    PhasesComponent,
+    SimulationTransportComponent,
     RegisterPanelComponent,
     AluPanelComponent,
     ProgramPanelComponent,
@@ -101,6 +105,7 @@ export class App implements AfterViewInit, OnDestroy {
   readonly session = inject(LabSession);
   readonly ws = inject(WorkspaceService);
   readonly viewport = inject(SceneViewportService);
+  private readonly coordinator = inject(SimulationCoordinator);
   private readonly router = inject(Router);
   private readonly zone = inject(NgZone);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -162,6 +167,14 @@ export class App implements AfterViewInit, OnDestroy {
     effect(() => this.world()?.setCallouts(this.session.callouts()));
     // The desk offers the panels of whatever station the session shows, however it got there.
     effect(() => this.ws.setExperience(this.session.section()));
+    // Another chapter of the same exercise keeps its owner and its clock; any other one pauses it.
+    effect(() => {
+      const view = experienceOf(this.session.section());
+      untracked(() => (view ? this.coordinator.changeView(view) : this.coordinator.pause()));
+    });
+    // A hidden tab never keeps the clock going.
+    this.visibility = () => document.hidden && this.coordinator.pause();
+    document.addEventListener('visibilitychange', this.visibility);
     effect(() => {
       this.session.section();
       this.session.activePart();
@@ -174,6 +187,7 @@ export class App implements AfterViewInit, OnDestroy {
   readonly meter = signal(false);
   private lastSection?: Section;
   private urlTimer?: ReturnType<typeof setTimeout>;
+  private visibility: () => void;
 
   private route(): void {
     const id = this.router.url.split('?')[0].split('/')[1] as Section;
@@ -181,7 +195,6 @@ export class App implements AfterViewInit, OnDestroy {
     // Writing the piece into the address re-enters here; the station itself must not be reset by that.
     if (section === this.lastSection) return;
     this.lastSection = section;
-    this.session.pause();
     this.session.section.set(section);
     this.ws.setExperience(section);
     this.session.activePart.set(
@@ -324,7 +337,7 @@ export class App implements AfterViewInit, OnDestroy {
     const target = event.target;
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     // Typing in a field keeps its letters; the document itself is never a field.
-    if (target instanceof Element && target.closest('input, textarea, select, [contenteditable="true"]'))
+    if (target instanceof Element && target.closest('input, textarea, select, dialog, [role="dialog"], [role="menu"], [contenteditable="true"]'))
       return;
     const commands: Record<string, SceneCommand> = {
       '[': 'rotate-left',
@@ -487,6 +500,7 @@ export class App implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.session.dispose();
     this.navigation?.unsubscribe();
+    document.removeEventListener('visibilitychange', this.visibility);
     this.context?.revert();
     this.viewport.detachStage();
     this.media?.removeEventListener('change', this.mediaChanged);

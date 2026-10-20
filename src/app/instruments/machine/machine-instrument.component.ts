@@ -30,12 +30,4 @@ export class MachineInstrumentComponent {
     return n.toString(16).toUpperCase().padStart(4, '0');
   }
 
-  advance(): void {
-    this.session.advanceMachine();
-    this.session.transferBus(this.channels[this.stage()] || 'address');
-  }
-
-  reset(): void {
-    this.session.resetMachine();
-  }
 }

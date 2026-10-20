@@ -13,7 +13,7 @@
   height: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) 30px;
+  grid-template-rows: auto auto minmax(0, 1fr) 30px;
   background: #101214;
   color: var(--ink);
 }
@@ -26,8 +26,12 @@
   display: none;
 }
 
-.desk-area {
+.transport-bar {
   grid-row: 2;
+}
+
+.desk-area {
+  grid-row: 3;
   min-height: 0;
 }
 
@@ -249,7 +253,7 @@
 }
 
 .footer {
-  grid-row: 3;
+  grid-row: 4;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -267,10 +271,10 @@
     overflow: hidden;
   }
   .experience {
-    grid-template-rows: auto 48px minmax(0, 1fr);
+    grid-template-rows: auto auto 48px minmax(0, 1fr);
   }
   .mobile-modes {
-    grid-row: 2;
+    grid-row: 3;
     display: flex;
     gap: 8px;
     padding: 4px 8px;
@@ -284,7 +288,7 @@
     }
   }
   .desk-area {
-    grid-row: 3;
+    grid-row: 4;
   }
   .title-block {
     top: 10px;
@@ -312,10 +316,10 @@
 // Short landscape screens: the modes stay, the footer goes.
 @media (max-height: 520px) {
   .experience {
-    grid-template-rows: auto 48px minmax(0, 1fr);
+    grid-template-rows: auto auto 48px minmax(0, 1fr);
   }
   .mobile-modes {
-    grid-row: 2;
+    grid-row: 3;
     display: flex;
     gap: 8px;
     padding: 4px 8px;
@@ -328,7 +332,7 @@
     }
   }
   .desk-area {
-    grid-row: 3;
+    grid-row: 4;
   }
   .scene-caption,
   .footer {

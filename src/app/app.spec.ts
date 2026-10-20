@@ -149,12 +149,42 @@ describe('SILICIO / shell y consola', () => {
     expect(session.state().registers.AX).toBe(7);
   });
 
+  it('shortcuts_do_not_fire_from_fields_menus_or_dialogs', () => {
+    const { fixture, session } = create();
+    session.section.set('8086');
+    fixture.detectChanges();
+    const before = session.exploded();
+    const press = (host: HTMLElement) => {
+      document.body.append(host);
+      host.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true }));
+      host.remove();
+    };
+    press(document.createElement('textarea'));
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    const item = document.createElement('button');
+    menu.append(item);
+    document.body.append(menu);
+    item.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true }));
+    menu.remove();
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    const inner = document.createElement('button');
+    dialog.append(inner);
+    document.body.append(dialog);
+    inner.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true }));
+    dialog.remove();
+    expect(session.exploded()).toBe(before);
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true }));
+    expect(session.exploded()).toBe(!before);
+  });
+
   it('webgl_unavailable_preserves_lab_controls', () => {
     const { fixture, session } = create();
     session.section.set('8086');
     fixture.detectChanges();
     (fixture.nativeElement as HTMLElement)
-      .querySelector<HTMLButtonElement>('app-transport button[aria-label="Ejecutar un paso"]')!
+      .querySelector<HTMLButtonElement>('app-simulation-transport button[aria-label="Ejecutar un paso"]')!
       .click();
     expect(session.state().registers.AX).toBe(12);
   });

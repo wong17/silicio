@@ -1,0 +1,70 @@
+@if (state(); as s) {
+  <div class="bar" role="group" [attr.aria-label]="'Simulación activa: ' + s.label">
+    <p class="goal">
+      <span class="led" [class.run]="s.status === 'running'" [class.wait]="s.status === 'waiting-input'" [class.halt]="s.status === 'finished' || s.status === 'error'" aria-hidden="true"></span>
+      <strong>{{ s.label }}</strong>
+    </p>
+
+    <div class="controls">
+      <button type="button" class="control" data-tip="Reiniciar" aria-label="Reiniciar el ejercicio" (click)="restart()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5" /></svg>
+      </button>
+      <button type="button" class="control" data-tip="Atrás" aria-label="Retroceder un paso" [disabled]="!s.canBack" (click)="back()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6m5-5-5 5 5 5" /></svg>
+      </button>
+      <button type="button" class="control" data-tip="Paso" aria-label="Ejecutar un paso" [disabled]="!s.canNext || running()" (click)="step()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5l9 7-9 7zM19 5v14" /></svg>
+      </button>
+      <button
+        type="button"
+        class="control primary"
+        [attr.data-tip]="running() ? 'Pausar' : 'Ejecutar'"
+        [attr.aria-label]="running() ? 'Pausar la ejecución' : 'Ejecutar continuamente'"
+        [attr.aria-pressed]="running()"
+        [disabled]="!running() && !s.canNext"
+        (click)="toggle()"
+      >
+        @if (running()) {
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" /></svg>
+        } @else {
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" /></svg>
+        }
+      </button>
+    </div>
+
+    <div class="options">
+      @if (unitOptions().length > 1) {
+        <label>
+          <span class="sr-only">Avanzar por</span>
+          <select (change)="setGrain($event)" aria-label="Avanzar por">
+            @for (u of unitOptions(); track u.id) {
+              <option [value]="u.id" [selected]="u.id === s.unit">{{ u.label }}</option>
+            }
+          </select>
+        </label>
+      }
+      <label>
+        <span class="sr-only">Velocidad didáctica</span>
+        <select (change)="setSpeed($event)" [attr.aria-label]="'Velocidad didáctica: ' + speedHint()">
+          @for (v of speeds; track v.id) {
+            <option [value]="v.id" [selected]="v.id === coordinator.speed()">{{ v.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <p class="status" aria-live="polite">
+      <span class="label">{{ statusLabel() }}</span>
+      <span class="count">paso {{ s.step }}</span>
+      @if (s.reason) {
+        <span class="reason">{{ s.reason }}</span>
+      }
+    </p>
+
+    @if (lesson.consulting()) {
+      <button type="button" class="back-to-step" (click)="backToStep()">
+        Consultando · volver al paso de {{ owner() }}
+      </button>
+    }
+  </div>
+}

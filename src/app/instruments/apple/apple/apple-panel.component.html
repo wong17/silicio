@@ -57,9 +57,6 @@
       <input type="checkbox" [checked]="session.separateMemory()" (change)="session.separateMemory.set($any($event.target).checked)" />
       Memoria separada (referencia conceptual)
     </label>
-    <button type="button" class="advance" (click)="session.nextBuffer()">
-      {{ session.bufferStage() === 2 ? 'Reiniciar recorrido' : 'Avanzar dependencia' }}
-    </button>
     <p class="note">
       La GPU duplica cada elemento. <span appTerm="B0">B0</span> y <span appTerm="B1">B1</span> conservan identidad; la CPU recibe B1 solo al terminar.
     </p>

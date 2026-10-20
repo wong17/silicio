@@ -662,12 +662,12 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Modificar:** instruments/cpu/transport/, laboratory/lab-session.service.ts, machine-instrument.component.ts, apple-panel.component.*, cache-panel.component.*.
 **Produce:** interfaces §9.
 
-- [ ] Tests: cambio de modelo con next pendiente descarta respuesta vieja; doble Play no crea dos relojes; siguiente paso espera al worker. Cambiar solo de vista mantiene propietario, datos y paso.
-- [ ] Crear laboratory/lesson-context.service.ts y simulation/learning-artifact.ts con pruebas de continuidad y transferencia explícita validada, conforme a §1.1.
-- [ ] Adaptar primero modelos actuales sin cambiar resultados académicos.
-- [ ] Pausa al cambiar modelo/ejercicio, abrir ayuda y ocultar pestaña; no auto-reanudar. Consultar vistas del mismo ejercicio no activa otro controlador.
-- [ ] Estado `waiting-input` con motivo visible; esperas e indisponibilidad explícitas; retirar transportes duplicados.
-- [ ] Probar atajos durante edición, ocultar panel sin reiniciar, reinicio recuperable.
+- [x] Tests: cambio de modelo con next pendiente descarta respuesta vieja; doble Play no crea dos relojes; siguiente paso espera al worker. Cambiar solo de vista mantiene propietario, datos y paso.
+- [x] Crear laboratory/lesson-context.service.ts y simulation/learning-artifact.ts con pruebas de continuidad y transferencia explícita validada, conforme a §1.1.
+- [x] Adaptar primero modelos actuales sin cambiar resultados académicos.
+- [x] Pausa al cambiar modelo/ejercicio, abrir ayuda y ocultar pestaña; no auto-reanudar. Consultar vistas del mismo ejercicio no activa otro controlador.
+- [x] Estado `waiting-input` con motivo visible; esperas e indisponibilidad explícitas; retirar transportes duplicados.
+- [x] Probar atajos durante edición, ocultar panel sin reiniciar, reinicio recuperable.
 
 **Puerta:** una barra controla cada experiencia sin actividad oculta.
 
