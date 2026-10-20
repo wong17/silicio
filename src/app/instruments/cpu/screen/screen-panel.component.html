@@ -1,5 +1,5 @@
 <section class="screen" data-guide="screen-panel" aria-label="Pantalla y teclado del programa">
-  <div class="display" role="img" [attr.aria-label]="'Pantalla de 80 por 25: ' + (session.io().screen || 'vacía')">
+  <div class="display" data-guide="screen-display" role="img" [attr.aria-label]="'Pantalla de 80 por 25: ' + (session.io().screen || 'vacía')">
     <div class="grid" [style.--row]="cursor().row" [style.--col]="cursor().col">
       @for (row of rows(); track $index) {
         <div class="row">{{ row }}</div>

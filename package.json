@@ -10,7 +10,9 @@
     "preview": "node tools/serve-production.mjs",
     "check:geometry": "node tools/check-workshop.mjs",
     "check:offline": "node tools/check-offline.mjs",
-    "check:tokens": "node tools/check-tokens.mjs"
+    "check:tokens": "node tools/check-tokens.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "prettier": {
     "printWidth": 100,
@@ -45,6 +47,7 @@
     "@angular/build": "^21.1.4",
     "@angular/cli": "^21.1.4",
     "@angular/compiler-cli": "^21.1.0",
+    "@playwright/test": "1.56.1",
     "@types/three": "^0.186.0",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",

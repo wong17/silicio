@@ -59,7 +59,7 @@ export const LEARNING_PATHS: readonly LearningPath[] = [
     steps: [
       {
         id: 'programa',
-        anchor: '[data-guide="program-panel"]',
+        anchor: '[data-guide="editor"]',
         panel: 'program',
         title: 'El programa',
         text: 'Aquí está el programa de la misión 01: una suma de la memoria a AX. La línea marcada es la próxima instrucción.',
@@ -73,7 +73,7 @@ export const LEARNING_PATHS: readonly LearningPath[] = [
       },
       {
         id: 'estado',
-        anchor: '[data-guide="register-panel"]',
+        anchor: '[data-guide="register-bank"]',
         panel: 'state',
         title: 'Qué cambió',
         text: 'AX pasó de 7 a 12: sumó el 5 que había en memoria. Los registros que cambian se marcan.',
@@ -125,7 +125,7 @@ export const LEARNING_PATHS: readonly LearningPath[] = [
       },
       {
         id: 'pantalla',
-        anchor: '[data-guide="screen-panel"]',
+        anchor: '[data-guide="screen-display"]',
         panel: 'screen',
         title: 'La Pantalla',
         text: 'Aquí aparece lo que escribió INT 21h: el equivalente de la ventana «emulator screen».',
@@ -156,7 +156,7 @@ export const LEARNING_PATHS: readonly LearningPath[] = [
       },
       {
         id: 'resultado',
-        anchor: '[data-guide="memory-result"]',
+        anchor: '[data-guide="memory-steps"]',
         panel: 'result',
         title: 'La dirección física',
         text: 'La física es segmento × 16 + dirección efectiva. Aquí ves también la ventana de la placa.',

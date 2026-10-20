@@ -32,9 +32,9 @@ export interface SimulationController {
   pause(): void;
 }
 
-export type Speed = 'slow' | 'normal' | 'fast';
+export type Speed = 'slow' | 'normal' | 'fast' | 'instant';
 /** Pause between two steps of a run; it changes the presentation, never the simulated frequency. */
-export const SPEED_DELAY: Readonly<Record<Speed, number>> = { slow: 900, normal: 450, fast: 120 };
+export const SPEED_DELAY: Readonly<Record<Speed, number>> = { slow: 900, normal: 450, fast: 120, instant: 4 };
 export const RUN_STEP_LIMIT = 2048;
 
 /** The view each engine opens by default. */

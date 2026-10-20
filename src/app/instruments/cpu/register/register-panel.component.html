@@ -1,5 +1,5 @@
 <section class="register" data-guide="register-panel" aria-label="Registro de dieciséis bits">
-  <div class="bank" role="group" aria-label="Registros del procesador">
+  <div class="bank" data-guide="register-bank" role="group" aria-label="Registros del procesador">
     @for (g of groups; track g.label) {
       <div class="group" role="group" [attr.aria-label]="g.label">
         <p class="kicker">{{ g.label }}</p>

@@ -23,6 +23,7 @@ const SPEEDS: readonly { id: Speed; label: string }[] = [
   { id: 'slow', label: 'Lento' },
   { id: 'normal', label: 'Normal' },
   { id: 'fast', label: 'Rápido' },
+  { id: 'instant', label: 'Inmediata' },
 ];
 
 /**

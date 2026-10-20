@@ -45,3 +45,6 @@ Thumbs.db
 
 # Cache local de instalación
 .npm-cache/
+
+test-results/
+playwright-report/

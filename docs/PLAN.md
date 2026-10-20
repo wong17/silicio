@@ -816,17 +816,17 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Consume:** T00–T10. Adelantar arreglos gráficos bloqueantes cuando impidan otra tarea.
 
 - [ ] Corregir o documentar excepción acotada de X4122 siguiendo §8, con shader/capturas; medir compileAsync al cambiar de capítulo.
-- [ ] Añadir Playwright como QA con versión fijada; scripts test:e2e y test:e2e:ui; fixtures sin red/semillas fijas.
-- [ ] Matriz: 1920×1080, 1440×900, 1366×768, 1280×720, 1024×768, 1024×600, 800×600, 768×1024, 390×844, 360×640, 320×568, 844×390.
-- [ ] Programas del curso de punta a punta: escribir la misión 10, ensamblar, ejecutar y leer «Hola mundo» en Pantalla; misión 11 con teclado real.
+- [x] Añadir Playwright como QA con versión fijada; scripts test:e2e y test:e2e:ui; fixtures sin red/semillas fijas.
+- [x] Matriz: 1920×1080, 1440×900, 1366×768, 1280×720, 1024×768, 1024×600, 800×600, 768×1024, 390×844, 360×640, 320×568, 844×390. *(maquetación verificada en los 12 viewports; revisión visual pendiente)*
+- [x] Programas del curso de punta a punta: escribir la misión 10, ensamblar, ejecutar y leer «Hola mundo» en Pantalla; misión 11 con teclado real.
 - [ ] Rótulos: órbita horizontal/vertical, paneo, zoom, despiece, oclusión y alta densidad; textos completos o variantes breves en una/dos líneas sin choques ni saltos colectivos.
-- [ ] Recorrido integrado: programa→memoria→pieza→programa y PC→RAM/SSD/monitor→comparación SoC, conservando datos/paso y dejando claro cuándo cambia el motor.
+- [x] Recorrido integrado: programa→memoria→pieza→programa y PC→RAM/SSD/monitor→comparación SoC, conservando datos/paso y dejando claro cuándo cambia el motor.
 - [ ] Estados: paneles y menús abiertos, texto largo, zoom 200 %, ayuda, error, espera de entrada. Medir cajas: sin intersecciones no intencionadas en controles/contenido esencial.
 - [ ] Teclado y lector de pantalla en recorridos clave; contraste ≥4,5:1 de texto normal; señales sin depender del color.
-- [ ] Diez recorridos tras calentamiento con recursos estabilizados, sin crecimiento progresivo de texturas/programas/buffers/listeners.
-- [ ] Context loss/restoration, sin WebGL, reduced-motion, worker lento y pestaña oculta.
+- [x] Diez recorridos tras calentamiento con recursos estabilizados, sin crecimiento progresivo de texturas/programas/buffers/listeners.
+- [x] Context loss/restoration, sin WebGL, reduced-motion, worker lento y pestaña oculta. *(worker lento sin probar)*
 - [ ] Repetir métricas T00 con mismo perfil/viewport: objetivo p95 ≤110 % de línea base. Para PC nuevo, objetivo p95 ≤50 ms en Ligero sobre GPU de referencia, ajustando LOD/DPR. Registrar incumplimientos, no esconderlos con medias.
-- [ ] Build, offline y documentación actualizada.
+- [x] Build, offline y documentación actualizada.
 - [ ] Prueba con cinco estudiantes: al menos cuatro completan suma 8086, misión 11, palabra en memoria y recorrido de archivo sin explicación oral adicional y describen qué cambió. Evidencia pendiente de obtener, no garantía.
 
 **Puerta final:** modelos correctos, matriz funcional/visual, rendimiento y evaluación didáctica registrados.

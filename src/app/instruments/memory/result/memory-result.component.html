@@ -8,7 +8,7 @@
     }
     @default {
       @if (lesson.activity() === 'addresses') {
-        <div class="steps" aria-live="polite">
+        <div class="steps" data-guide="memory-steps" aria-live="polite">
           <p class="kicker">Dirección por pasos</p>
           @if (built(); as b) {
             <ol>

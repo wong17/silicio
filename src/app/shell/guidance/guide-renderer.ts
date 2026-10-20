@@ -33,6 +33,8 @@ export class DriverRenderer implements GuideRenderer {
     if (!element) throw Error('Anclaje ausente: ' + o.step.anchor);
     const { driver } = await import('driver.js');
     this.loadStyle();
+    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+    await new Promise<void>((done) => requestAnimationFrame(() => done()));
     this.driver?.destroy();
     this.driver = driver({ animate: !o.reducedMotion, smoothScroll: !o.reducedMotion, allowClose: true, overlayClickBehavior: () => undefined });
     this.driver.highlight({
