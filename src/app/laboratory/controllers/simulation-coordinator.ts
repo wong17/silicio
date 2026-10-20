@@ -60,6 +60,7 @@ export class SimulationCoordinator {
       ...state,
       status: this.running() && state.status !== 'waiting-input' ? 'running' : state.status,
       reason: state.reason ?? (this.stopReason() || undefined),
+      detail: state.detail,
       label: CONTROLLER_LABEL[controller.id] + ' · ' + UNIT_LABEL[unit],
       unit,
     };
@@ -183,6 +184,11 @@ export class SimulationCoordinator {
       while (alive()) {
         const before = controller.state();
         if (!before.canNext || before.status === 'waiting-input' || before.status === 'error') break;
+        // A breakpoint stops the run before its instruction; starting on it takes that one step first.
+        if (before.breakpoint !== undefined && steps > 0) {
+          this.stopReason.set('Punto de interrupción antes de la línea ' + before.breakpoint);
+          break;
+        }
         if (steps++ >= RUN_STEP_LIMIT) {
           this.stopReason.set('Pausa automática: límite de ' + RUN_STEP_LIMIT + ' pasos. Inspecciona el bucle.');
           break;

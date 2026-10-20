@@ -98,3 +98,171 @@ textarea {
   color: kit.$green;
   font-size: 14px;
 }
+
+// Numbered editor: the gutter and the text share font and line height so every number sits on its line.
+.editor {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  border: 1px solid #2d3533;
+  border-radius: 8px;
+  background: #121617;
+  overflow: hidden;
+  textarea {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    min-height: 160px;
+    max-height: 320px;
+    padding: 8px 10px;
+    font-size: 13px;
+    line-height: 20px;
+    white-space: pre;
+    overflow: auto;
+  }
+}
+
+.gutter {
+  margin: 0;
+  padding: 8px 0;
+  list-style: none;
+  max-height: 320px;
+  overflow: hidden;
+  background: #171c1d;
+  border-right: 1px solid #2d3533;
+  li {
+    height: 20px;
+    position: relative;
+  }
+  button {
+    width: 100%;
+    height: 20px;
+    min-height: 20px;
+    padding: 0 8px 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: kit.$dim;
+    font: 12px/20px 'IBM Plex Mono', monospace;
+    text-align: right;
+    cursor: pointer;
+    &.on {
+      background: rgba(214, 96, 84, 0.25);
+      color: #ffb4a8;
+      box-shadow: inset 4px 0 0 #d66054;
+    }
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+  li.current button {
+    color: kit.$amber-soft;
+    box-shadow: inset 3px 0 0 kit.$amber;
+  }
+  li.current button.on {
+    box-shadow: inset 3px 0 0 kit.$amber, inset 6px 0 0 #d66054;
+  }
+  li.error button {
+    background: rgba(214, 96, 84, 0.18);
+    color: #ffb4a8;
+  }
+}
+
+.error-line {
+  margin: 0;
+  color: #ffb4a8;
+  font-size: 14px;
+}
+
+.pending {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid kit.$amber;
+  border-radius: 6px;
+  font-size: 14px;
+  button {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+}
+
+.observe,
+.expansions,
+.variables {
+  summary {
+    min-height: 32px;
+    cursor: pointer;
+    color: kit.$amber-soft;
+    font-size: 14px;
+  }
+  p {
+    margin: 4px 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+.expansions pre {
+  margin: 0 0 8px;
+  padding: 8px;
+  border: 1px solid #2d3533;
+  border-radius: 6px;
+  font: 12px/1.5 'IBM Plex Mono', monospace;
+  white-space: pre-wrap;
+}
+
+.predict {
+  display: grid;
+  gap: 6px;
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+  input {
+    min-height: 44px;
+    padding: 0 10px;
+  }
+  .compare {
+    color: kit.$green;
+  }
+}
+
+.variables table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  th,
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #22292a;
+    text-align: left;
+    font-weight: 400;
+  }
+  thead th {
+    color: kit.$dim;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  button {
+    min-height: 36px;
+    padding: 0 8px;
+    color: kit.$amber-soft;
+    font: 13px 'IBM Plex Mono', monospace;
+  }
+  code {
+    font: 12px 'IBM Plex Mono', monospace;
+    overflow-wrap: anywhere;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

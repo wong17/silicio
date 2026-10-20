@@ -98,3 +98,27 @@ describe('memoria: de segmento:offset a banco, fila y columna', () => {
     expect(m.burst).toEqual([8, 9, 10, 11, 12, 13, 14, 15]);
   });
 });
+
+describe('actividad por fase del curso', () => {
+  it('leer operandos es una lectura de datos y solo guardar el resultado escribe', () => {
+    const { view } = stepped('ADD AX, [10]');
+    const operands = projectActivity(view, 'execute', 1, 3);
+    expect(operands).toMatchObject({ rd: true, wr: false, ale: true, address: 0x2000a, data: 5, blocks: ['registers', 'biu'] });
+    const run = projectActivity(view, 'execute', 1, 4);
+    expect(run).toMatchObject({ rd: false, wr: false, blocks: ['alu'], data: 12 });
+    const store = projectActivity(view, 'write', 1, 5);
+    expect(store).toMatchObject({ rd: false, wr: false, changed: expect.arrayContaining(['AX']) });
+  });
+
+  it('una escritura aparece solo al guardar', () => {
+    const { view } = stepped('MOV BX, 20h\nMOV [BX], BX', 2);
+    expect(projectActivity(view, 'execute', 1, 3).wr).toBe(false);
+    const store = projectActivity(view, 'write', 1, 5);
+    expect(store).toMatchObject({ wr: true, rd: false, address: 0x20020, data: 0x20 });
+  });
+
+  it('sin acceso a memoria, cargar operandos no enciende lectura ni escritura', () => {
+    const { view } = stepped('MOV AX, 5');
+    expect(projectActivity(view, 'execute', 1, 3)).toMatchObject({ rd: false, wr: false, ale: false, bytes: [] });
+  });
+});

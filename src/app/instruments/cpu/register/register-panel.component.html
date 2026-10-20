@@ -15,6 +15,9 @@
             >
               <span class="sig">{{ r.name }}</span>
               <span class="val">{{ valueOf(r.name) }}</span>
+              @if (halvesOf(r.name); as parts) {
+                <span class="hl" [attr.aria-hidden]="true"><em>{{ r.name[0] }}H</em> {{ parts.high }} <em>{{ r.name[0] }}L</em> {{ parts.low }}</span>
+              }
             </button>
           }
         </div>

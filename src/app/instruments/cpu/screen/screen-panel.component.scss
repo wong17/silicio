@@ -1,0 +1,66 @@
+@use '../../../shared/console-kit' as kit;
+
+.screen {
+  @include kit.module;
+}
+
+.display {
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid #1f3a28;
+  border-radius: 8px;
+  background: #07110a;
+  color: #8de3a0;
+  font: 500 12px/16px 'IBM Plex Mono', ui-monospace, monospace;
+  scrollbar-width: thin;
+  max-height: 340px;
+}
+
+// 80 columns never wrap: a narrow panel scrolls sideways inside the screen instead.
+.grid {
+  position: relative;
+  width: max-content;
+}
+.row {
+  height: 16px;
+  white-space: pre;
+}
+.cursor {
+  position: absolute;
+  left: calc(var(--col) * 1ch);
+  top: calc(var(--row) * 16px);
+  width: 1ch;
+  height: 16px;
+  background: #8de3a0;
+  opacity: 0.85;
+}
+
+.keys {
+  display: grid;
+  gap: 8px;
+  .kicker {
+    @include kit.kicker;
+  }
+  input {
+    min-height: 44px;
+    padding: 0 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    &.waiting {
+      border-color: kit.$amber;
+      box-shadow: 0 0 0 2px rgba(215, 172, 111, 0.35);
+    }
+  }
+  .state {
+    margin: 0;
+    font-size: 14px;
+    color: kit.$dim;
+    strong {
+      color: kit.$amber-soft;
+    }
+  }
+  button {
+    justify-self: start;
+    min-height: 44px;
+    padding: 0 12px;
+  }
+}

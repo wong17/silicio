@@ -1,0 +1,37 @@
+<section class="screen" aria-label="Pantalla y teclado del programa">
+  <div class="display" role="img" [attr.aria-label]="'Pantalla de 80 por 25: ' + (session.io().screen || 'vacía')">
+    <div class="grid" [style.--row]="cursor().row" [style.--col]="cursor().col">
+      @for (row of rows(); track $index) {
+        <div class="row">{{ row }}</div>
+      }
+      <span class="cursor" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <div class="keys">
+    <label class="kicker" for="capture">Teclado</label>
+    <input
+      #capture
+      id="capture"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Escribe aquí; cada tecla va al programa"
+      [class.waiting]="waiting()"
+      (keydown)="onKey($event)"
+      (input)="onInput($event)"
+    />
+    <p class="state" aria-live="polite">
+      @if (waiting()) {
+        <strong>Esperando teclado.</strong> El programa se detiene hasta que escribas.
+      } @else if (queued()) {
+        {{ queued() }} tecla(s) en la cola del teclado.
+      } @else {
+        Sin teclas pendientes.
+      }
+    </p>
+    @if (sample(); as keys) {
+      <button type="button" (click)="typeSample()">Teclear el ejemplo «{{ keys }}»</button>
+    }
+  </div>
+</section>

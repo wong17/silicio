@@ -71,14 +71,14 @@ export const COURSE_MAP: readonly CourseTopic[] = [
     source: 'Actividad 4 · Práctica 1',
     where: 'Banco 8086: misiones 10 a 17 con la ventana Pantalla.',
     station: '8086',
-    status: 'Próximamente',
+    status: 'Disponible',
   },
   {
     topic: 'Procedimientos, pila, macros e interrupciones de software',
     source: 'Actividad 5',
-    where: 'Banco 8086: misión 09 (CALL y RET). Macros e INT 21h llegan con el ensamblador ampliado.',
+    where: 'Banco 8086: misión 09 (CALL y RET), misión 17 (macros) e INT 21h en las misiones 10 a 13.',
     station: '8086',
-    status: 'Ampliándose',
+    status: 'Disponible',
   },
   {
     topic: 'Memoria caché',
@@ -113,12 +113,13 @@ export const COURSE_MAP: readonly CourseTopic[] = [
 
 /** EMU8086 windows and their place in SILICIO (plan §4.1). */
 export const EMU8086_EQUIVALENCES: readonly { emu: string; silicio: string; status: TopicStatus }[] = [
-  { emu: 'Editor y «compile»', silicio: 'Programa: editor y «Compilar y reiniciar»', status: 'Disponible' },
-  { emu: 'Línea amarilla del código fuente', silicio: 'Programa: listado con la instrucción actual', status: 'Disponible' },
+  { emu: 'Editor y «compile»', silicio: 'Programa: editor numerado y «Ensamblar y reiniciar»', status: 'Disponible' },
+  { emu: 'Línea amarilla del código fuente', silicio: 'Programa: línea actual en el editor y en el listado, con puntos de interrupción', status: 'Disponible' },
   { emu: 'Registros', silicio: 'Estado: registros, punteros, segmentos, IP y flags', status: 'Disponible' },
   { emu: 'Single step / Run / Step back', silicio: 'Transporte: Paso, Ejecutar y Retroceder', status: 'Disponible' },
   { emu: 'Memory', silicio: 'Capítulo Memoria con los bytes del mismo programa', status: 'Ampliándose' },
-  { emu: 'Variables y Stack', silicio: 'Variables y Pila dentro de Programa y Estado', status: 'Próximamente' },
-  { emu: 'Emulator screen', silicio: 'Pantalla con teclado (INT 21h)', status: 'Próximamente' },
+  { emu: 'Variables', silicio: 'Variables dentro de Programa: nombre, dirección, tipo y valor', status: 'Disponible' },
+  { emu: 'Stack', silicio: 'Pila contextual al usar PUSH, POP, CALL y RET', status: 'Próximamente' },
+  { emu: 'Emulator screen', silicio: 'Pantalla de 80×25 con teclado (INT 21h)', status: 'Disponible' },
   { emu: 'Virtual devices', silicio: 'Puertos del 8255 didáctico', status: 'Próximamente' },
 ];

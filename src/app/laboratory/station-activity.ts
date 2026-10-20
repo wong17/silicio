@@ -134,7 +134,7 @@ const BLOCKS: Record<Phase, string[]> = {
 };
 
 /** Projects the facade view into the activity of one phase. Pure: no clocks, no randomness. */
-export function projectActivity(view: LaboratoryView, phase: Phase, revision = 0): StationActivity {
+export function projectActivity(view: LaboratoryView, phase: Phase, revision = 0, course?: number): StationActivity {
   const instruction = view.instruction;
   if (phase === 'idle' || !instruction)
     return { ...IDLE_ACTIVITY, sessionId: view.sessionId, revision, phase: instruction ? phase : 'idle' };
@@ -153,6 +153,7 @@ export function projectActivity(view: LaboratoryView, phase: Phase, revision = 0
     changed: phase === 'execute' || phase === 'write' ? changed : [],
     mnemonic: instruction.text,
   };
+  if (course !== undefined && course >= 3) return courseActivity(base, view, course);
   switch (phase) {
     case 'fetch':
       return { ...base, address: view.fetchAddress, ale: true, rd: true, bytes: [...instruction.bytes] };
@@ -172,6 +173,48 @@ export function projectActivity(view: LaboratoryView, phase: Phase, revision = 0
         bytes: access ? [access.value & 0xff] : [],
       };
     }
+  }
+}
+
+/**
+ * Steps 4–7 of the course cycle, which the four coarse phases blur: reading the operands is a data read,
+ * storing the result is the only write, and neither is mistaken for fetching the code.
+ */
+function courseActivity(base: StationActivity, view: LaboratoryView, course: number): StationActivity {
+  const write = view.accesses.find((a) => a.kind === 'write');
+  const read = view.accesses.find((a) => a.kind === 'read');
+  const changed = base.changed;
+  switch (course) {
+    case 3:
+      return {
+        ...base,
+        phase: 'execute',
+        blocks: ['registers', 'biu'],
+        changed: [],
+        address: read?.address,
+        data: read?.value,
+        ale: !!read,
+        rd: !!read,
+        wr: false,
+        bytes: read ? [read.value & 0xff] : [],
+      };
+    case 4:
+      return { ...base, phase: 'execute', blocks: ['alu'], changed: [], data: view.operation?.result ?? view.operation?.operands[0] };
+    case 5:
+      return {
+        ...base,
+        phase: 'write',
+        blocks: write ? ['registers', 'biu'] : ['registers'],
+        changed,
+        address: write?.address,
+        data: write?.value ?? view.operation?.result,
+        ale: !!write,
+        wr: !!write,
+        rd: false,
+        bytes: write ? [write.value & 0xff] : [],
+      };
+    default:
+      return { ...base, phase: 'execute', blocks: ['control'], changed: [] };
   }
 }
 

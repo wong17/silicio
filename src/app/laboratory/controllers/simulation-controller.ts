@@ -13,6 +13,10 @@ export interface TransportState {
   step: number;
   /** Why the exercise cannot go on, shown beside the controls («Esperando teclado»). */
   reason?: string;
+  /** Extra line about where the student is («Explicando instrucción 3 · Ejecución 5/7»). */
+  detail?: string;
+  /** Source line of a breakpoint that stops a run before the next instruction. */
+  breakpoint?: number;
 }
 
 /**

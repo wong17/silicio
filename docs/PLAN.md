@@ -695,13 +695,13 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Modificar:** instruments/cpu/program/, register/, alu/, signal/; laboratory.facade.ts, lab-session.service.ts, station-activity.ts, content/missions.ts; world/models/cpu-activity.ts (pines y cola por fase).
 **Consume:** T01/T03/T04a.
 
-- [ ] Test: todas las fases de una instrucción generan exactamente un evento CPU y el mismo resultado que Paso instrucción.
-- [ ] Tests: las siete fases de §4.3 en orden; before/after coherentes; lectura antes de operación; salto sin escritura inventada; CALL/RET recupera SP; `waiting-input` no entra en el historial.
-- [ ] Implementar Programa (editor, Ensamblar, listado/IP, breakpoints, error por línea, variables) y Estado con AH|AL.
-- [ ] Implementar Pantalla con entrada, foco al esperar teclado y espejo opcional en un monitor del banco.
-- [ ] Probar parar antes de breakpoint, continuar una vez y HLT/4Ch sin pasos adicionales.
-- [ ] Unificar proyección de datos para instrumentos y 3D.
-- [ ] Misiones 10–17 con selector por niveles, predicción, comprobación automática y explicación; completar recorridos prioritarios 01, 02, 06, 05, 09, 10 y 11.
+- [x] Test: todas las fases de una instrucción generan exactamente un evento CPU y el mismo resultado que Paso instrucción.
+- [x] Tests: las siete fases de §4.3 en orden; before/after coherentes; lectura antes de operación; salto sin escritura inventada; CALL/RET recupera SP; `waiting-input` no entra en el historial.
+- [x] Implementar Programa (editor, Ensamblar, listado/IP, breakpoints, error por línea, variables) y Estado con AH|AL.
+- [x] Implementar Pantalla con entrada, foco al esperar teclado y espejo opcional en un monitor del banco (el espejo en el monitor 3D queda pendiente; la Pantalla 2D está completa).
+- [x] Probar parar antes de breakpoint, continuar una vez y HLT/4Ch sin pasos adicionales.
+- [x] Unificar proyección de datos para instrumentos y 3D.
+- [x] Misiones 10–17 con selector por niveles, predicción, comprobación automática y explicación; completar recorridos prioritarios 01, 02, 06, 05, 09, 10 y 11 (los recorridos guiados por acciones llegan en T09; aquí las misiones tienen objetivo, predicción, comprobación y «qué observar»).
 
 **Puerta:** suma, CALL/RET y misión 11 explicables con Programa, Estado y Pantalla juntos; ninguna promesa de temporización eléctrica.
 

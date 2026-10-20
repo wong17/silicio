@@ -217,3 +217,15 @@ select {
     margin-right: 6px;
   }
 }
+
+// AH|AL under the value of AX…DX, so the halves read without selecting the register.
+.cell .hl {
+  display: block;
+  margin-top: 2px;
+  font: 11px/1.2 'IBM Plex Mono', monospace;
+  color: #a4aaa0;
+  em {
+    font-style: normal;
+    opacity: 0.75;
+  }
+}

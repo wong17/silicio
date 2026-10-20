@@ -6,7 +6,8 @@ import { MemoryLessonController } from './controllers/memory-controller';
 import { SocController } from './controllers/soc-controller';
 import { Cpu8086, hex, physicalAddress, REGISTER_NAMES, Registers, Snapshot, Trace } from '../simulation/cpu8086';
 import { readSession } from '../simulation/session-codec';
-import { MISSIONS } from '../content/missions';
+import { LAB_MISSIONS, MISSIONS, meetsExpectation } from '../content/missions';
+import { COURSE_PHASES, presentStep, type StepPresentation } from './step-presentation';
 import type { MissionContext } from '../content/station-missions';
 import { accessibleCatalog } from '../world/piece-definitions';
 import { INSTRUMENT_PARTS } from '../world/internal-parts';
@@ -54,7 +55,7 @@ export class LabSession {
   private readonly zone = inject(NgZone);
   private readonly coordinator = inject(SimulationCoordinator);
   readonly cpu = new Cpu8086();
-  readonly missions = MISSIONS;
+  readonly missions = LAB_MISSIONS;
   readonly registerNames = REGISTER_LIST;
   readonly flagNames = FLAG_LIST;
   readonly busNames = BUS_LIST;
@@ -84,6 +85,12 @@ export class LabSession {
   readonly branches = signal<Branch[]>([]);
   readonly loadedSource = signal('');
   readonly missionIndex = signal(0);
+  /** Source lines that stop the run before their instruction. */
+  readonly breakpoints = signal<ReadonlySet<number>>(new Set());
+  /** Step of the cycle (0–6) being explained for the instruction on screen; undefined shows the confirmed state. */
+  readonly explaining = signal<number | undefined>(undefined);
+  /** The student's guess for the mission on screen, kept to compare with the result. */
+  readonly prediction = signal('');
   readonly bus = signal('address');
   readonly bufferStage = signal(0);
   readonly baseline = signal<Snapshot | undefined>(undefined);
@@ -114,12 +121,35 @@ export class LabSession {
     this.revision();
     return this.cpu.snapshot();
   });
+  /** What the instruments show: the confirmed state, or the state as of the step being explained. */
+  readonly presentation = computed<StepPresentation | undefined>(() => {
+    const index = this.cursor();
+    const event = index >= 0 ? this.trace()[index] : undefined;
+    return event ? presentStep(event, { sessionId: '8086-' + this.laboratoryFacade.session(), revision: index }) : undefined;
+  });
+  readonly shownState = computed<Snapshot>(() => {
+    const step = this.explaining();
+    const presentation = this.presentation();
+    return step !== undefined && presentation ? presentation.projection(step) : this.state();
+  });
+  /** Screen and keyboard as of what is shown. */
+  readonly io = computed(() => this.shownState().io);
+  /** Source line of the next instruction, and whether a breakpoint stops before it. */
+  readonly nextLine = computed(() => {
+    this.revision();
+    const ip = this.cpu.registers.IP;
+    return this.cpu.instructions.find((i) => i.address === ip)?.line;
+  });
+  readonly atBreakpoint = computed(() => {
+    const line = this.nextLine();
+    return line !== undefined && this.breakpoints().has(line) && !this.cpu.halted;
+  });
   readonly trace = computed(() => {
     this.revision();
     return [...this.cpu.trace];
   });
-  readonly laboratoryFacade = new LaboratoryFacade({
-    snapshot: () => this.state(),
+  readonly laboratoryFacade: LaboratoryFacade = new LaboratoryFacade({
+    snapshot: () => this.shownState(),
     event: () => (this.cursor() >= 0 ? this.trace()[this.cursor()] : undefined),
     selection: () => this.activePart(),
     experience: () => this.section(),
@@ -206,7 +236,7 @@ export class LabSession {
         },
       };
     }
-    return projectActivity(this.laboratory() as never, this.phase(), this.revision());
+    return projectActivity(this.laboratory() as never, this.phase(), this.revision(), this.explaining());
   });
   readonly lastReads = computed(() => this.laboratory().accesses.some((a) => a.kind === 'read'));
   readonly lastWrites = computed(() => this.laboratory().accesses.some((a) => a.kind === 'write'));
@@ -275,6 +305,12 @@ export class LabSession {
     this.revision();
     const mission = this.missions[this.missionIndex()];
     const registers = this.state().registers;
+    if (mission.expect)
+      return (
+        this.source === mission.source &&
+        this.state().halted &&
+        meetsExpectation(mission.expect, this.state(), this.cpu.program?.data ?? [])
+      );
     return (
       this.source === mission.source &&
       this.state().halted &&
@@ -304,8 +340,13 @@ export class LabSession {
   constructor() {
     this.coordinator.register(
       new Cpu8086Controller({
-        step: () => this.step(),
+        nextInstruction: () => this.nextInstruction(),
+        nextPhase: () => this.nextPhase(),
         back: () => this.back(),
+        backPhase: () => this.backPhase(),
+        explaining: () => this.explaining(),
+        breakpointLine: () => (this.atBreakpoint() ? this.nextLine() : undefined),
+        phaseLabel: (index: number) => COURSE_PHASES[index].group + ' ' + COURSE_PHASES[index].number + '/7',
         load: () => this.load(),
         cancelStep: () => this.cancelStep(),
         halted: () => this.state().halted,
@@ -473,6 +514,8 @@ export class LabSession {
 
   chooseMission(index: number): void {
     this.missionIndex.set(index);
+    this.prediction.set('');
+    this.breakpoints.set(new Set());
     this.source = this.missions[index].source;
     this.load();
   }
@@ -484,6 +527,8 @@ export class LabSession {
       this.cpu.load(this.source);
       this.laboratoryFacade.beginSession();
       this.loadedSource.set(this.source);
+      this.explaining.set(undefined);
+      this.waitingInput.set(undefined);
       this.cursor.set(-1);
       this.branches.set([]);
       this.baseline.set(undefined);
@@ -541,8 +586,88 @@ export class LabSession {
     this.tick.update((n) => n + 1);
     this.activePart.set(event.reads.length || event.writes.length ? 'biu' : 'alu');
     this.revision.update((n) => n + 1);
-    this.playPhases();
+    if (this.explainNext) this.showCoursePhase(0);
+    else {
+      this.explaining.set(undefined);
+      this.playPhases();
+    }
     if (this.cpu.halted) this.pause();
+  }
+
+  private explainNext = false;
+  private static readonly SCENE_PHASE: readonly Phase[] = ['fetch', 'fetch', 'decode', 'execute', 'execute', 'write', 'write'];
+
+  /** Shows step `index` (0–6) of the cycle for the instruction on screen; nothing is executed again. */
+  private showCoursePhase(index: number): void {
+    clearTimeout(this.phaseTimer);
+    this.stepSerial++;
+    this.explaining.set(index);
+    this.phase.set(LabSession.SCENE_PHASE[index]);
+    this.activePart.set(COURSE_PHASES[index].pieces[0]);
+    this.tick.update((n) => n + 1);
+  }
+
+  /** Grain «phase»: the next step of the cycle, executing the following instruction after the seventh. */
+  nextPhase(): Promise<void> {
+    const at = this.explaining();
+    if (at !== undefined && at < 6) {
+      this.showCoursePhase(at + 1);
+      return Promise.resolve();
+    }
+    this.explaining.set(undefined);
+    this.explainNext = true;
+    return this.step().finally(() => (this.explainNext = false));
+  }
+
+  /** Grain «instruction»: leaving an explanation shows the confirmed state first. */
+  nextInstruction(): Promise<void> {
+    this.explaining.set(undefined);
+    this.explainNext = false;
+    return this.step();
+  }
+
+  backPhase(): void {
+    const at = this.explaining();
+    if (at !== undefined && at > 0) {
+      this.showCoursePhase(at - 1);
+      return;
+    }
+    if (at === undefined && this.cursor() >= 0) {
+      this.showCoursePhase(5);
+      return;
+    }
+    this.restore(this.cursor() - 1);
+    if (this.cursor() >= 0) this.showCoursePhase(6);
+  }
+
+  /** Shows step `index` of the cycle on request (a click on the list of steps). */
+  explainAt(index: number): void {
+    if (this.cursor() >= 0) this.showCoursePhase(index);
+  }
+
+  /** Opens the memory view on a variable of the program. */
+  selectVariable(v: { name: string; address: number }): void {
+    this.segment.set(this.cpu.registers.DS);
+    this.segmentText = hex(this.cpu.registers.DS);
+    this.offsetText = hex(v.address);
+    this.setAddress();
+  }
+
+  toggleBreakpoint(line: number): void {
+    this.breakpoints.update((set) => {
+      const next = new Set(set);
+      if (!next.delete(line)) next.add(line);
+      return next;
+    });
+  }
+
+  /** Types into the emulated keyboard; an instruction waiting for a key can then go on. */
+  typeKeys(text: string): void {
+    if (!text) return;
+    this.cpu.type(text);
+    this.waitingInput.set(undefined);
+    this.error.set('');
+    this.revision.update((n) => n + 1);
   }
 
   /**
@@ -595,6 +720,7 @@ export class LabSession {
     this.revision.update((n) => n + 1);
     clearTimeout(this.phaseTimer);
     this.stepSerial++;
+    this.explaining.set(undefined);
     this.phase.set(index < 0 ? 'idle' : 'write');
     this.activePart.set('frame-' + Math.max(0, index));
   }

@@ -45,6 +45,15 @@ export class RegisterPanelComponent {
     return this.session.laboratory().registers.find((r) => r.name === name)?.hex ?? '0000';
   }
 
+  /** AH|AL, BH|BL, CH|CL and DH|DL for the cells of the data group. */
+  halvesOf(name: keyof Registers): { high: string; low: string } | undefined {
+    if (!hasHalves(name)) return undefined;
+    this.session.revision();
+    const value = this.session.laboratory().registers.find((r) => r.name === name)?.value ?? 0;
+    const parts = halves(value);
+    return { high: this.hex2(parts.high), low: this.hex2(parts.low) };
+  }
+
   hex2(value: number): string {
     return value.toString(16).toUpperCase().padStart(2, '0');
   }

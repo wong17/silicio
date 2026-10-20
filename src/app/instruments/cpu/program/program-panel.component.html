@@ -6,25 +6,75 @@
       [ngModel]="session.missionIndex()"
       (ngModelChange)="session.chooseMission(+$event)"
     >
-      @for (m of session.missions; track m.title; let i = $index) {
-        <option [ngValue]="i">{{ m.title }}</option>
+      @for (group of levels; track group.level) {
+        <optgroup [label]="group.level">
+          @for (m of group.missions; track m.index) {
+            <option [ngValue]="m.index">{{ m.title }}</option>
+          }
+        </optgroup>
       }
     </select>
-    <p class="goal">{{ session.missions[session.missionIndex()].goal }}</p>
+    <p class="goal">{{ mission().goal }}</p>
+    @if (mission().observe; as observe) {
+      <details class="observe">
+        <summary>Qué observar</summary>
+        <p>{{ observe }}</p>
+      </details>
+    }
+    @if (mission().predict; as predict) {
+      <div class="predict">
+        <label class="kicker" for="prediction">Predicción</label>
+        <p>{{ predict.question }}</p>
+        <input id="prediction" type="text" autocomplete="off" spellcheck="false"
+          [ngModel]="session.prediction()" (ngModelChange)="session.prediction.set($event)" />
+        @if (session.missionComplete()) {
+          <p class="compare" role="status">
+            Tu predicción: «{{ session.prediction() || '—' }}» · Resultado: «{{ predict.answer }}»
+          </p>
+        }
+      </div>
+    }
   </div>
 
   <div class="field">
     <label class="kicker" for="program">Código fuente</label>
-    <textarea
-      id="program"
-      [(ngModel)]="session.source"
-      (focus)="editorFocus.emit()"
-      spellcheck="false"
-      rows="7"
-      data-lenis-prevent
-    ></textarea>
+    <div class="editor">
+      <ol class="gutter" #gutter aria-label="Líneas del programa">
+        @for (n of lineNumbers(); track n) {
+          <li [class.current]="n === session.nextLine()" [class.error]="n === errorLine()">
+            <button
+              type="button"
+              [class.on]="session.breakpoints().has(n)"
+              [attr.aria-pressed]="session.breakpoints().has(n)"
+              [attr.aria-label]="'Punto de interrupción en la línea ' + n"
+              (click)="session.toggleBreakpoint(n)"
+            >{{ n }}</button>
+          </li>
+        }
+      </ol>
+      <textarea
+        id="program"
+        [(ngModel)]="session.source"
+        (ngModelChange)="typed()"
+        (focus)="editorFocus.emit()"
+        (scroll)="syncScroll(gutter, $event)"
+        wrap="off"
+        spellcheck="false"
+        rows="8"
+        data-lenis-prevent
+      ></textarea>
+    </div>
+    @if (errorLine(); as line) {
+      <p class="error-line" role="alert">{{ session.error() }}</p>
+    }
+    @if (pendingAssembly()) {
+      <p class="pending" role="status">
+        Editaste el programa y aún no está ensamblado: el paso no ejecutará el código anterior.
+        <button type="button" (click)="assembleAndContinue()">Ensamblar y continuar</button>
+      </p>
+    }
     <button type="button" class="compile" (click)="session.intent('load')">
-      Compilar y reiniciar
+      Ensamblar y reiniciar
     </button>
   </div>
 
@@ -32,7 +82,7 @@
     <p class="kicker">Desensamblado</p>
     <ol class="listing">
       @for (i of session.cpu.instructions; track i.address) {
-        <li [class.current]="i.address === session.state().registers.IP">
+        <li [class.current]="i.address === session.shownState().registers.IP">
           <code>{{ h(i.address) }}</code>
           <span>{{ i.text }}</span>
           <small>
@@ -43,7 +93,40 @@
         </li>
       }
     </ol>
+    @if (expansions().length) {
+      <details class="expansions">
+        <summary>Macros expandidas ({{ expansions().length }})</summary>
+        @for (e of expansions(); track $index) {
+          <p class="kicker">Línea {{ e.line }}</p>
+          <pre>{{ e.expanded.join('\n') }}</pre>
+        }
+      </details>
+    }
   </div>
+
+  @if (variables().length) {
+    <details class="variables" open>
+      <summary>Variables ({{ variables().length }})</summary>
+      <table>
+        <caption class="sr-only">Variables del programa</caption>
+        <thead>
+          <tr><th scope="col">Nombre</th><th scope="col">Dirección</th><th scope="col">Tipo</th><th scope="col">Valor</th></tr>
+        </thead>
+        <tbody>
+          @for (v of variables(); track v.name) {
+            <tr>
+              <th scope="row">
+                <button type="button" (click)="session.selectVariable(v)" [attr.aria-label]="'Ver ' + v.name + ' en memoria'">{{ v.name }}</button>
+              </th>
+              <td>{{ h(v.address) }}h</td>
+              <td>{{ v.type === 'byte' ? 'DB' : 'DW' }}{{ v.length > 1 ? ' × ' + v.length : '' }}</td>
+              <td><code>{{ valueOf(v) }}</code></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </details>
+  }
 
   @if (session.missionComplete()) {
     <p class="success" role="status">Resultado alcanzado. Observa en Estado los flags y los registros que cambiaron.</p>

@@ -161,9 +161,30 @@
         @case ('scope') {
           <h3>Alcance del modelo</h3>
           <p>
-            El 8086 ejecuta un subconjunto: MOV, ADD, SUB, CMP, INC, DEC, PUSH y POP de registros, CALL y RET cercanos,
-            JMP, JZ, JNZ, LOOP, NOP y HLT, con registros de 16 bits. Todavía no admite INT 21h, MUL, DIV, DB/DW ni
-            macros; cuando lleguen, aparecerán aquí.
+            El 8086 ejecuta el subconjunto del curso, con las codificaciones del 8086 real y registros de 8 y 16 bits:
+            MOV, XCHG, LEA, PUSH y POP; ADD, ADC, SUB, SBB, CMP, INC, DEC, NEG, MUL, IMUL, DIV, IDIV, CBW y CWD; AND, OR,
+            XOR, NOT, TEST, SHL, SHR, SAR, ROL y ROR (de 1 en 1 o con CL); JMP, los saltos condicionales, LOOP, CALL y RET
+            cercanos; INT 21h (servicios 01h, 02h, 09h, 0Ah y 4Ch), INT 20h, HLT y NOP.
+          </p>
+          <p>
+            Directivas: ORG 100h, DB y DW (con listas, cadenas y DUP), EQU, OFFSET, BYTE PTR y WORD PTR, PROC/ENDP, END,
+            MACRO/ENDM con parámetros y LOCAL, y la plantilla .MODEL SMALL con .STACK, .DATA y .CODE.
+          </p>
+          <p>
+            Fuera del subconjunto, con un error que dice la línea: instrucciones de cadena, prefijos de segmento, saltos y
+            llamadas lejanos, otras INT, coprocesador e INCLUDE. En lugar de INCLUDE 'emu8086.inc', escribe con INT 21h
+            servicio 09h o define una macro como en la misión 17.
+          </p>
+          <p>
+            Disposición fija de segmentos: el código está en CS = 1000h desde 0100h, la pila en SS = 3000h con SP = FFFEh y
+            los datos en DS = 2000h. Si el programa declara variables DB/DW dentro del código, como en un archivo .COM, DS
+            vale lo mismo que CS (1000h). Con .MODEL SMALL los datos van en DS = 2000h y MOV AX,@DATA lo carga.
+          </p>
+          <p>
+            La Pantalla es de 80 × 25 caracteres y el teclado es el campo de la Pantalla. INT 21h se explica como servicio
+            del sistema: en un PC real apila FLAGS, CS e IP y salta por el vector de 0000:0084h; aquí el servicio está
+            simulado. Una división entre 0, o con un cociente que no cabe, detiene el programa con un error de división y
+            no cambia ningún registro.
           </p>
           <p>
             Dirección = <span appTerm="segmento">segmento</span> × 16 + <span appTerm="offset">offset</span>, limitada

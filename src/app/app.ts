@@ -33,6 +33,7 @@ import { SceneHudComponent } from './world/scene-hud/scene-hud.component';
 import { PieceInspectorComponent } from './console/piece-inspector/piece-inspector.component';
 import { HelpDialogComponent } from './shell/help/help-dialog.component';
 import { PhasesComponent } from './instruments/cpu/phases/phases.component';
+import { ScreenPanelComponent } from './instruments/cpu/screen/screen-panel.component';
 import { SimulationTransportComponent } from './shell/transport/simulation-transport.component';
 import { SimulationCoordinator } from './laboratory/controllers/simulation-coordinator';
 import { experienceOf } from './laboratory/controllers/simulation-controller';
@@ -83,6 +84,7 @@ const NARROW = '(max-width: 899px)';
     PieceInspectorComponent,
     HelpDialogComponent,
     PhasesComponent,
+    ScreenPanelComponent,
     SimulationTransportComponent,
     RegisterPanelComponent,
     AluPanelComponent,
@@ -145,6 +147,7 @@ export class App implements AfterViewInit, OnDestroy {
   private readonly inspectorPanel = viewChild.required<TemplateRef<unknown>>('inspectorPanel');
   private readonly portalsPanel = viewChild.required<TemplateRef<unknown>>('portalsPanel');
   private readonly instrumentsPanel = viewChild.required<TemplateRef<unknown>>('instrumentsPanel');
+  private readonly screenPanel = viewChild.required<TemplateRef<unknown>>('screenPanel');
   /** Content of each desk panel; the workspace places it, the shell only says what it contains. */
   readonly panelTemplates = computed<Record<string, TemplateRef<unknown>>>(() => ({
     program: this.programPanel(),
@@ -152,6 +155,7 @@ export class App implements AfterViewInit, OnDestroy {
     inspector: this.inspectorPanel(),
     portals: this.portalsPanel(),
     instruments: this.instrumentsPanel(),
+    screen: this.screenPanel(),
   }));
   private navigation?: Subscription;
   private context?: gsap.Context;
@@ -172,6 +176,14 @@ export class App implements AfterViewInit, OnDestroy {
       const view = experienceOf(this.session.section());
       untracked(() => (view ? this.coordinator.changeView(view) : this.coordinator.pause()));
     });
+    // The screen opens with the first INT 21h of a program (and again after a restart cleared it).
+    effect(() => {
+      const has = !!this.session.io().screen || !!this.session.waitingInput();
+      untracked(() => {
+        if (has && !this.screenSeen && this.session.section() === '8086') this.ws.open('screen', false);
+        this.screenSeen = has;
+      });
+    });
     // A hidden tab never keeps the clock going.
     this.visibility = () => document.hidden && this.coordinator.pause();
     document.addEventListener('visibilitychange', this.visibility);
@@ -188,6 +200,7 @@ export class App implements AfterViewInit, OnDestroy {
   private lastSection?: Section;
   private urlTimer?: ReturnType<typeof setTimeout>;
   private visibility: () => void;
+  private screenSeen = false;
 
   private route(): void {
     const id = this.router.url.split('?')[0].split('/')[1] as Section;
