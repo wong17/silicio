@@ -59,7 +59,7 @@ describe('CPU 8086 / semántica arquitectónica', () => {
     expect(cpu.memory[0xfffff]).toBe(0x34); expect(cpu.memory[0]).toBe(0x12);
   });
   it('rechaza instrucciones, operandos, etiquetas y saltos inválidos', () => {
-    for(const source of ['MOV AX,[SP]','ADD [10],AX','MOV AX,65536','JZ ausente','a: NOP\na: HLT','INC AX,BX']) expect(()=>assemble(source)).toThrow();
+    for(const source of ['MOV AX,[SP]','ADD [10],[BX]','MOV AX,65536','JZ ausente','a: NOP\na: HLT','INC AX,BX']) expect(()=>assemble(source)).toThrow();
     expect(()=>assemble('JZ lejos\n'+Array(130).fill('NOP').join('\n')+'\nlejos: HLT')).toThrow('fuera de rango');
   });
 });

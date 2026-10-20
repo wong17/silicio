@@ -1,4 +1,4 @@
-import { Cpu8086, REGISTER_NAMES, Snapshot, Trace } from './cpu8086';
+import { Cpu8086, REGISTER_NAMES, Snapshot, Trace, type IoState } from './cpu8086';
 export interface Session {
   branches?: { id: string; session: Session }[];
   version: 1;
@@ -10,6 +10,30 @@ export interface Session {
   baseline?: Snapshot;
 }
 const flags = ['CF', 'PF', 'AF', 'ZF', 'SF', 'OF'] as const;
+/** Screen, cursor and queued keys; sessions written before the screen existed simply have none. */
+function readIo(value: unknown): IoState {
+  const io = value as IoState;
+  if (
+    !io ||
+    typeof io.screen !== 'string' ||
+    io.screen.length > 2100 ||
+    !Number.isInteger(io.cursor) ||
+    io.cursor < 0 ||
+    io.cursor >= 2000 ||
+    !Array.isArray(io.keyboard) ||
+    io.keyboard.length > 256 ||
+    io.keyboard.some((k) => !Number.isInteger(k) || k < 0 || k > 255)
+  )
+    throw Error('Pantalla o teclado inválidos.');
+  const result: IoState = { screen: io.screen, cursor: io.cursor, keyboard: [...io.keyboard] };
+  if (io.ports !== undefined) {
+    const entries = Object.entries(io.ports);
+    if (entries.length > 256 || entries.some(([k, v]) => !/^\d+$/.test(k) || Number(k) > 0xffff || !Number.isInteger(v) || v < 0 || v > 255))
+      throw Error('Puertos inválidos.');
+    result.ports = { ...io.ports };
+  }
+  return result;
+}
 export function readSession(text: string): Session {
   if (text.length > 12_000_000) throw Error('La sesión supera el límite de 12 MB.');
   const raw = JSON.parse(text);
@@ -60,6 +84,7 @@ export function readSession(text: string): Session {
     const result = cpu.snapshot();
     result.memory = {};
     result.halted = obj.halted;
+    if (obj.io !== undefined) result.io = readIo(obj.io);
     for (const r of [...REGISTER_NAMES, 'CS', 'DS', 'SS', 'ES', 'IP'] as const) {
       const v = obj.registers[r];
       if (!Number.isInteger(v) || v < 0 || v > 65535) throw Error('Registro inválido: ' + r);
@@ -102,7 +127,10 @@ export function readSession(text: string): Session {
           actual.after.registers[r as keyof Snapshot['registers']],
       ) &&
       flags.every((f) => after.flags[f] === actual.after.flags[f]) &&
-      after.halted === actual.after.halted;
+      after.halted === actual.after.halted &&
+      after.io.screen === actual.after.io.screen &&
+      after.io.cursor === actual.after.io.cursor &&
+      after.io.keyboard.join() === actual.after.io.keyboard.join();
     const keys = new Set([...Object.keys(after.memory), ...Object.keys(actual.after.memory)]);
     if (!equal || [...keys].some((k) => after.memory[Number(k)] !== actual.after.memory[Number(k)]))
       throw Error('La traza no coincide con la instrucción ejecutada.');

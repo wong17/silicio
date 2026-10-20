@@ -23,7 +23,7 @@ for (const [index, mission] of MISSIONS.entries())
 import { assemble } from '../simulation/cpu8086';
 it('academic_mission_9_names_the_real_addresses', () => {
   const mission = MISSIONS[8];
-  const program = assemble(mission.source);
+  const program = assemble(mission.source).instructions;
   const call = program.find((i) => i.op === 'CALL')!;
   expect(call.address).toBe(0x103);
   expect(call.address + call.bytes.length).toBe(0x106);

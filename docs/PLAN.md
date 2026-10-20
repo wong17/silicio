@@ -677,15 +677,15 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 **Modificar:** simulation/cpu8086.ts (reexporta), cpu8086.worker.ts (StepResult), simulation/session-codec.ts (io por defecto), laboratory/laboratory.facade.ts (waiting-input).
 **Consume:** nada de la interfaz. **Produce:** `assemble`, `AssembledProgram`, `StepResult`, `Snapshot.io` de §9.
 
-- [ ] Separar cpu8086.ts en los módulos de §9 sin cambiar comportamiento; la suite actual (cpu8086, operation, stack, missions, session-codec) pasa antes de ampliar.
-- [ ] Tests de codificación: `MOV AH,09h` → B4 09; `INT 21h` → CD 21; `MUL BL` → F6 E3; `DIV CX` → F7 F1; `ADD [10],AX` → 01 06 0A 00; `MOV DX,OFFSET msg` → BA + dirección de msg; Jcc fuera de −128…127 da error.
-- [ ] Test de ida y vuelta: para cada instrucción admitida, assemble → bytes → decode devuelve el mismo mnemónico y operandos.
-- [ ] Tests de semántica: MUL/DIV de 8 y 16 bits (AX y DX:AX), IMUL/IDIV con signo, AND/OR/XOR dejan CF=OF=0, SHL/SHR con CL, ADC/SBB usan CF, DIV entre 0 → `fault` 'division' sin modificar estado.
-- [ ] Directivas y macros: DB/DW/DUP/EQU/OFFSET/PTR, cadenas con `$`, ORG 100h, plantilla EXE, PROC/ENDP, MACRO con parámetros y LOCAL (dos expansiones no duplican etiquetas).
-- [ ] INT 21h 01h/02h/09h/0Ah/4Ch e INT 20h sobre text-screen; cola vacía → `waiting-input` sin avanzar IP; 4Ch y 20h → `halted`.
-- [ ] Tests con content/course-programs.ts: las ocho comprobaciones de §4.4.
-- [ ] Mensajes «fuera del subconjunto» con línea; `INCLUDE 'emu8086.inc'` sugiere alternativa.
-- [ ] Sesiones v1/v2 restauran con io vacío; misiones 01–09 conservan resultados y direcciones.
+- [x] Separar cpu8086.ts en los módulos de §9 sin cambiar comportamiento; la suite actual (cpu8086, operation, stack, missions, session-codec) pasa antes de ampliar.
+- [x] Tests de codificación: `MOV AH,09h` → B4 09; `INT 21h` → CD 21; `MUL BL` → F6 E3; `DIV CX` → F7 F1; `ADD [10],AX` → 01 06 0A 00; `MOV DX,OFFSET msg` → BA + dirección de msg; Jcc fuera de −128…127 da error.
+- [x] Test de ida y vuelta: para cada instrucción admitida, assemble → bytes → decode devuelve el mismo mnemónico y operandos.
+- [x] Tests de semántica: MUL/DIV de 8 y 16 bits (AX y DX:AX), IMUL/IDIV con signo, AND/OR/XOR dejan CF=OF=0, SHL/SHR con CL, ADC/SBB usan CF, DIV entre 0 → `fault` 'division' sin modificar estado.
+- [x] Directivas y macros: DB/DW/DUP/EQU/OFFSET/PTR, cadenas con `$`, ORG 100h, plantilla EXE, PROC/ENDP, MACRO con parámetros y LOCAL (dos expansiones no duplican etiquetas).
+- [x] INT 21h 01h/02h/09h/0Ah/4Ch e INT 20h sobre text-screen; cola vacía → `waiting-input` sin avanzar IP; 4Ch y 20h → `halted`.
+- [x] Tests con content/course-programs.ts: las ocho comprobaciones de §4.4.
+- [x] Mensajes «fuera del subconjunto» con línea; `INCLUDE 'emu8086.inc'` sugiere alternativa.
+- [x] Sesiones v1/v2 restauran con io vacío; misiones 01–09 conservan resultados y direcciones.
 
 **Puerta:** los ocho programas del curso producen la salida esperada sin interfaz; las nueve misiones previas sin cambios.
 

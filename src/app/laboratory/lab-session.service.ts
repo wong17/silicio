@@ -37,6 +37,10 @@ export { INSTRUMENT_PARTS };
  * Session state shared by the console instruments, the 3D bench and the toolbar. The 8086 core and
  * its worker stay outside Angular; this service only projects and commands them.
  */
+/** Message for a DIV/IDIV that cannot complete; the 8086 would raise INT 0. */
+const divisionFault = (line: number) =>
+  'Error de división (línea ' + line + '): el divisor es 0 o el cociente no cabe. El 8086 real lanzaría INT 0.';
+
 @Injectable({ providedIn: 'root' })
 export class LabSession {
   private readonly zone = inject(NgZone);
@@ -62,6 +66,8 @@ export class LabSession {
   readonly sound = signal(false);
   readonly running = signal(false);
   readonly error = signal('');
+  /** INT 21h service that is waiting for a key; the step is not taken until the key arrives. */
+  readonly waitingInput = signal<0x01 | 0x0a | undefined>(undefined);
   readonly revision = signal(0);
   readonly tick = signal(0);
   readonly cursor = signal(-1);
@@ -310,6 +316,16 @@ export class LabSession {
               this.pause();
               return;
             }
+            this.waitingInput.set(data.waiting);
+            if (data.fault !== undefined) {
+              this.error.set(divisionFault(data.fault));
+              this.pause();
+              return;
+            }
+            if (data.waiting !== undefined) {
+              this.pause();
+              return;
+            }
             if (data.event) {
               this.archiveFuture();
               this.cpu.restore(data.event.after);
@@ -453,8 +469,11 @@ export class LabSession {
     }
     try {
       this.archiveFuture();
-      const event = this.cpu.step();
-      if (event) this.commitStep(event);
+      const result = this.cpu.execute();
+      this.waitingInput.set(result.kind === 'waiting-input' ? result.service : undefined);
+      if (result.kind === 'fault') throw Error(divisionFault(result.line));
+      if (result.kind === 'waiting-input') this.pause();
+      else if ('trace' in result && result.trace) this.commitStep(result.trace);
     } catch (e) {
       this.error.set((e as Error).message);
       this.pause();

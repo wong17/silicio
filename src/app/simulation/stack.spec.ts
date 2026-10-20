@@ -64,7 +64,7 @@ describe('pila, CALL y RET', () => {
   });
 
   it('encodes_push_pop_call_ret_bytes', () => {
-    const bytes = assemble('PUSH AX\nPUSH BX\nPOP CX\nCALL f\nRET\nf:\nRET').map((i) => i.bytes);
+    const bytes = assemble('PUSH AX\nPUSH BX\nPOP CX\nCALL f\nRET\nf:\nRET').instructions.map((i) => i.bytes);
     expect(bytes[0]).toEqual([0x50]);
     expect(bytes[1]).toEqual([0x53]);
     expect(bytes[2]).toEqual([0x59]);
