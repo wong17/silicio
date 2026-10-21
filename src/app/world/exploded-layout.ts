@@ -23,9 +23,10 @@ export function explodedOffset(id: string, section: string, amount: number): Exp
   const a = Math.min(1, Math.max(0, amount));
   if (section === 'atrium') return { x: 0, y: 0, z: 0 };
   if (section === 'machine') {
-    // The case lifts away and slides back so the board underneath reads from the front.
+    // The case lifts away and slides off to the side: sliding back it hangs in front of the monitor, the output
+    // the student is following, so the board and the monitor both stay in plain view.
     const k = ease(a);
-    return id === 'lid' ? { x: 0, y: 2.6 * k, z: -2.2 * k } : { x: 0, y: 0, z: 0 };
+    return id === 'lid' ? { x: -13 * k, y: 3 * k, z: 1.5 * k } : { x: 0, y: 0, z: 0 };
   }
   if (section === 'memory') {
     // DIMM layers separate out of the module plane: the chips first, the SPD a little farther.

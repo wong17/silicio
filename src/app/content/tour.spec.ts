@@ -6,7 +6,7 @@ describe('modo exposición', () => {
   it('every_tour_step_targets_an_existing_piece', () => {
     for (const step of TOUR) {
       const ids = accessibleCatalog(step.station, step.memoryModel ?? 'classic', 4).map((p) => p.id);
-      expect(ids, `${step.id} → ${step.piece}`).toContain(step.piece);
+      expect(ids, `${step.id} a ${step.piece}`).toContain(step.piece);
     }
   });
   it('slots_follow_the_exhibition_order', () => {

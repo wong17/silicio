@@ -94,7 +94,7 @@ handler:
     source: `BRANCH ALWAYS, main
 HALT
 main:
-    READ_FILE R2, input, datos.csv   ; SSD → RAM; R2 = cuántos valores
+    READ_FILE R2, input, datos.csv   ; SSD a RAM; R2 = cuántos valores
     LOADI R0, input
     LOADI R1, 0
 suma:
@@ -134,14 +134,14 @@ mayus:
     BRANCH LT, sigue
     COMPAREI R3, 123      ; después de 'z'
     BRANCH GE, sigue
-    ADDI R3, -32          ; minúscula → mayúscula
+    ADDI R3, -32          ; minúscula a mayúscula
     STORE [R0], R3
 sigue:
     ADDI R0, 1
     ADDI R2, -1
     BRANCH ALWAYS, mayus
 guardar:
-    WRITE_FILE R1, nota.txt, text   ; RAM → SSD
+    WRITE_FILE R1, nota.txt, text   ; RAM a SSD
     DISPLAY input-text, R1
     HALT`,
   },

@@ -14,7 +14,7 @@ const FORMATS = ['hex', 'dec', 'bin', 'ascii'] as const;
 export interface MemoryPart {
   activity: (typeof ACTIVITIES)[number];
   format: (typeof FORMATS)[number];
-  /** Bytes of the isolated exercise, address → value. */
+  /** Bytes of the isolated exercise, address a value. */
   exercise: Record<number, number>;
   progress: Record<(typeof ACTIVITIES)[number], number>;
   inputs: { mode: string; regBX: string; regBP: string; regSI: string; regDI: string; displacement: string; segDS: string; segSS: string; value: string };

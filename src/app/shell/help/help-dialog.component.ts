@@ -25,7 +25,22 @@ export class HelpDialogComponent {
   readonly session = inject(LabSession);
   private readonly router = inject(Router);
   readonly guide = inject(LearningGuide);
-  readonly paths = LEARNING_PATHS;
+  /** Guides by actions; the usage tutorial of each chapter has its own button at the top. */
+  readonly paths = LEARNING_PATHS.filter((p) => !p.id.endsWith('-tutorial'));
+  /** The tutorial of the chapter on screen, if it has one. */
+  readonly tutorial = computed(() => {
+    const chapter = this.session.section() === 'apple' ? 'soc' : this.session.section();
+    return LEARNING_PATHS.find((p) => p.id === chapter + '-tutorial');
+  });
+  readonly phases = [
+    { n: 1, name: 'Traer', tech: 'La BIU forma CS:IP y trae los bytes de la instrucción a la cola.', everyday: 'Leer el paso de la receta.' },
+    { n: 2, name: 'Avanzar', tech: 'IP avanza la longitud de la instrucción.', everyday: 'Mover el dedo al paso siguiente.' },
+    { n: 3, name: 'Entender', tech: 'La unidad de control decodifica el código de operación.', everyday: 'Entender qué pide el paso.' },
+    { n: 4, name: 'Datos', tech: 'Se resuelven los operandos: registro, memoria o valor inmediato.', everyday: 'Sacar los ingredientes.' },
+    { n: 5, name: 'Operar', tech: 'La ALU calcula y fija los flags.', everyday: 'Cocinar.' },
+    { n: 6, name: 'Guardar', tech: 'El resultado va al registro o a la memoria de destino.', everyday: 'Servir el plato.' },
+    { n: 7, name: 'Interrupciones', tech: 'Se comprueba IF y las solicitudes pendientes.', everyday: 'Mirar si suena el timbre.' },
+  ];
   /** Asks the shell to start the exhibition mode. */
   readonly tour = output<void>();
 

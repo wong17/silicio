@@ -193,22 +193,22 @@ function fetchEvents(state: PcState): { events: PcEvent[]; ir: number; mdr: numb
     events: [
       {
         phase: 1, role: 'transfer', source: 'cpu-pc', target: 'cpu-mar', address, value: address, bus: { address, control: 'read' },
-        text: 'PC → MAR: la dirección ' + h(address, 4) + ' sale al bus de direcciones.',
+        text: 'PC a MAR: la dirección ' + h(address, 4) + ' sale al bus de direcciones.',
         changes: [{ label: 'MAR', before: h(state.mar, 4), after: h(address, 4) }],
       },
       {
         phase: 1, role: 'transfer', source: store, target: 'cpu-mdr', address, value: word, bus: { address, data: word, control: 'read' },
-        text: regionName[region] + '[MAR] → MDR: la memoria responde con la palabra ' + h(word) + '.',
+        text: regionName[region] + '[MAR] a MDR: la memoria responde con la palabra ' + h(word) + '.',
         changes: [{ label: 'MDR', before: h(state.mdr), after: h(word) }],
       },
       {
         phase: 1, role: 'transfer', source: 'cpu-mdr', target: 'cpu-ir', value: word, bus: { data: word },
-        text: 'MDR → IR: la instrucción queda en el registro de instrucción.',
+        text: 'MDR a IR: la instrucción queda en el registro de instrucción.',
         changes: [{ label: 'IR', before: h(state.ir), after: h(word) }],
       },
       {
         phase: 2, role: 'control', source: 'cpu-pc', target: 'cpu-pc', value: address + 1, bus: {},
-        text: 'PC avanza una palabra: ' + h(address, 4) + ' → ' + h(address + 1, 4) + '.',
+        text: 'PC avanza una palabra: ' + h(address, 4) + ' a ' + h(address + 1, 4) + '.',
         changes: [{ label: 'PC', before: h(address, 4), after: h(address + 1, 4) }],
       },
     ],
@@ -275,7 +275,7 @@ function execute(start: PcState): StepOutcome {
       events.push(ev({ phase: 5, role: 'transfer', source: 'cpu-regs', target: 'cpu-mdr', value: regs[d.a], bus: { data: regs[d.a] }, text: 'R' + d.a + ' = ' + regs[d.a] + ' pasa a MDR.', changes: [{ label: 'MDR', before: h(s.mdr), after: h(regs[d.a]) }] }));
       const before = readWord(s, at);
       s = writeWord({ ...s, mar: at, mdr: regs[d.a] >>> 0 }, at, regs[d.a]);
-      events.push(ev({ phase: 6, role: 'storage', source: 'cpu-mdr', target: 'ram', address: at, value: regs[d.a], bus: { address: at, data: regs[d.a], control: 'write' }, text: 'MDR → ' + regionName[regionOf(at)!] + '[' + h(at, 4) + ']: la palabra queda guardada.', changes: [{ label: 'RAM[' + h(at, 4) + ']', before: String(before | 0), after: String(regs[d.a] | 0) }] }));
+      events.push(ev({ phase: 6, role: 'storage', source: 'cpu-mdr', target: 'ram', address: at, value: regs[d.a], bus: { address: at, data: regs[d.a], control: 'write' }, text: 'MDR a ' + regionName[regionOf(at)!] + '[' + h(at, 4) + ']: la palabra queda guardada.', changes: [{ label: 'RAM[' + h(at, 4) + ']', before: String(before | 0), after: String(regs[d.a] | 0) }] }));
       break;
     }
     case 'ADD': case 'SUB': case 'ADDI': {

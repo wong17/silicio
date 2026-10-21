@@ -37,9 +37,9 @@
       }
 
       <p class="alias">
-        {{ h(session.segment()) }}:{{ h(session.offset()) }} → <b>{{ h(physical(), 5) }}h</b>
+        {{ h(session.segment()) }}:{{ h(session.offset()) }} a <b>{{ h(physical(), 5) }}h</b>
         @if (alias(); as a) {
-          · alias {{ h(a.segment) }}:{{ h(a.offset) }} → <b>{{ h(physical(), 5) }}h</b>
+          · alias {{ h(a.segment) }}:{{ h(a.offset) }} a <b>{{ h(physical(), 5) }}h</b>
         }
         · ventana {{ window().index + 1 }} de 8
       </p>

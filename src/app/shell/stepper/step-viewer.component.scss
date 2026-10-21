@@ -1,0 +1,267 @@
+@use '../../shared/console-kit' as kit;
+
+:host {
+  display: block;
+  height: 100%;
+  container-type: inline-size;
+}
+
+// Three columns on a wide desk, each with its own scroll: the program, the steps and the state of the step.
+// Narrower, they stack in reading order (steps first) and the panel scrolls as one.
+.stepper {
+  display: grid;
+  gap: 12px;
+}
+.col {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+}
+.steps {
+  order: -1;
+}
+@container (min-width: 900px) {
+  .stepper {
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+  .col {
+    overflow: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
+  }
+  .left {
+    order: 0;
+  }
+  .steps {
+    order: 1;
+  }
+  .right {
+    order: 2;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px 12px;
+  padding: 6px 0;
+  background: kit.$graphite;
+  border-bottom: 1px solid kit.$edge;
+}
+.title,
+.summary,
+.empty,
+.waiting {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  color: kit.$ink;
+}
+.next {
+  font-size: 14px;
+  color: kit.$amber;
+}
+.summary {
+  color: kit.$ink;
+}
+.empty {
+  color: kit.$dim;
+}
+.all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 14px;
+  color: kit.$dim;
+}
+.waiting {
+  padding: 8px 10px;
+  border-left: 3px solid kit.$amber;
+  background: rgba(215, 172, 111, 0.1);
+}
+
+.cards {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  border: 1px solid kit.$edge;
+  border-radius: 8px;
+  background: kit.$panel;
+  &[data-status='active'] {
+    border: 2px solid kit.$amber;
+    background: #181c1d;
+  }
+  &[data-status='pending'] {
+    border-style: dashed;
+    .name,
+    small {
+      color: #7f8a84;
+    }
+  }
+}
+
+.top {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: kit.$ink;
+  .mark {
+    font: 600 14px kit.$mono;
+    color: kit.$amber;
+  }
+  small {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: kit.$dim;
+  }
+  .name {
+    font-size: 16px;
+    line-height: 1.3;
+  }
+  .line {
+    grid-column: 2;
+    font: 500 13px kit.$mono;
+    color: kit.$green;
+  }
+}
+
+.body {
+  display: grid;
+  gap: 10px;
+  padding: 2px 12px 12px;
+}
+.text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: kit.$ink;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  .role {
+    padding: 2px 8px;
+    border: 1px solid kit.$edge-strong;
+    border-radius: 999px;
+    color: kit.$amber-soft;
+  }
+  .route {
+    font-family: kit.$mono;
+    color: kit.$dim;
+  }
+}
+
+.lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 500 14px kit.$mono;
+  b {
+    margin-right: 6px;
+    font-weight: 500;
+    color: kit.$dim;
+  }
+  [data-bus='address'] {
+    color: #8fb7ff;
+  }
+  [data-bus='data'] {
+    color: kit.$green;
+  }
+  [data-bus='control'] {
+    color: kit.$amber;
+  }
+}
+
+.changes {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid #22292a;
+    font-size: 14px;
+  }
+  dt {
+    color: kit.$dim;
+  }
+  dd {
+    margin: 0;
+    font-family: kit.$mono;
+    strong {
+      color: kit.$amber-soft;
+    }
+  }
+}
+
+.screen {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid #1f3a28;
+  border-radius: 8px;
+  background: #07110a;
+  color: #7dff9a;
+  text-shadow: 0 0 8px rgba(125, 255, 154, 0.35);
+  font: 500 clamp(18px, 2.4cqi, 32px) / 1.3 kit.$mono;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.back {
+  position: sticky;
+  bottom: 8px;
+  justify-self: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid kit.$amber;
+  border-radius: 999px;
+  background: kit.$graphite;
+  color: kit.$amber-soft;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto;
+  }
+}

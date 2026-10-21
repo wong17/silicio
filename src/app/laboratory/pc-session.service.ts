@@ -35,6 +35,8 @@ export class PcSession {
   readonly revision = signal(0);
 
   readonly program = computed(() => programById(this.programId()));
+  /** The machine as it was before the last step, to compare what the step changed. */
+  readonly before = computed(() => this.past().at(-1));
   readonly canBack = computed(() => this.past().length > 0);
   readonly stepCount = computed(() => this.past().length);
   readonly powered = computed(() => this.state().power === 'on');

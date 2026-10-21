@@ -18,7 +18,7 @@ export const APPLE_UNITS: readonly AppleUnit[] = [
   { id: 'unified', area: 'unified', label: 'Memoria unificada', cores: 0, count: '153 GB/s', color: '#a9aa79' },
 ];
 
-/** Which units touch the shared buffer in each stage of the CPU → GPU → CPU dependency. */
+/** Which units touch the shared buffer in each stage of the CPU, GPU y CPU dependency. */
 export const BUFFER_STAGE_UNITS: readonly (readonly string[])[] = [
   ['performance', 'unified'],
   ['gpu', 'unified'],

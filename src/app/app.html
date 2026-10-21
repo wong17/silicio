@@ -25,6 +25,7 @@
     <section
       workspaceStage
       class="stage"
+      data-guide="scene"
       #stage
       aria-label="Banco tridimensional"
       (pointermove)="moveTip($event)"
@@ -84,6 +85,7 @@
       </div>
 
       <app-scene-toolbar
+        data-guide="scene-dock"
         [section]="session.section()"
         [exploded]="session.exploded()"
         [viewMode]="session.viewMode()"
@@ -153,7 +155,6 @@
 </main>
 
 <ng-template #programPanel>
-  <app-phases />
   <app-program-panel (editorFocus)="editorFocus()" />
   <app-station-mission />
 </ng-template>
@@ -188,6 +189,27 @@
 
 <ng-template #resultPanel>
   <app-memory-result />
+</ng-template>
+
+<ng-template #stepsPanel>
+  <app-step-viewer>
+    <div stepper-left>
+      @if (session.section() === 'machine') {
+        <app-pc-program />
+      } @else {
+        <app-program-panel (editorFocus)="editorFocus()" />
+      }
+      <app-station-mission />
+    </div>
+    <div stepper-right>
+      @if (session.section() === 'machine') {
+        <app-pc-components [hideTransfers]="true" />
+      } @else {
+        <app-register-panel />
+        <app-alu-panel />
+      }
+    </div>
+  </app-step-viewer>
 </ng-template>
 
 <ng-template #portsPanel>

@@ -2,7 +2,7 @@ import type { ControllerId, ExperienceId } from './controllers/simulation-contro
 
 /**
  * What one step looked like to the student, separate from the engine's state: where the data came from and
- * went, what changed (before → after) and the key of its explanation. IDs in source and target are piece
+ * went, what changed (before a after) and the key of its explanation. IDs in source and target are piece
  * ids of the scene and of the 2D instruments.
  */
 export interface LearningEvent {

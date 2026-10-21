@@ -53,7 +53,7 @@ export const STATION_MISSIONS: readonly StationMission[] = [
     id: 'M07',
     station: 'apple',
     title: 'Compartir sin copiar',
-    goal: 'Recorre la dependencia CPU → GPU → CPU con memoria unificada, sin la referencia de memoria separada.',
+    goal: 'Recorre la dependencia CPU, GPU y CPU con memoria unificada, sin la referencia de memoria separada.',
     hint: 'El buffer B0 no se mueve: la GPU se enlaza al mismo. La CPU lee B1 solo tras la señal de fin.',
     check: (c) => c.bufferStage === 2 && c.bufferCompleted && c.bufferVersion >= 1 && !c.separateMemory,
   },

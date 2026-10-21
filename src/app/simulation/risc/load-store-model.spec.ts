@@ -39,7 +39,7 @@ describe('CISC frente a RISC con la misma tarea', () => {
 });
 
 describe('memoria unificada con salida tangible', () => {
-  it('invierte los 64 valores: 0→255, 255→0, 128→127; ambas configuraciones dan la misma imagen', () => {
+  it('invierte los 64 valores: 0a255, 255a0, 128a127; ambas configuraciones dan la misma imagen', () => {
     const tile = Array.from({ length: TILE_SIZE }, (_, i) => (i === 0 ? 0 : i === 1 ? 255 : i === 2 ? 128 : i * 3));
     const results = (['shared', 'separate'] as const).map((mode) => {
       const b = new BufferExperiment();

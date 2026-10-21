@@ -12,7 +12,8 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  // `clip`, not `hidden`: a guide that scrolls an anchor into view must not be able to shift the whole desk.
+  overflow: clip;
 }
 
 .stage-slot {

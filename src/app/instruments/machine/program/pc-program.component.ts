@@ -8,6 +8,8 @@ import { PROGRAM_BASE, describeKey } from '../../../simulation/pc/pc-model';
 import { programWords } from '../../../simulation/pc/pc-programs';
 import { TileEditorComponent } from '../../../shared/tile-editor/tile-editor.component';
 
+const ECHO_LIMIT = 40;
+
 /**
  * «Programa y entradas»: which exercise, the machine's power, the program as the processor reads it, the real
  * keyboard and the files of the SSD. Bringing a file in (to the SSD) is a different action from reading it into
@@ -27,6 +29,8 @@ export class PcProgramComponent {
   readonly selectedFile = signal('nota.txt');
   /** Text being typed for the selected file; empty until the student edits. */
   readonly draft = signal<string | undefined>(undefined);
+  /** What the keyboard field shows: the keys sent since the last Enter. */
+  readonly echo = signal('');
   readonly editable = ['datos.csv', 'nota.txt', 'imagen.csv'] as const;
 
   readonly listing = computed(() => {
@@ -108,22 +112,33 @@ export class PcProgramComponent {
     if (!this.pc.message()) this.draft.set(undefined);
   }
 
-  /** Characters typed in the capture field go to the keyboard controller; Enter is its own key. */
+  /**
+   * Characters typed in the capture field go to the keyboard controller; Enter is its own key. The field keeps
+   * what was sent (like a terminal line) so the student sees it; a key already sent cannot be taken back.
+   */
   onInput(event: Event): void {
     const field = event.target as HTMLInputElement;
-    this.pc.type(field.value);
-    field.value = '';
+    const sent = this.echo();
+    if (field.value.length > sent.length && field.value.startsWith(sent)) {
+      this.pc.type(field.value.slice(sent.length));
+      this.echo.set(field.value.length >= ECHO_LIMIT ? '' : field.value);
+    }
+    field.value = this.echo();
   }
 
   onKey(event: KeyboardEvent): void {
     if (event.key !== 'Enter' || event.ctrlKey || event.metaKey || event.altKey) return;
     event.preventDefault();
     this.pc.press(10);
+    this.echo.set('');
+    (event.target as HTMLInputElement).value = '';
   }
 
   typeSample(): void {
     const keys = this.pc.program().keys;
-    if (keys) this.pc.type(keys);
+    if (!keys) return;
+    this.pc.type(keys);
+    this.echo.set(keys.replace(/[\r\n]/g, ''));
   }
 
   restart(): void {

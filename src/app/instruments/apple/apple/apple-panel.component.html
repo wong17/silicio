@@ -10,7 +10,7 @@
     >
   </header>
 
-  <div class="activity">
+  <div class="activity" data-guide="soc-compare">
     <p class="kicker">1 · CISC frente a RISC, la misma tarea</p>
     <div class="tabs" role="group" aria-label="Tarea a comparar">
       <button type="button" [attr.aria-pressed]="task() === 'sum'" (click)="setTask('sum')">Sumar y dejar en el registro</button>
@@ -23,7 +23,7 @@
     @if (received()) {
       <p class="note" role="status">{{ received() }}</p>
     }
-    <div class="compare">
+    <div class="compare" data-guide="soc-sides">
       <div class="side">
         <h3>8086 · CISC</h3>
         @for (t of comparison().cisc.text; track t) { <code>{{ t }}</code> }
@@ -71,7 +71,7 @@
       <button type="button" class="link" (click)="backToPc()">Volver al PC</button>
     </p>
 
-    <ol class="stages" aria-label="Etapas del buffer">
+    <ol class="stages" data-guide="soc-stages" aria-label="Etapas del buffer">
       @for (s of session.bufferStages; track s; let i = $index) {
         <li [class.current]="session.bufferStage() === i" [class.done]="session.bufferStage() > i">
           {{ s }}
@@ -86,7 +86,7 @@
           <span [style.background]="'rgb(' + g + ',' + g + ',' + g + ')'" [attr.title]="'' + g"></span>
         }
       </div>
-      <p class="note">Celda 1: {{ tile()[0] }} → {{ result()[0] }} · celda 2: {{ tile()[1] }} → {{ result()[1] }}</p>
+      <p class="note">Celda 1: {{ tile()[0] }} a {{ result()[0] }} · celda 2: {{ tile()[1] }} a {{ result()[1] }}</p>
     } @else {
       <p class="note">Esperando la señal de fin de la GPU: <span appTerm="B1">B1</span> todavía no es válido.</p>
     }
@@ -97,7 +97,7 @@
       <p class="note warn" role="status">{{ notice() }}</p>
     }
 
-    <dl class="copies">
+    <dl class="copies" data-guide="soc-copies">
       <div><dt>Copias explícitas al dispositivo</dt><dd>{{ copies().toDevice }} bytes</dd></div>
       <div><dt>Copias explícitas de vuelta</dt><dd>{{ copies().fromDevice }} bytes</dd></div>
     </dl>
@@ -108,7 +108,7 @@
     </p>
   </div>
 
-  <details class="units">
+  <details class="units" data-guide="soc-units">
     <summary>Unidades publicadas del M5</summary>
     <div class="floor" role="group" aria-label="Unidades publicadas del M5">
       @for (u of units; track u.id) {

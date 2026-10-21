@@ -24,6 +24,9 @@ const BUS_COLOUR: Record<Bus, string> = { address: '#c9925a', data: '#d6a46c', c
 /** Seconds each event of a step stays on stage when the clock runs. */
 export const EVENT_SECONDS = 0.75;
 
+/** The monitor shows few, large characters: legible from the default camera, not a terminal. */
+const MONITOR_ROWS = 3;
+const MONITOR_COLUMNS = 12;
 const hex = (n: number, d = 4) => (n >>> 0).toString(16).toUpperCase().padStart(d, '0');
 
 /**
@@ -151,7 +154,7 @@ export class PcBoardModel extends WorkshopGeometry {
       write('interrupt-controller', activity.interrupt.enabled ? 'HABILITADA' : 'DESHABILITADA');
       write('storage-controller', 'SSD ↔ RAM');
       write('display-engine', activity.monitor.mode === 'off' ? 'APAGADO' : activity.monitor.mode.toUpperCase());
-      write('memory-controller', 'MAR → MEMORIA');
+      write('memory-controller', 'MAR a MEMORIA');
       write('alu', 'ALU');
       write('control-unit', activity.interrupt.inService ? 'EN INTERRUPCIÓN' : 'CICLO');
       (power.material as T.MeshStandardMaterial).emissiveIntensity = activity.power ? 1.8 : 0.05;
@@ -285,9 +288,14 @@ export class PcBoardModel extends WorkshopGeometry {
     screen.position.set(0, 0.9 + MONITOR.h / 2, MONITOR.d / 2 + 0.004);
     screen.name = 'monitor-screen';
     g.add(screen);
-    // Four rows of text and an 8×8 image: only what the engine's monitor holds is shown.
-    for (let row = 0; row < 4; row++) {
-      const label = this.tools.label(g, '', 0, 0.9 + MONITOR.h - 0.45 - row * 0.42, MONITOR.d / 2 + 0.012, MONITOR.w - 0.5, undefined);
+    // Three big rows of text and an 8×8 image: only what the engine's monitor holds is shown. The rows stand
+    // upright facing the viewer (legends lie flat by default, which is why the screen looked black) in phosphor green.
+    for (let row = 0; row < MONITOR_ROWS; row++) {
+      const label = this.tools.label(g, '', 0, 0.9 + MONITOR.h / 2 + 0.62 - row * 0.62, MONITOR.d / 2 + 0.012, MONITOR.w - 0.3, {
+        color: '#7dff9a',
+        maxSize: 64,
+        upright: true,
+      });
       if (label) legends.set('monitor-row-' + row, label as T.Object3D);
     }
     const pixels = new T.InstancedMesh(this.tools.track(new T.PlaneGeometry(0.2, 0.2)), this.tools.track(new T.MeshBasicMaterial({ color: '#ffffff' })), 64);
@@ -313,7 +321,7 @@ export class PcBoardModel extends WorkshopGeometry {
       const lines = (m.text || ' ').split('\n').flatMap((l) => (l.length ? l.match(/.{1,22}/g)! : ['']));
       rows.push(...lines.slice(-4));
     }
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < MONITOR_ROWS; i++) {
       const label = legends.get('monitor-row-' + i);
       if (!label) continue;
       const wanted = rows[i] ?? '';

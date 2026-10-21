@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { chooseMission, instant, open, transport } from './helpers';
 
 test.describe('recorridos integrados', () => {
-  test('programa → memoria → pieza → programa conserva el paso y los datos', async ({ page }) => {
+  test('programa a memoria a pieza a programa conserva el paso y los datos', async ({ page }) => {
     await open(page, '/8086');
     await transport(page).step.click();
     await expect(transport(page).status).toContainText('paso 1');
@@ -45,7 +45,7 @@ test.describe('recorridos integrados', () => {
     await open(page, '/8086');
     await chooseMission(page, 1);
     await page.getByRole('button', { name: 'Ayuda' }).click();
-    await page.getByRole('button', { name: 'Empezar esta guía' }).first().click();
+    await page.getByRole('row', { name: /Tu primera instrucción/ }).getByRole('button', { name: 'Empezar' }).click();
     await expect(page.locator('.driver-popover')).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('.driver-popover-title')).toHaveText('El programa');
     await page.getByRole('button', { name: 'Siguiente' }).click();

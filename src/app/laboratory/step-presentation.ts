@@ -151,7 +151,7 @@ function explain(trace: Trace): string {
     case 'TEST':
       return i.text + ' hace AND de ' + val(a, d) + ' y ' + val(b, d) + ' sin guardarlo: solo cambian los flags.';
     case 'INC': case 'DEC':
-      return i.text + (i.op === 'INC' ? ' suma' : ' resta') + ' 1 a ' + where(d) + ' (' + val(a, d) + ' → ' + val(res, d) + ') y conserva CF.';
+      return i.text + (i.op === 'INC' ? ' suma' : ' resta') + ' 1 a ' + where(d) + ' (' + val(a, d) + ' a ' + val(res, d) + ') y conserva CF.';
     case 'NEG': case 'NOT':
       return i.text + (i.op === 'NEG' ? ' cambia el signo de ' : ' invierte los bits de ') + val(a, d) + ' y deja ' + val(res, d) + '.';
     case 'MUL': case 'IMUL': {
@@ -171,7 +171,7 @@ function explain(trace: Trace): string {
     case 'CBW': return 'CBW extiende el signo de AL a AX: AX=' + after.registers.AX + '.';
     case 'CWD': return 'CWD extiende el signo de AX a DX: DX=' + after.registers.DX + '.';
     case 'PUSH':
-      return i.text + ' resta 2 a SP (' + h(before.registers.SP) + ' → ' + h(after.registers.SP) + ') y guarda ' + val(a, d) + ' en la pila.';
+      return i.text + ' resta 2 a SP (' + h(before.registers.SP) + ' a ' + h(after.registers.SP) + ') y guarda ' + val(a, d) + ' en la pila.';
     case 'POP':
       return i.text + ' lee ' + val(a, d) + ' de la pila, lo guarda en ' + where(d) + ' y suma 2 a SP.';
     case 'CALL':
@@ -203,7 +203,7 @@ function explain(trace: Trace): string {
       if (JUMPS.has(i.op)) {
         const taken = after.registers.IP !== (i.address + i.bytes.length) % 0x10000 || (i.op === 'JMP');
         if (i.op === 'JMP') return i.text + ' salta siempre a ' + h(i.target ?? 0) + '.';
-        if (i.op === 'LOOP') return 'LOOP resta 1 a CX (' + before.registers.CX + ' → ' + after.registers.CX + ') y ' + (taken ? 'salta a ' + h(i.target ?? 0) + ' porque CX≠0.' : 'sigue porque CX llegó a 0.');
+        if (i.op === 'LOOP') return 'LOOP resta 1 a CX (' + before.registers.CX + ' a ' + after.registers.CX + ') y ' + (taken ? 'salta a ' + h(i.target ?? 0) + ' porque CX≠0.' : 'sigue porque CX llegó a 0.');
         return i.text + (taken ? ' salta a ' + h(i.target ?? 0) : ' no salta') + ' porque ' + (CONDITIONS[i.op] ?? 'la condición') + (taken ? ' se cumple.' : ' no se cumple.');
       }
       return i.text + '.';
@@ -227,7 +227,7 @@ function runText(trace: Trace): string {
   const { operation } = trace;
   if (JUMPS.has(i.op) || i.op === 'CALL' || i.op === 'RET') return explain(trace);
   if (['ADD', 'ADC', 'SUB', 'SBB', 'AND', 'OR', 'XOR', 'CMP', 'TEST', 'INC', 'DEC', 'NEG'].includes(i.op) && operation)
-    return 'La ALU opera ' + operation.operands.map((n) => h(n)).join(' y ') + (operation.result !== undefined ? ' → ' + h(operation.result) : '') + ' y fija los flags.';
+    return 'La ALU opera ' + operation.operands.map((n) => h(n)).join(' y ') + (operation.result !== undefined ? ' a ' + h(operation.result) : '') + ' y fija los flags.';
   if (i.op === 'MOV') return 'No hay operación aritmética: el valor pasa sin cambios.';
   if (i.op === 'INT') return explain(trace);
   if (i.op === 'HLT') return 'El procesador queda detenido.';
@@ -241,8 +241,8 @@ function storeText(trace: Trace, changes: Change[]): string {
   const mem = changes.filter((c) => c.label.startsWith('Memoria'));
   const flags = changes.filter((c) => FLAGS.includes(c.label as 'CF'));
   const parts = [
-    ...regs.map((c) => c.label + ' ' + c.before + ' → ' + c.after),
-    ...mem.map((c) => c.label + ': ' + c.before + ' → ' + c.after),
+    ...regs.map((c) => c.label + ' ' + c.before + ' a ' + c.after),
+    ...mem.map((c) => c.label + ': ' + c.before + ' a ' + c.after),
     ...(flags.length ? ['flags ' + flags.map((c) => c.label + '=' + c.after).join(' ')] : []),
   ];
   return parts.length ? 'Guarda: ' + parts.join('; ') + '.' : 'Solo cambia IP.';

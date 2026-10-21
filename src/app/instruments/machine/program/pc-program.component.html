@@ -23,7 +23,7 @@
 
   <div class="field">
     <p class="kicker">Programa · {{ listing().where }}</p>
-    <ol class="listing">
+    <ol class="listing" data-guide="pc-listing">
       @for (l of listing().lines; track l.address) {
         <li [class.current]="pc.powered() && pc.state().pc === l.address">
           <code>{{ l.address.toString(16).toUpperCase().padStart(4, '0') }}</code>
@@ -34,7 +34,7 @@
     </ol>
   </div>
 
-  <div class="field">
+  <div class="field" data-guide="pc-keyboard">
     <label class="kicker" for="pc-keys">Teclado</label>
     <input
       id="pc-keys"
@@ -43,6 +43,7 @@
       spellcheck="false"
       placeholder="Escribe aquí: cada tecla va al controlador"
       [class.waiting]="pc.waiting()"
+      [value]="echo()"
       (keydown)="onKey($event)"
       (input)="onInput($event)"
     />
@@ -62,7 +63,7 @@
 
   <div class="field">
     <p class="kicker">Archivos del SSD</p>
-    <ul class="files">
+    <ul class="files" data-guide="pc-files">
       @for (f of files(); track f.name) {
         <li>
           <button type="button" [attr.aria-pressed]="selectedFile() === f.name" (click)="select(f.name)">

@@ -81,3 +81,158 @@ body {
   white-space: normal;
   pointer-events: none;
 }
+
+// The guide popover (Driver.js) wears the console's colours, is readable and can be touched: 44 px targets, 16 px body.
+// Its own stylesheet loads after this one on the first guide, so these rules take `body` to win on specificity.
+body .driver-popover {
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  padding: 12px 14px 10px;
+  border: 1px solid #d7ac6f;
+  border-radius: 12px;
+  background: #161b1c;
+  color: #e3ded2;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
+  .driver-popover-title {
+    margin-bottom: 4px;
+    color: #f0d29c;
+    font: 600 24px/1.1 'Barlow Condensed', sans-serif;
+  }
+  .driver-popover-description {
+    margin: 0;
+    color: #e3ded2;
+    font: 400 15px/1.45 'Barlow', sans-serif;
+    p {
+      margin: 0 0 6px;
+    }
+  }
+  .driver-popover-footer {
+    margin-top: 10px;
+  }
+  .driver-popover-footer button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid #46514d;
+    border-radius: 8px;
+    background: #1c2223;
+    color: #e3ded2;
+    font: 500 15px 'Barlow', sans-serif;
+    text-shadow: none;
+  }
+  .driver-popover-footer .driver-popover-next-btn,
+  .driver-popover-footer .driver-popover-done-btn {
+    border-color: #d7ac6f;
+    background: #3a3224;
+    color: #f0d29c;
+  }
+  .driver-popover-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    color: #a4aaa0;
+  }
+  // The arrow is a triangle of borders; a slightly larger amber one sits behind it so the pointer keeps the popover's outline.
+  .driver-popover-arrow::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    border: 6px solid transparent;
+  }
+  .driver-popover-arrow-side-left.driver-popover-arrow {
+    border-left-color: #161b1c;
+    &::before {
+      top: -6px;
+      left: -5px;
+      border-left-color: #d7ac6f;
+    }
+  }
+  .driver-popover-arrow-side-right.driver-popover-arrow {
+    border-right-color: #161b1c;
+    &::before {
+      top: -6px;
+      left: -7px;
+      border-right-color: #d7ac6f;
+    }
+  }
+  .driver-popover-arrow-side-top.driver-popover-arrow {
+    border-top-color: #161b1c;
+    &::before {
+      top: -5px;
+      left: -6px;
+      border-top-color: #d7ac6f;
+    }
+  }
+  .driver-popover-arrow-side-bottom.driver-popover-arrow {
+    border-bottom-color: #161b1c;
+    &::before {
+      top: -7px;
+      left: -6px;
+      border-bottom-color: #d7ac6f;
+    }
+  }
+  .gv-count {
+    color: #a4aaa0;
+    font: 500 12px 'IBM Plex Mono', monospace;
+  }
+}
+// Small drawings inside the popovers: the real button glyphs and the seven phases.
+.gv {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 6px;
+  .gv-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 48px;
+    padding: 4px 6px;
+    border: 1px solid #46514d;
+    border-radius: 8px;
+    background: #1c2223;
+    svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #d7ac6f;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    em {
+      color: #a4aaa0;
+      font: 500 12px 'Barlow', sans-serif;
+      font-style: normal;
+    }
+  }
+  &.gv-phases {
+    gap: 4px;
+    span {
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid;
+      border-radius: 50%;
+      font: 600 13px 'IBM Plex Mono', monospace;
+      &.a {
+        border-color: #d7ac6f;
+        background: #3a3224;
+        color: #f0d29c;
+      }
+      &.b {
+        border-color: #9fd6a6;
+        background: #1f2e22;
+        color: #9fd6a6;
+      }
+    }
+    em {
+      margin-left: 6px;
+      color: #a4aaa0;
+      font: 500 12px 'Barlow', sans-serif;
+      font-style: normal;
+    }
+  }
+}

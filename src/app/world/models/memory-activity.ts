@@ -173,7 +173,7 @@ export class MemoryActivityView {
       'bus',
       `A0=${+mem.a0} BHE#=${+!mem.bhe}  ·  ${mem.cycles} ciclo${mem.cycles > 1 ? 's' : ''}  ·  también ${hex(mem.alias.segment)}:${hex(mem.alias.offset)}`,
     );
-    relabel('sp', `SP = ${hex(mem.stack.segment)}:${hex(mem.stack.pointer)}  →  ${hex(mem.stack.physical, 5)}h  (cima de la pila)`);
+    relabel('sp', `SP = ${hex(mem.stack.segment)}:${hex(mem.stack.pointer)}, dirección física ${hex(mem.stack.physical, 5)}h (cima de la pila)`);
     this.cacheSlots.forEach((slot, i) => {
       const material = slot.material as T.MeshStandardMaterial;
       const last = mem.cache?.last;

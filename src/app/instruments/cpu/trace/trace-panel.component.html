@@ -35,7 +35,7 @@
     <div class="card">
       <code>{{ h(step.instruction.address) }} · {{ step.instruction.text }}</code>
       <p class="delta">
-        AX {{ h(step.before.registers.AX) }} → {{ h(step.after.registers.AX) }}
+        AX {{ h(step.before.registers.AX) }} a {{ h(step.after.registers.AX) }}
         <span>IP {{ h(step.after.registers.IP) }}</span>
       </p>
     </div>

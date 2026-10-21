@@ -1,5 +1,5 @@
 <section class="operation" aria-label="Operación de memoria">
-  <ol class="levels" aria-label="Nivel de la jerarquía de memoria en el que trabaja la actividad">
+  <ol class="levels" data-guide="memory-levels" aria-label="Nivel de la jerarquía de memoria en el que trabaja la actividad">
     @for (level of levels; track level) {
       <li [class.here]="working().includes(level)" [attr.aria-current]="working().includes(level) ? 'step' : null">
         {{ level }}
@@ -22,7 +22,7 @@
   </div>
   <p class="question">{{ current().question }}</p>
 
-  <div class="origin" role="group" aria-label="Origen de los datos">
+  <div class="origin" data-guide="memory-origin" role="group" aria-label="Origen de los datos">
     <span class="kicker">Datos de</span>
     <button type="button" [attr.aria-pressed]="lesson.origin() === 'exercise'" (click)="lesson.startExercise()">
       Ejercicio

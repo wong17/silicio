@@ -330,7 +330,7 @@ function drawWhiteboard(ctx: CanvasRenderingContext2D): void {
     ctx.fill();
   };
   text('BUS DE DATOS · 8086', 40, 46, 34, blue, 'left');
-  text('fetch → decode → exec', 540, 46, 24, blue, 'left');
+  text('fetch, decode, exec', 540, 46, 24, blue, 'left');
   box(60, 110, 420, 270, ink);
   text('CPU', 80, 140, 26, ink, 'left');
   box(100, 170, 150, 80, blue);

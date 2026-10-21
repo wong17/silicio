@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { LabSession } from '../../../laboratory/lab-session.service';
 import { LessonContext } from '../../../laboratory/lesson-context.service';
@@ -38,6 +38,8 @@ export class PcComponentsComponent {
   readonly pc = this.session.pc;
   private readonly router = inject(Router);
   private readonly lesson = inject(LessonContext);
+  /** The step viewer lists the transfers itself; the panel on its own keeps them. */
+  readonly hideTransfers = input(false);
   readonly pieces = PIECES;
   readonly roles = ROLES;
   readonly activity = computed(() => {

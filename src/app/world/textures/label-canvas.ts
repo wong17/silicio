@@ -22,6 +22,7 @@ export function paintLabel(
   ink = '#ede5ca',
   outline = '#15120c',
   plate = false,
+  maxSize = 26,
 ): number {
   const c = canvas.getContext('2d')!;
   const scale = canvas.width / 512;
@@ -30,7 +31,7 @@ export function paintLabel(
     c.font = font(size);
     return c.measureText(text).width;
   };
-  const size = fitFontSize(measure, canvas.width - PADDING * 2 * scale, 26 * scale, 12 * scale);
+  const size = fitFontSize(measure, canvas.width - PADDING * 2 * scale, maxSize * scale, 12 * scale);
   c.clearRect(0, 0, canvas.width, canvas.height);
   c.font = font(size);
   c.textAlign = 'center';

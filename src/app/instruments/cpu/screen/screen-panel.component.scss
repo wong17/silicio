@@ -10,10 +10,10 @@
   border: 1px solid #1f3a28;
   border-radius: 8px;
   background: #07110a;
-  color: #8de3a0;
-  font: 500 12px/16px 'IBM Plex Mono', ui-monospace, monospace;
+  color: #7dff9a;
+  font: 500 16px/20px 'IBM Plex Mono', ui-monospace, monospace;
   scrollbar-width: thin;
-  max-height: 340px;
+  max-height: 520px;
 }
 
 // 80 columns never wrap: a narrow panel scrolls sideways inside the screen instead.
@@ -22,15 +22,15 @@
   width: max-content;
 }
 .row {
-  height: 16px;
+  height: 20px;
   white-space: pre;
 }
 .cursor {
   position: absolute;
   left: calc(var(--col) * 1ch);
-  top: calc(var(--row) * 16px);
+  top: calc(var(--row) * 20px);
   width: 1ch;
-  height: 16px;
+  height: 20px;
   background: #8de3a0;
   opacity: 0.85;
 }

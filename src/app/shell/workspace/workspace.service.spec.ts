@@ -12,14 +12,14 @@ describe('WorkspaceService', () => {
     TestBed.inject(LabSession).dispose();
   });
 
-  it('en el 8086 abre Programa y Estado juntos', () => {
+  it('en el 8086 abre un solo panel «Paso a paso» con programa, pasos y estado', () => {
     const ws = TestBed.inject(WorkspaceService);
     ws.setExperience('8086');
     ws.setArea({ width: 1366, height: 674 });
-    expect(ws.arrangement().placements.map((p) => p.id)).toEqual(['program', 'state']);
+    expect(ws.arrangement().placements.map((p) => p.id)).toEqual(['steps']);
   });
 
-  it('1920 → 1024 → 390 → 1920 recupera la distribución de escritorio', () => {
+  it('1920 a 1024 a 390 a 1920 recupera la distribución de escritorio', () => {
     const ws = TestBed.inject(WorkspaceService);
     ws.setExperience('8086');
     ws.setArea({ width: 1920, height: 950 });
@@ -51,7 +51,7 @@ describe('WorkspaceService', () => {
     ws.setExperience('8086');
     ws.setArea({ width: 1366, height: 674 });
     expect(ws.layout().preset).toBe('study');
-    expect(ws.arrangement().placements.map((p) => p.zone)).toEqual(['bottom', 'bottom']);
+    expect(ws.arrangement().placements.map((p) => p.zone)).toEqual(['bottom']);
     expect(session.state().registers.AX).toBe(12);
   });
 
@@ -74,7 +74,21 @@ describe('WorkspaceService', () => {
     ws.setExperience('8086');
     ws.setArea({ width: 820, height: 600 });
     expect(ws.notice()).toBeNull();
+    ws.open('program', false);
+    ws.open('state', false);
     ws.open('inspector');
     expect(ws.notice()).toContain('flota');
+  });
+  it('el modo exposición retira los paneles sin tocar la distribución guardada y los devuelve al salir', () => {
+    const ws = TestBed.inject(WorkspaceService);
+    ws.setExperience('8086');
+    ws.setArea({ width: 1366, height: 674 });
+    const before = ws.arrangement().placements.map((p) => p.id);
+    expect(before).toContain('steps');
+    ws.presenting.set(true);
+    expect(ws.arrangement().placements).toEqual([]);
+    expect(ws.layout().panels.some((p) => p.id === 'steps' && p.open)).toBe(true);
+    ws.presenting.set(false);
+    expect(ws.arrangement().placements.map((p) => p.id)).toEqual(before);
   });
 });

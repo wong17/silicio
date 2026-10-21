@@ -41,7 +41,7 @@ describe('codificación del 8086 real', () => {
     ['MOV AX,DS', '8c d8'],
     ['ADC AX,BX', '13 c3'],
     ['SBB AL,BL', '1a c3'],
-  ])('%s → %s', (source, expected) => {
+  ])('%s a %s', (source, expected) => {
     expect(hexOf(bytesOf(source))).toBe(expected);
   });
 
@@ -73,7 +73,7 @@ describe('codificación del 8086 real', () => {
   });
 });
 
-describe('ida y vuelta: assemble → bytes → decode', () => {
+describe('ida y vuelta: assemble a bytes a decode', () => {
   const samples = [
     'MOV AX,BX', 'MOV AL,BL', 'MOV AH,12h', 'MOV CX,1234h', 'MOV [BX+SI+4],DX', 'MOV BYTE PTR [10],7', 'MOV WORD PTR [BP+2],300',
     'MOV DS,AX', 'MOV AX,ES', 'XCHG BL,CL', 'LEA DI,[BP+SI]', 'PUSH AX', 'POP DX',

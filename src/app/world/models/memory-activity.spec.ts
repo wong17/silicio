@@ -60,7 +60,7 @@ function harness(variant: 'classic' | 'dimm') {
 describe('memoria: animación de la placa y el módulo', () => {
   it('row_and_column_address_the_selected_cell', () => {
     const { texts, send } = harness('classic');
-    send(0x2000, 0x0005 * 2 + 0x100 * 2); // índice 0x105 → fila 05h, columna 01h
+    send(0x2000, 0x0005 * 2 + 0x100 * 2); // índice 0x105 a fila 05h, columna 01h
     const all = [...texts.values()];
     expect(all.some((t) => t.startsWith('FILA 05h'))).toBe(true);
     expect(all.some((t) => t.startsWith('COLUMNA 01h'))).toBe(true);

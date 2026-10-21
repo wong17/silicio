@@ -5,7 +5,27 @@
     }
   </div>
 
-  <div class="block" [class.selected]="selectedIs('cpu', 'cpu-pc', 'cpu-ir', 'cpu-mar', 'cpu-mdr', 'cpu-regs', 'alu', 'control-unit')">
+  <div class="block output" data-block="monitor" data-guide="pc-monitor" [class.selected]="selectedIs('monitor', 'display-engine')">
+    <p class="kicker">Monitor</p>
+    @switch (activity().monitor.mode) {
+      @case ('image') {
+        <div class="image" role="img" aria-label="Imagen de 8 por 8 niveles de gris">
+          @for (g of pixels(); track $index) {
+            <span [style.background]="'rgb(' + g + ',' + g + ',' + g + ')'" [attr.title]="'' + g"></span>
+          }
+        </div>
+        <button type="button" (click)="compare()">Comparar este resultado en el SoC</button>
+      }
+      @case ('off') {
+        <p class="note">El monitor no muestra nada todavía.</p>
+      }
+      @default {
+        <pre class="screen" [class.error]="activity().monitor.mode === 'error'">{{ activity().monitor.text }}</pre>
+      }
+    }
+  </div>
+
+  <div class="block" data-block="cpu" data-guide="pc-cpu" [class.selected]="selectedIs('cpu', 'cpu-pc', 'cpu-ir', 'cpu-mar', 'cpu-mdr', 'cpu-regs', 'alu', 'control-unit')">
     <p class="kicker">Procesador · registros del ciclo</p>
     <dl class="regs">
       @for (r of core(); track r.label) {
@@ -39,47 +59,49 @@
     </dl>
   </div>
 
-  <div class="block">
-    <p class="kicker">Transferencias del paso{{ pc.focus() !== undefined ? ' · siguiendo una' : '' }}</p>
-    @if (rows().length) {
-      <ol class="events">
-        @for (e of rows(); track $index) {
-          <li [class.followed]="pc.focus() === e.index">
-            <header>
-              <span class="phase">{{ e.phaseLabel }}</span>
-              <span class="role" [attr.data-role]="e.role" [attr.title]="roles[e.role].hint">
-                <svg viewBox="0 0 16 16" aria-hidden="true">
-                  @switch (e.role) {
-                    @case ('processing') { <path d="M3 3h10v10H3zM6 6h4v4H6z" /> }
-                    @case ('storage') { <path d="M2 4h12M2 8h12M2 12h12" /> }
-                    @case ('transfer') { <path d="M2 8h11m-3-3 3 3-3 3" /> }
-                    @default { <path d="M8 2v12M3 6l5-4 5 4" /> }
+  @if (!hideTransfers()) {
+    <div class="block">
+      <p class="kicker">Transferencias del paso{{ pc.focus() !== undefined ? ' · siguiendo una' : '' }}</p>
+      @if (rows().length) {
+        <ol class="events">
+          @for (e of rows(); track $index) {
+            <li [class.followed]="pc.focus() === e.index">
+              <header>
+                <span class="phase">{{ e.phaseLabel }}</span>
+                <span class="role" [attr.data-role]="e.role" [attr.title]="roles[e.role].hint">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    @switch (e.role) {
+                      @case ('processing') { <path d="M3 3h10v10H3zM6 6h4v4H6z" /> }
+                      @case ('storage') { <path d="M2 4h12M2 8h12M2 12h12" /> }
+                      @case ('transfer') { <path d="M2 8h11m-3-3 3 3-3 3" /> }
+                      @default { <path d="M8 2v12M3 6l5-4 5 4" /> }
+                    }
+                  </svg>
+                  {{ roles[e.role].label }}
+                </span>
+                <button type="button" (click)="follow(e)" [attr.aria-pressed]="pc.focus() === e.index">
+                  {{ pc.focus() === e.index ? 'Ver el paso entero' : 'Seguir' }}
+                </button>
+              </header>
+              <p class="route">{{ e.source }} a {{ e.target }}</p>
+              <p class="text">{{ e.text }}</p>
+              @if (e.packets.length) {
+                <ul class="lines" aria-label="Líneas del bus de esta transferencia">
+                  @for (p of e.packets; track p.bus) {
+                    <li [attr.data-bus]="p.bus"><b>{{ bus[p.bus] }}</b> {{ p.value }}</li>
                   }
-                </svg>
-                {{ roles[e.role].label }}
-              </span>
-              <button type="button" (click)="follow(e)" [attr.aria-pressed]="pc.focus() === e.index">
-                {{ pc.focus() === e.index ? 'Ver el paso entero' : 'Seguir' }}
-              </button>
-            </header>
-            <p class="route">{{ e.source }} → {{ e.target }}</p>
-            <p class="text">{{ e.text }}</p>
-            @if (e.packets.length) {
-              <ul class="lines" aria-label="Líneas del bus de esta transferencia">
-                @for (p of e.packets; track p.bus) {
-                  <li [attr.data-bus]="p.bus"><b>{{ bus[p.bus] }}</b> {{ p.value }}</li>
-                }
-              </ul>
-            }
-          </li>
-        }
-      </ol>
-    } @else {
-      <p class="note">Aún no hay transferencias. El primer paso enciende el PC.</p>
-    }
-  </div>
+                </ul>
+              }
+            </li>
+          }
+        </ol>
+      } @else {
+        <p class="note">Aún no hay transferencias. El primer paso enciende el PC.</p>
+      }
+    </div>
+  }
 
-  <div class="block" [class.selected]="selectedIs('ram', 'memory-controller')">
+  <div class="block" data-block="ram" data-guide="pc-ram" [class.selected]="selectedIs('ram', 'memory-controller')">
     <p class="kicker">RAM · se borra al apagar</p>
     <ul class="regions">
       @for (r of regions(); track r.id) {
@@ -92,7 +114,7 @@
     </ul>
   </div>
 
-  <div class="block" [class.selected]="selectedIs('ssd', 'storage-controller')">
+  <div class="block" data-block="ssd" data-guide="pc-ssd" [class.selected]="selectedIs('ssd', 'storage-controller')">
     <p class="kicker">SSD · sobrevive al apagado</p>
     <ul class="ssd">
       @for (f of files(); track f.name) {
@@ -101,7 +123,7 @@
     </ul>
   </div>
 
-  <div class="block" [class.selected]="selectedIs('interrupt-controller', 'keyboard', 'keyboard-controller')">
+  <div class="block" data-block="irq" data-guide="pc-irq" [class.selected]="selectedIs('interrupt-controller', 'keyboard', 'keyboard-controller')">
     <p class="kicker">Interrupción frente a sondeo</p>
     <dl class="counters">
       <div><dt>Instrucciones</dt><dd>{{ activity().step }}</dd></div>
@@ -114,25 +136,5 @@
       @if (activity().interrupt.inService) { · atendiendo una ahora }
       @if (activity().interrupt.pending) { · {{ activity().interrupt.pending }} tecla(s) esperando }
     </p>
-  </div>
-
-  <div class="block output" data-guide="pc-monitor" [class.selected]="selectedIs('monitor', 'display-engine')">
-    <p class="kicker">Monitor</p>
-    @switch (activity().monitor.mode) {
-      @case ('image') {
-        <div class="image" role="img" aria-label="Imagen de 8 por 8 niveles de gris">
-          @for (g of pixels(); track $index) {
-            <span [style.background]="'rgb(' + g + ',' + g + ',' + g + ')'" [attr.title]="'' + g"></span>
-          }
-        </div>
-        <button type="button" (click)="compare()">Comparar este resultado en el SoC</button>
-      }
-      @case ('off') {
-        <p class="note">El monitor no muestra nada todavía.</p>
-      }
-      @default {
-        <pre class="screen" [class.error]="activity().monitor.mode === 'error'">{{ activity().monitor.text }}</pre>
-      }
-    }
   </div>
 </section>

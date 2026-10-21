@@ -1,4 +1,5 @@
 import type { Section } from '../world/scene-inputs';
+import { TUTORIALS } from './tutorials';
 
 /**
  * What a guide may look at: the real state of the laboratory. Steps advance when this satisfies them, never
@@ -37,6 +38,8 @@ export interface GuideStep {
   title: string;
   /** What to do, in one or two sentences. */
   text: string;
+  /** A small drawing for the popover, only where it makes clear something that is on screen. */
+  visual?: 'transport' | 'panels' | 'help' | 'phases';
   /** The state that completes the step. Without it the step is informative and has its own «Siguiente». */
   done?: (c: GuideContext) => boolean;
 }
@@ -51,6 +54,7 @@ export interface LearningPath {
 }
 
 export const LEARNING_PATHS: readonly LearningPath[] = [
+  ...TUTORIALS,
   {
     id: '8086-primer-paso',
     experience: '8086',
@@ -204,7 +208,7 @@ export const LEARNING_PATHS: readonly LearningPath[] = [
     id: 'soc-mosaico',
     experience: 'apple',
     title: 'Memoria unificada',
-    goal: 'Recorrer la dependencia CPU → GPU → CPU y ver la imagen invertida.',
+    goal: 'Recorrer la dependencia CPU, GPU y CPU y ver la imagen invertida.',
     steps: [
       {
         id: 'modo',

@@ -43,7 +43,16 @@ export class WorkspaceService {
   readonly layout = computed(
     () => this.layouts()[this.key()] ?? defaultLayout(this.specs(), this.area()),
   );
-  readonly arrangement = computed(() => arrange(this.layout(), this.specs(), this.area(), this.sizeClass()));
+  /**
+   * Exhibition mode: every panel steps aside so the scene takes the whole desk. Nothing is closed or moved in the
+   * stored layout, so leaving the mode brings each panel back exactly where it was, on every station.
+   */
+  readonly presenting = signal(false);
+  readonly arrangement = computed(() => {
+    const layout = this.layout();
+    const shown = this.presenting() ? { ...layout, maximized: null, panels: layout.panels.map((p) => ({ ...p, open: false })) } : layout;
+    return arrange(shown, this.specs(), this.area(), this.sizeClass());
+  });
   readonly notice = computed(() =>
     this.arrangement().adjusted
       ? 'Algún panel flota para que la escena y los instrumentos anclados quepan. Restablecer distribución lo ordena.'
@@ -76,6 +85,19 @@ export class WorkspaceService {
     const active = typeof document !== 'undefined' ? document.activeElement : null;
     if (active instanceof HTMLElement && active !== document.body) this.openers.set(id, active);
     this.focusRequest.set({ id, seq: ++this.seq });
+  }
+
+  /**
+   * Makes a panel's content reachable for a guide or a tour step. While «Paso a paso» is open it already holds
+   * program, registers and the PC inputs, so that window is brought forward instead of opening a duplicate.
+   */
+  reveal(id: string): void {
+    const held = ['program', 'state', 'pc-program', 'pc-components'].includes(id);
+    if (held && this.layout().panels.some((p) => p.id === 'steps' && p.open)) {
+      if (!this.isOpen('steps')) this.restore('steps');
+      return;
+    }
+    this.open(id, false);
   }
 
   close(id: string): void {

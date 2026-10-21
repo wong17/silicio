@@ -33,7 +33,7 @@ import { SceneHudComponent } from './world/scene-hud/scene-hud.component';
 import { PieceInspectorComponent } from './console/piece-inspector/piece-inspector.component';
 import { HelpDialogComponent } from './shell/help/help-dialog.component';
 import { StateCompareComponent } from './instruments/cpu/compare/state-compare.component';
-import { PhasesComponent } from './instruments/cpu/phases/phases.component';
+import { StepViewerComponent } from './shell/stepper/step-viewer.component';
 import { ScreenPanelComponent } from './instruments/cpu/screen/screen-panel.component';
 import { PortsPanelComponent } from './instruments/cpu/ports/ports-panel.component';
 import { SimulationTransportComponent } from './shell/transport/simulation-transport.component';
@@ -86,7 +86,7 @@ const NARROW = '(max-width: 899px)';
     StationMissionComponent,
     PieceInspectorComponent,
     HelpDialogComponent,
-    PhasesComponent,
+    StepViewerComponent,
     StateCompareComponent,
     ScreenPanelComponent,
     PortsPanelComponent,
@@ -158,6 +158,7 @@ export class App implements AfterViewInit, OnDestroy {
   private readonly pcProgramPanel = viewChild.required<TemplateRef<unknown>>('pcProgramPanel');
   private readonly pcComponentsPanel = viewChild.required<TemplateRef<unknown>>('pcComponentsPanel');
   private readonly resultPanel = viewChild.required<TemplateRef<unknown>>('resultPanel');
+  private readonly stepsPanel = viewChild.required<TemplateRef<unknown>>('stepsPanel');
   /** Content of each desk panel; the workspace places it, the shell only says what it contains. */
   readonly panelTemplates = computed<Record<string, TemplateRef<unknown>>>(() => ({
     program: this.programPanel(),
@@ -171,6 +172,7 @@ export class App implements AfterViewInit, OnDestroy {
     'pc-program': this.pcProgramPanel(),
     'pc-components': this.pcComponentsPanel(),
     result: this.resultPanel(),
+    steps: this.stepsPanel(),
   }));
   private navigation?: Subscription;
   private context?: gsap.Context;
@@ -184,6 +186,8 @@ export class App implements AfterViewInit, OnDestroy {
       .pipe(filter((e) => e instanceof NavigationEnd))
       .subscribe(() => this.route());
     effect(() => this.world()?.setCallouts(this.session.callouts()));
+    // In exhibition mode the panels step aside; leaving it brings them back as they were.
+    effect(() => this.ws.presenting.set(this.session.tourIndex() !== null));
     // The desk offers the panels of whatever station the session shows, however it got there.
     effect(() => this.ws.setExperience(this.session.section()));
     // Another chapter of the same exercise keeps its owner and its clock; any other one pauses it.
@@ -253,8 +257,9 @@ export class App implements AfterViewInit, OnDestroy {
                 ? 'initial'
                 : 'lid',
     );
-    // The 8086 and the SoC open by default; the memory modules start closed so their layers read as a choice.
-    this.session.exploded.set(section === '8086' || section === 'apple');
+    // The 8086, the SoC and the PC open by default (a closed case hides everything the PC does); the memory
+    // modules start closed so their layers read as a choice.
+    this.session.exploded.set(section === '8086' || section === 'apple' || section === 'machine');
     this.session.tab.set('state' as Tab);
     this.applyDeepLink();
   }
@@ -449,11 +454,7 @@ export class App implements AfterViewInit, OnDestroy {
     if (step.memoryModel) this.session.memoryModel.set(step.memoryModel);
     const place = () => {
       this.session.part(step.piece);
-      if (step.tab) {
-        this.session.tab.set(step.tab);
-        // Programa and Estado are both on the desk; the step only makes sure its panel is open.
-        if (this.session.section() === '8086') this.ws.open(step.tab === 'program' ? 'program' : 'state', false);
-      }
+      if (step.tab) this.session.tab.set(step.tab);
       if (step.open !== undefined) {
         this.session.exploded.set(step.open);
         if (step.open && this.session.explodeAmount() === 0) this.session.explodeAmount.set(100);

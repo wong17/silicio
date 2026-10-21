@@ -224,15 +224,22 @@
 }
 
 .output {
+  // The text grows with the panel: about 14 characters across at any width, never a footnote.
+  container-type: inline-size;
   .screen {
     margin: 0;
-    min-height: 56px;
-    padding: 10px;
+    min-height: 40cqi;
+    padding: 4cqi;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     border: 1px solid #1f3a28;
     border-radius: 8px;
     background: #07110a;
-    color: #8de3a0;
-    font: 500 14px/1.4 kit.$mono;
+    color: #7dff9a;
+    text-shadow: 0 0 8px rgba(125, 255, 154, 0.45);
+    font: 500 clamp(24px, 9cqi, 72px) / 1.25 kit.$mono;
+    overflow-wrap: anywhere;
     white-space: pre-wrap;
     &.error {
       color: #ffb4a8;

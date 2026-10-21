@@ -135,7 +135,7 @@ describe('adaptadores de simulación sobre LabSession', () => {
     expect(JSON.stringify(session.pc.state())).toBe(before);
   });
 
-  it('SoC: las tres etapas de la dependencia CPU → GPU → CPU', async () => {
+  it('SoC: las tres etapas de la dependencia CPU, GPU y CPU', async () => {
     coordinator.activate('soc');
     await coordinator.restart();
     await coordinator.step();

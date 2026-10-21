@@ -5,7 +5,7 @@ export const MAX_TEXT_CHARS = 256;
 export const MAX_FILE_BYTES = 64 * 1024;
 export const MAX_CSV_VALUES = 1024;
 
-/** The virtual SSD: file name → bytes. It survives powering the PC off. */
+/** The virtual SSD: file name a bytes. It survives powering the PC off. */
 export type SsdFiles = Readonly<Record<string, readonly number[]>>;
 
 export function utf8Encode(text: string): number[] {

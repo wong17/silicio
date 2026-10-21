@@ -1,0 +1,85 @@
+<section class="stepper" data-guide="step-viewer" aria-label="Paso a paso">
+  <div class="col left" data-guide="step-left">
+    <ng-content select="[stepper-left]" />
+  </div>
+
+  <div class="col steps" data-guide="step-cards">
+    @if (timeline(); as t) {
+      <header class="head">
+        <p class="title"><strong>{{ t.title }}</strong> · <span class="next">{{ next() }}</span></p>
+      </header>
+      <p class="summary">{{ t.summary }}</p>
+
+      @if (waiting()) {
+        <p class="waiting" role="status"><strong>Esperando teclado.</strong> El programa sigue cuando escribas una tecla.</p>
+      }
+
+      <ol class="cards">
+        @for (card of t.cards; track card.id) {
+          <li class="card" [attr.data-status]="status($index)" [attr.aria-current]="status($index) === 'active' ? 'step' : null">
+            <button type="button" class="top" [attr.aria-expanded]="status($index) === 'active'" (click)="choose(card)">
+              <span class="mark" aria-hidden="true">{{ status($index) === 'done' ? '✓' : status($index) === 'active' ? '●' : '○' }}</span>
+              <span class="label">
+                <small>{{ card.number ? card.number + ' · ' : '' }}{{ card.group }}</small>
+                <span class="name">{{ card.title }}</span>
+              </span>
+              <span class="sr-only">{{ status($index) === 'active' ? 'activo' : status($index) === 'done' ? 'hecho' : 'pendiente' }}</span>
+              @if (status($index) === 'done' && summary(card); as line) {
+                <span class="line">{{ line }}</span>
+              }
+            </button>
+
+            @if (status($index) === 'active') {
+              <div class="body">
+                <p class="text">{{ card.text }}</p>
+
+                @if (card.role) {
+                  <p class="meta">
+                    <span class="role" [attr.data-role]="card.role">{{ roles[card.role] }}</span>
+                    @if (card.route) {
+                      <span class="route">{{ card.route.label }}</span>
+                    }
+                  </p>
+                }
+
+                @if (card.packets.length) {
+                  <ul class="lines" aria-label="Líneas del bus de este paso">
+                    @for (p of card.packets; track p.bus) {
+                      <li [attr.data-bus]="p.bus"><b>{{ bus[p.bus] }}</b> {{ p.value }}</li>
+                    }
+                  </ul>
+                }
+
+                @if (card.changes.length) {
+                  <dl class="changes" aria-label="Qué cambió en este paso">
+                    @for (c of card.changes; track c.label) {
+                      <div>
+                        <dt>{{ c.label }}</dt>
+                        <dd>{{ c.before }} a <strong>{{ c.after }}</strong></dd>
+                      </div>
+                    }
+                  </dl>
+                }
+
+                @if (card.state.screen) {
+                  <pre class="screen" aria-label="Salida en pantalla">{{ card.state.screen }}</pre>
+                }
+              </div>
+            }
+          </li>
+        }
+      </ol>
+
+      @if (paused()) {
+        <button type="button" class="back" (click)="follow()">Volver al paso actual</button>
+      }
+      <p class="sr-only" aria-live="polite">{{ announcement() }}</p>
+    } @else {
+      <p class="empty">Da un paso y aquí verás qué ocurre, pieza por pieza, con lo que cambia en cada uno.</p>
+    }
+  </div>
+
+  <div class="col right" data-guide="step-state">
+    <ng-content select="[stepper-right]" />
+  </div>
+</section>

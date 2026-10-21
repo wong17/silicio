@@ -38,9 +38,9 @@ describe('disposición del PC', () => {
         for (const to of ids) {
           if (from === to) continue;
           const path = routeOf(from, to, bus);
-          expect(path.length, from + '→' + to).toBeGreaterThanOrEqual(2);
+          expect(path.length, from + 'a' + to).toBeGreaterThanOrEqual(2);
           for (let i = 0; i < path.length - 1; i++)
-            expect(path[i][0] === path[i + 1][0] || path[i][1] === path[i + 1][1] || (CPU_BLOCKS.some((b) => b.id === from) && CPU_BLOCKS.some((b) => b.id === to)), `${from}→${to} tramo ${i}`).toBe(true);
+            expect(path[i][0] === path[i + 1][0] || path[i][1] === path[i + 1][1] || (CPU_BLOCKS.some((b) => b.id === from) && CPU_BLOCKS.some((b) => b.id === to)), `${from}a${to} tramo ${i}`).toBe(true);
           expect(path[0]).toEqual(centre(from));
           expect(path[path.length - 1]).toEqual(centre(to));
         }

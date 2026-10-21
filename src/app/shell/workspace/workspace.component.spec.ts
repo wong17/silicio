@@ -34,6 +34,9 @@ describe('WorkspaceComponent', () => {
     await TestBed.configureTestingModule({ imports: [Host] }).compileComponents();
     const ws = TestBed.inject(WorkspaceService);
     ws.setExperience('8086');
+    // Programa y Estado ya no abren solos (viven dentro de «Paso a paso»); aquí se abren como ventanas propias.
+    ws.open('program', false);
+    ws.open('state', false);
     const fixture = TestBed.createComponent(Host);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
@@ -54,6 +57,9 @@ describe('WorkspaceComponent', () => {
     await TestBed.configureTestingModule({ imports: [Host] }).compileComponents();
     const ws = TestBed.inject(WorkspaceService);
     ws.setExperience('8086');
+    // Programa y Estado ya no abren solos (viven dentro de «Paso a paso»); aquí se abren como ventanas propias.
+    ws.open('program', false);
+    ws.open('state', false);
     const fixture = TestBed.createComponent(Host);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
@@ -80,13 +86,15 @@ describe('Escritorio del 8086 en el shell', () => {
     vi.restoreAllMocks();
   });
 
-  it('muestra Programa y Estado a la vez, sin pestañas excluyentes', () => {
+  it('reúne programa, pasos y estado en un solo panel, sin pestañas excluyentes', () => {
     const fixture = TestBed.createComponent(App);
     TestBed.inject(LabSession).section.set('8086');
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
-    expect(root.querySelector('[data-panel="program"] app-program-panel')).not.toBeNull();
-    expect(root.querySelector('[data-panel="state"] app-register-panel')).not.toBeNull();
+    expect(root.querySelector('[data-panel="steps"] app-step-viewer')).not.toBeNull();
+    expect(root.querySelector('[data-panel="steps"] app-program-panel')).not.toBeNull();
+    expect(root.querySelector('[data-panel="steps"] app-register-panel')).not.toBeNull();
+    expect(root.querySelector('[data-panel="program"]')).toBeNull();
     expect(root.querySelector('app-workspace [role="tablist"]')).toBeNull();
   });
 

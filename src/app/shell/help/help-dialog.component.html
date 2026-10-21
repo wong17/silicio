@@ -2,6 +2,7 @@
   #trigger
   type="button"
   class="trigger"
+  data-guide="help-button"
   aria-haspopup="dialog"
   [attr.aria-expanded]="open()"
   (click)="show()"
@@ -12,6 +13,16 @@
   </svg>
   <span class="label">Ayuda</span>
 </button>
+
+@if (tutorial(); as t) {
+  <button type="button" class="trigger" data-guide="tutorial-button" [attr.title]="t.title" (click)="startGuide(t.id)">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10 8.5v7l5.5-3.5z" />
+    </svg>
+    <span class="label">Tutorial</span>
+  </button>
+}
 
 <dialog #dialog class="help" aria-labelledby="help-title" (cancel)="cancel($event)" (close)="closed()">
   <header class="head">
@@ -44,37 +55,189 @@
       @switch (section()) {
         @case ('start') {
           <h3>Cómo se usa el laboratorio</h3>
-          <ol class="steps">
-            <li>Elige un capítulo arriba: Banco 8086, Memoria, La máquina o SoC.</li>
-            <li>En el 8086, <strong>Programa</strong> y <strong>Estado</strong> están abajo, juntos: escribe o elige un experimento y pulsa <em>Paso</em>.</li>
-            <li>Toca una pieza en la escena para abrir su ficha en <strong>Pieza</strong>.</li>
-            <li>Con <strong>Paneles</strong> eliges qué instrumentos ves y si van abajo, a la derecha o flotando.</li>
-            <li>La barra bajo la escena mueve la cámara, abre el chip y muestra Piezas, Mapa y Gráficos.</li>
-          </ol>
-          <h4>Guías por acciones</h4>
-          <p class="note">
-            Cada guía te pide hacer algo y avanza cuando lo haces. Puedes salir con Esc o con la cruz en cualquier
-            momento; todo lo que sigue es también el texto de cada guía, por si prefieres leerla.
+          <p class="lead">
+            Un solo laboratorio con cuatro escalas: del chip suelto (Banco 8086) a la memoria, al computador completo
+            (La máquina) y al SoC moderno. En todas la pantalla se organiza igual.
           </p>
-          <ul class="guides">
-            @for (p of paths; track p.id) {
-              <li>
-                <strong>{{ p.title }}</strong>
-                <span>{{ p.goal }}</span>
-                <ol>
-                  @for (st of p.steps; track st.id) {
-                    <li><b>{{ st.title }}.</b> {{ st.text }}</li>
-                  }
-                </ol>
-                <button type="button" (click)="startGuide(p.id)">Empezar esta guía</button>
-              </li>
-            }
-          </ul>
+
+          @if (tutorial(); as t) {
+            <div class="callout">
+              <div>
+                <strong>Tutorial de este capítulo</strong>
+                <span>{{ t.goal }}</span>
+              </div>
+              <button type="button" class="primary" (click)="startGuide(t.id)">Empezar el tutorial</button>
+            </div>
+          }
+
+          <figure class="iso">
+          <svg class="iso-svg" viewBox="0 0 700 330" role="img" aria-labelledby="iso1-t iso1-d"><title id="iso1-t">Mapa de la pantalla en vista isométrica</title><desc id="iso1-d">Tres capas apiladas: arriba los capítulos y la barra de control; en medio la escena 3D; abajo el panel Paso a paso dividido en tres columnas A, B y C.</desc><polygon class="l a" points="132.1,59.0 262.0,134.0 262.0,140.0 132.1,65.0" />
+          <polygon class="r a" points="262.0,134.0 339.9,89.0 339.9,95.0 262.0,140.0" />
+          <polygon class="t a" points="210.0,14.0 339.9,89.0 262.0,134.0 132.1,59.0" />
+          <line class="g" x1="231.7" y1="36.5" x2="214.3" y2="46.5" />
+          <line class="g" x1="262.0" y1="54.0" x2="244.6" y2="64.0" />
+          <line class="g" x1="292.3" y1="71.5" x2="274.9" y2="81.5" />
+          <line class="lead" x1="236.0" y1="74.0" x2="372.0" y2="74.0" />
+          <g class="badge"><circle cx="372.0" cy="74.0" r="11" /><text x="372.0" y="78.0">1</text></g>
+          <text class="cap" x="390" y="78.0">Capítulos y barra de control</text>
+          <polygon class="l b" points="132.1,141.0 262.0,216.0 262.0,228.0 132.1,153.0" />
+          <polygon class="r b" points="262.0,216.0 339.9,171.0 339.9,183.0 262.0,228.0" />
+          <polygon class="t b" points="210.0,96.0 339.9,171.0 262.0,216.0 132.1,141.0" />
+          <line class="lead" x1="236.0" y1="156.0" x2="372.0" y2="156.0" />
+          <g class="badge"><circle cx="372.0" cy="156.0" r="11" /><text x="372.0" y="160.0">2</text></g>
+          <text class="cap" x="390" y="160.0">Escena 3D y sus herramientas</text>
+          <polygon class="l c" points="132.1,235.0 262.0,310.0 262.0,318.0 132.1,243.0" />
+          <polygon class="r c" points="262.0,310.0 339.9,265.0 339.9,273.0 262.0,318.0" />
+          <polygon class="t c" points="210.0,190.0 339.9,265.0 262.0,310.0 132.1,235.0" />
+          <line class="g" x1="253.3" y1="215.0" x2="175.4" y2="260.0" />
+          <line class="g" x1="296.6" y1="240.0" x2="218.7" y2="285.0" />
+          <line class="lead" x1="236.0" y1="250.0" x2="372.0" y2="250.0" />
+          <g class="badge"><circle cx="372.0" cy="250.0" r="11" /><text x="372.0" y="254.0">3</text></g>
+          <text class="cap" x="390" y="254.0">Paso a paso: experimento, pasos y datos</text>
+          <text class="col" x="192.7" y="229.0">A</text>
+          <text class="col" x="236.0" y="254.0">B</text>
+          <text class="col" x="279.3" y="279.0">C</text></svg>
+            <figcaption>La pantalla vista como capas: lo que ves arriba manda, lo de abajo explica el detalle.</figcaption>
+          </figure>
+
+          <table class="grid legend">
+            <caption class="sr-only">Zonas de la pantalla</caption>
+            <thead>
+              <tr><th scope="col">Zona</th><th scope="col">Qué hace</th><th scope="col">Se parece a</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4" /></svg> <span><b>1</b> Capítulos</span></th>
+                <td>Cambias de escala sin perder tu ejercicio: Banco 8086, Memoria, La máquina y SoC.</td>
+                <td>Los pisos de un edificio.</td>
+              </tr>
+              <tr>
+                <th scope="row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5l9 7-9 7zM19 5v14" /></svg> <span><b>1</b> Barra de control</span></th>
+                <td>Paso, Ejecutar, Atrás y Reiniciar; «Avanzar por» elige instrucción o fase, y Velocidad solo cambia el ritmo.</td>
+                <td>El control remoto de un video.</td>
+              </tr>
+              <tr>
+                <th scope="row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5" /></svg> <span><b>2</b> Escena 3D</span></th>
+                <td>El hardware sobre la mesa; se ilumina la pieza que trabaja. Tócala para ver su ficha.</td>
+                <td>Una maqueta que puedes girar con la mano.</td>
+              </tr>
+              <tr>
+                <th scope="row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" /></svg> <span><b>3</b> Paso a paso</span></th>
+                <td>Columna A: el experimento y el código. B: las tarjetas de cada paso. C: los datos que cambian.</td>
+                <td>Una receta con la mesa de trabajo al lado.</td>
+              </tr>
+              <tr>
+                <th scope="row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 13h16M12 13v6" /></svg> <span>Paneles</span></th>
+                <td>Eliges qué instrumentos ver y dónde: abajo, a la derecha o flotando.</td>
+                <td>Los papeles abiertos sobre tu escritorio.</td>
+              </tr>
+              <tr>
+                <th scope="row"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01" /></svg> <span>Ayuda</span></th>
+                <td>Tutoriales, glosario, atajos, sesión y preferencias.</td>
+                <td>El manual, pero con buscador.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>Qué pasa dentro de una instrucción</h4>
+          <figure class="iso">
+          <svg class="iso-svg" viewBox="0 0 560 340" role="img" aria-labelledby="iso2-t iso2-d"><title id="iso2-t">Las siete fases de una instrucción, apiladas</title><desc id="iso2-d">Siete capas numeradas del 1 al 7. Las tres primeras, en ámbar, son la búsqueda; las cuatro últimas, en verde, son la ejecución.</desc><polygon class="l a" points="103.2,37.0 181.2,82.0 181.2,90.0 103.2,45.0" />
+          <polygon class="r a" points="181.2,82.0 227.9,55.0 227.9,63.0 181.2,90.0" />
+          <polygon class="t a" points="150.0,10.0 227.9,55.0 181.2,82.0 103.2,37.0" />
+          <line class="lead" x1="221.9" y1="46.0" x2="290.0" y2="46.0" />
+          <g class="badge"><circle cx="290.0" cy="46.0" r="11" /><text x="290.0" y="50.0">1</text></g>
+          <text class="cap" x="308" y="50.0">Traer la orden</text>
+          <polygon class="l a" points="103.2,81.0 181.2,126.0 181.2,134.0 103.2,89.0" />
+          <polygon class="r a" points="181.2,126.0 227.9,99.0 227.9,107.0 181.2,134.0" />
+          <polygon class="t a" points="150.0,54.0 227.9,99.0 181.2,126.0 103.2,81.0" />
+          <line class="lead" x1="221.9" y1="90.0" x2="290.0" y2="90.0" />
+          <g class="badge"><circle cx="290.0" cy="90.0" r="11" /><text x="290.0" y="94.0">2</text></g>
+          <text class="cap" x="308" y="94.0">Avanzar el contador</text>
+          <polygon class="l a" points="103.2,125.0 181.2,170.0 181.2,178.0 103.2,133.0" />
+          <polygon class="r a" points="181.2,170.0 227.9,143.0 227.9,151.0 181.2,178.0" />
+          <polygon class="t a" points="150.0,98.0 227.9,143.0 181.2,170.0 103.2,125.0" />
+          <line class="lead" x1="221.9" y1="134.0" x2="290.0" y2="134.0" />
+          <g class="badge"><circle cx="290.0" cy="134.0" r="11" /><text x="290.0" y="138.0">3</text></g>
+          <text class="cap" x="308" y="138.0">Entenderla</text>
+          <polygon class="l g" points="103.2,169.0 181.2,214.0 181.2,222.0 103.2,177.0" />
+          <polygon class="r g" points="181.2,214.0 227.9,187.0 227.9,195.0 181.2,222.0" />
+          <polygon class="t g" points="150.0,142.0 227.9,187.0 181.2,214.0 103.2,169.0" />
+          <line class="lead" x1="221.9" y1="178.0" x2="290.0" y2="178.0" />
+          <g class="badge"><circle cx="290.0" cy="178.0" r="11" /><text x="290.0" y="182.0">4</text></g>
+          <text class="cap" x="308" y="182.0">Buscar los datos</text>
+          <polygon class="l g" points="103.2,213.0 181.2,258.0 181.2,266.0 103.2,221.0" />
+          <polygon class="r g" points="181.2,258.0 227.9,231.0 227.9,239.0 181.2,266.0" />
+          <polygon class="t g" points="150.0,186.0 227.9,231.0 181.2,258.0 103.2,213.0" />
+          <line class="lead" x1="221.9" y1="222.0" x2="290.0" y2="222.0" />
+          <g class="badge"><circle cx="290.0" cy="222.0" r="11" /><text x="290.0" y="226.0">5</text></g>
+          <text class="cap" x="308" y="226.0">Operar</text>
+          <polygon class="l g" points="103.2,257.0 181.2,302.0 181.2,310.0 103.2,265.0" />
+          <polygon class="r g" points="181.2,302.0 227.9,275.0 227.9,283.0 181.2,310.0" />
+          <polygon class="t g" points="150.0,230.0 227.9,275.0 181.2,302.0 103.2,257.0" />
+          <line class="lead" x1="221.9" y1="266.0" x2="290.0" y2="266.0" />
+          <g class="badge"><circle cx="290.0" cy="266.0" r="11" /><text x="290.0" y="270.0">6</text></g>
+          <text class="cap" x="308" y="270.0">Guardar el resultado</text>
+          <polygon class="l g" points="103.2,301.0 181.2,346.0 181.2,354.0 103.2,309.0" />
+          <polygon class="r g" points="181.2,346.0 227.9,319.0 227.9,327.0 181.2,354.0" />
+          <polygon class="t g" points="150.0,274.0 227.9,319.0 181.2,346.0 103.2,301.0" />
+          <line class="lead" x1="221.9" y1="310.0" x2="290.0" y2="310.0" />
+          <g class="badge"><circle cx="290.0" cy="310.0" r="11" /><text x="290.0" y="314.0">7</text></g>
+          <text class="cap" x="308" y="314.0">Revisar interrupciones</text></svg>
+            <figcaption>Siete fases: las tres primeras buscan la orden; las cuatro últimas la ejecutan.</figcaption>
+          </figure>
+          <table class="grid">
+            <caption class="sr-only">Las siete fases de una instrucción</caption>
+            <thead>
+              <tr><th scope="col">Fase</th><th scope="col">Término técnico</th><th scope="col">En la cocina</th></tr>
+            </thead>
+            <tbody>
+              @for (f of phases; track f.n) {
+                <tr>
+                  <th scope="row"><b>{{ f.n }}</b> {{ f.name }}</th>
+                  <td>{{ f.tech }}</td>
+                  <td>{{ f.everyday }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <h4>Guías por acciones</h4>
+          <p class="note">Cada guía te pide hacer algo y avanza cuando lo haces. Sales con Esc o con la cruz.</p>
+          <table class="grid guides">
+            <caption class="sr-only">Guías disponibles</caption>
+            <thead>
+              <tr><th scope="col">Guía</th><th scope="col">Objetivo</th><th scope="col"><span class="sr-only">Acción</span></th></tr>
+            </thead>
+            <tbody>
+              @for (p of paths; track p.id) {
+                <tr>
+                  <th scope="row">{{ p.title }}</th>
+                  <td>
+                    {{ p.goal }}
+                    <details>
+                      <summary>Leer los pasos</summary>
+                      <ol>
+                        @for (st of p.steps; track st.id) {
+                          <li><b>{{ st.title }}.</b> {{ st.text }}</li>
+                        }
+                      </ol>
+                    </details>
+                  </td>
+                  <td><button type="button" (click)="startGuide(p.id)">Empezar</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
           @if (guide.notice()) {
             <p class="note" role="status">{{ guide.notice() }}</p>
           }
+
+          <h4>Modo exposición</h4>
+          <p class="note">
+            Para presentar: los paneles se retiran, la cámara recorre las piezas elegidas con una línea de apoyo y, al
+            terminar o salir con Esc, todo vuelve a estar como lo dejaste. Avanzas con las flechas.
+          </p>
           <button type="button" class="primary" (click)="startTour()">Iniciar modo exposición</button>
-          <p class="note">El modo exposición recorre las estaciones en ocho minutos. Se avanza con las flechas y se sale con Esc.</p>
         }
         @case ('course') {
           <h3>Temas del curso</h3>
@@ -127,28 +290,41 @@
             [value]="query()"
             (input)="query.set($any($event.target).value)"
           />
-          <dl class="glossary">
-            @for (t of terms(); track t.term) {
-              <div>
-                <dt>{{ t.term }} <small>{{ t.name }}</small></dt>
-                <dd>{{ t.definition }}</dd>
-              </div>
-            } @empty {
-              <p>Ningún término coincide.</p>
-            }
-          </dl>
+          <table class="grid glossary">
+            <caption class="sr-only">Glosario</caption>
+            <thead>
+              <tr><th scope="col">Término</th><th scope="col">Nombre completo</th><th scope="col">Qué es</th></tr>
+            </thead>
+            <tbody>
+              @for (t of terms(); track t.term) {
+                <tr>
+                  <th scope="row">{{ t.term }}</th>
+                  <td>{{ t.name }}</td>
+                  <td>{{ t.definition }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3">Ningún término coincide.</td></tr>
+              }
+            </tbody>
+          </table>
         }
         @case ('shortcuts') {
           <h3>Atajos del teclado</h3>
           <p class="note">No se activan mientras escribes en el editor o en un campo.</p>
-          <dl class="shortcuts">
-            @for (s of shortcuts; track s[0]) {
-              <div>
-                <dt><kbd>{{ s[0] }}</kbd></dt>
-                <dd>{{ s[1] }}</dd>
-              </div>
-            }
-          </dl>
+          <table class="grid shortcuts">
+            <caption class="sr-only">Atajos del teclado</caption>
+            <thead>
+              <tr><th scope="col">Tecla</th><th scope="col">Acción</th></tr>
+            </thead>
+            <tbody>
+              @for (s of shortcuts; track s[0]) {
+                <tr>
+                  <th scope="row"><kbd>{{ s[0] }}</kbd></th>
+                  <td>{{ s[1] }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         }
         @case ('session') {
           <h3>Sesión</h3>
@@ -182,44 +358,74 @@
         }
         @case ('scope') {
           <h3>Alcance del modelo</h3>
-          <p>
-            El 8086 ejecuta el subconjunto del curso, con las codificaciones del 8086 real y registros de 8 y 16 bits:
-            MOV, XCHG, LEA, PUSH y POP; ADD, ADC, SUB, SBB, CMP, INC, DEC, NEG, MUL, IMUL, DIV, IDIV, CBW y CWD; AND, OR,
-            XOR, NOT, TEST, SHL, SHR, SAR, ROL y ROR (de 1 en 1 o con CL); JMP, los saltos condicionales, LOOP, CALL y RET
-            cercanos; INT 21h (servicios 01h, 02h, 09h, 0Ah y 4Ch), INT 20h, HLT y NOP.
+          <p class="note">
+            El 8086 ejecuta el subconjunto del curso, con las codificaciones del 8086 real y registros de 8 y 16 bits.
+            Lo que queda fuera da un error que dice la línea.
           </p>
+
+          <h4>Instrucciones admitidas</h4>
+          <table class="grid">
+            <caption class="sr-only">Instrucciones admitidas</caption>
+            <thead><tr><th scope="col">Familia</th><th scope="col">Instrucciones</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Transferencia</th><td>MOV, XCHG, LEA, PUSH, POP</td></tr>
+              <tr><th scope="row">Aritméticas</th><td>ADD, ADC, SUB, SBB, CMP, INC, DEC, NEG, MUL, IMUL, DIV, IDIV, CBW, CWD</td></tr>
+              <tr><th scope="row">Lógicas y desplazamientos</th><td>AND, OR, XOR, NOT, TEST, SHL, SHR, SAR, ROL, ROR (de 1 en 1 o con CL)</td></tr>
+              <tr><th scope="row">Control</th><td>JMP, saltos condicionales, LOOP, CALL y RET cercanos</td></tr>
+              <tr><th scope="row">Sistema</th><td>INT 21h (servicios 01h, 02h, 09h, 0Ah y 4Ch), INT 20h, HLT, NOP</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Directivas</h4>
           <p>
-            Directivas: ORG 100h, DB y DW (con listas, cadenas y DUP), EQU, OFFSET, BYTE PTR y WORD PTR, PROC/ENDP, END,
-            MACRO/ENDM con parámetros y LOCAL, y la plantilla .MODEL SMALL con .STACK, .DATA y .CODE.
+            ORG 100h, DB y DW (con listas, cadenas y DUP), EQU, OFFSET, BYTE PTR y WORD PTR, PROC y ENDP, END,
+            MACRO y ENDM con parámetros y LOCAL, y la plantilla .MODEL SMALL con .STACK, .DATA y .CODE.
           </p>
+
+          <h4>Fuera del subconjunto</h4>
           <p>
-            Fuera del subconjunto, con un error que dice la línea: instrucciones de cadena, prefijos de segmento, saltos y
-            llamadas lejanos, otras INT, coprocesador e INCLUDE. En lugar de INCLUDE 'emu8086.inc', escribe con INT 21h
-            servicio 09h o define una macro como en la misión 17.
+            Instrucciones de cadena, prefijos de segmento, saltos y llamadas lejanos, otras INT, coprocesador e INCLUDE.
+            En lugar de INCLUDE 'emu8086.inc', escribe con INT 21h servicio 09h o define una macro como en la misión 17.
           </p>
+
+          <h4>Disposición fija de segmentos</h4>
+          <table class="grid">
+            <caption class="sr-only">Segmentos</caption>
+            <thead><tr><th scope="col">Zona</th><th scope="col">Valor</th><th scope="col">Nota</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Código</th><td>CS = 1000h, desde 0100h</td><td>Programas .COM: DS vale lo mismo que CS.</td></tr>
+              <tr><th scope="row">Pila</th><td>SS = 3000h, SP = FFFEh</td><td>Crece hacia abajo.</td></tr>
+              <tr><th scope="row">Datos</th><td>DS = 2000h</td><td>Con .MODEL SMALL, MOV AX,@DATA lo carga.</td></tr>
+            </tbody>
+          </table>
+
+          <h4>Puertos del 8255 didáctico</h4>
+          <table class="grid">
+            <caption class="sr-only">Puertos del 8255</caption>
+            <thead><tr><th scope="col">Puerto</th><th scope="col">Uso</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">A0h</th><td>A: LEDs</td></tr>
+              <tr><th scope="row">A1h</th><td>B: interruptores</td></tr>
+              <tr><th scope="row">A2h</th><td>C: siete segmentos</td></tr>
+              <tr><th scope="row">A3h</th><td>Control: escribe 82h antes de usarlo (A y C salidas, B entrada)</td></tr>
+            </tbody>
+          </table>
+          <p class="note">Usa IN AL y OUT con un puerto de 0 a 255 o con DX. Los interruptores se mueven en el panel Puertos 8255.</p>
+
+          <h4>Pantalla, teclado y errores</h4>
           <p>
-            Disposición fija de segmentos: el código está en CS = 1000h desde 0100h, la pila en SS = 3000h con SP = FFFEh y
-            los datos en DS = 2000h. Si el programa declara variables DB/DW dentro del código, como en un archivo .COM, DS
-            vale lo mismo que CS (1000h). Con .MODEL SMALL los datos van en DS = 2000h y MOV AX,@DATA lo carga.
-          </p>
-          <p>
-            8255 didáctico: IN AL y OUT con un puerto de 0 a 255 o con DX. Los puertos están en A0h (A, LEDs), A1h (B,
-            interruptores), A2h (C, siete segmentos) y A3h (control). Antes de usarlo escribe 82h en A3h: A y C quedan
-            como salidas y B como entrada. Los interruptores se mueven en el panel Puertos 8255.
-          </p>
-          <p>
-            La Pantalla es de 80 × 25 caracteres y el teclado es el campo de la Pantalla. INT 21h se explica como servicio
-            del sistema: en un PC real apila FLAGS, CS e IP y salta por el vector de 0000:0084h; aquí el servicio está
-            simulado. Una división entre 0, o con un cociente que no cabe, detiene el programa con un error de división y
-            no cambia ningún registro.
+            La Pantalla es de 80 × 25 caracteres y el teclado es su campo. INT 21h se explica como servicio del sistema:
+            en un PC real apila FLAGS, CS e IP y salta por el vector de 0000:0084h; aquí el servicio está simulado. Una
+            división entre 0, o con un cociente que no cabe, detiene el programa con un error de división y no cambia
+            ningún registro.
           </p>
           <p>
             Dirección = <span appTerm="segmento">segmento</span> × 16 + <span appTerm="offset">offset</span>, limitada
             a 20 bits; las palabras se guardan con el byte menos significativo primero.
           </p>
-          <p>
-            Las fases son pasos didácticos, no ciclos eléctricos ni temporización real. Los modelos del SoC y de
-            La máquina son conceptuales: no reproducen el hardware comercial ni miden su rendimiento.
+          <p class="note">
+            Las fases son pasos didácticos, no ciclos eléctricos ni temporización real. Los modelos del SoC y de La
+            máquina son conceptuales: no reproducen el hardware comercial ni miden su rendimiento.
           </p>
         }
       }

@@ -9,23 +9,29 @@ const INSTRUMENT_TITLES: Record<Exclude<Section, '8086' | 'atrium' | 'memory' | 
 const SECONDARY: PanelSpec[] = [{ id: 'inspector', title: 'Pieza', zone: 'right', open: false, weight: 1 }];
 
 /**
- * Panels each experience offers. The 8086 opens Programa and Estado side by side; the other stations keep a
- * single instrument column until their own redesign splits it.
+ * Panels each experience offers. The 8086 and the PC open one «Paso a paso» panel that gathers program, steps
+ * and state; the other stations keep their instruments.
  */
 export function panelsFor(section: Section): PanelSpec[] {
+  // One panel at the bottom holds what used to be two or three windows: program, steps and state. The separate
+  // windows stay in «Paneles» for whoever wants one on its own.
+  const steps: PanelSpec = { id: 'steps', title: 'Paso a paso', zone: 'bottom', open: true, weight: 3 };
   if (section === '8086')
     return [
-      { id: 'program', title: 'Programa', zone: 'bottom', open: true },
-      { id: 'state', title: 'Estado', zone: 'bottom', open: true },
-      // The screen opens by itself with the first INT 21h; until then it is one choice in «Paneles».
-      { id: 'screen', title: 'Pantalla', zone: 'right', open: false, weight: 1 },
-      { id: 'ports', title: 'Puertos 8255', zone: 'right', open: false, weight: 1 },
+      steps,
+      { id: 'program', title: 'Programa', zone: 'bottom', open: false },
+      { id: 'state', title: 'Estado', zone: 'bottom', open: false },
+      // The screen opens by itself with the first INT 21h, beside the steps and at their height; until then it is
+      // one choice in «Paneles».
+      { id: 'screen', title: 'Pantalla', zone: 'bottom', open: false, weight: 2 },
+      { id: 'ports', title: 'Puertos 8255', zone: 'bottom', open: false },
       ...SECONDARY,
     ];
   if (section === 'machine')
     return [
-      { id: 'pc-program', title: 'Programa y entradas', zone: 'bottom', open: true },
-      { id: 'pc-components', title: 'Componentes y salida', zone: 'bottom', open: true },
+      steps,
+      { id: 'pc-program', title: 'Programa y entradas', zone: 'bottom', open: false },
+      { id: 'pc-components', title: 'Componentes y salida', zone: 'bottom', open: false },
       ...SECONDARY,
     ];
   if (section === 'memory')

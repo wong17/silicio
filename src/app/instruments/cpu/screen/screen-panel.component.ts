@@ -1,6 +1,8 @@
-import { Component, ElementRef, computed, effect, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { LabSession } from '../../../laboratory/lab-session.service';
 import { SCREEN_COLUMNS, SCREEN_ROWS } from '../../../simulation/x86/text-screen';
+
+const ECHO_LIMIT = 40;
 
 /**
  * The emulated 80×25 screen and keyboard of INT 21h. The capture field takes the keys; while the program
@@ -24,6 +26,7 @@ export class ScreenPanelComponent {
     const at = this.session.io().cursor;
     return { row: Math.floor(at / SCREEN_COLUMNS), col: at % SCREEN_COLUMNS };
   });
+  readonly echo = signal('');
   readonly waiting = this.session.waitingInput;
   readonly queued = computed(() => this.session.io().keyboard.length);
   readonly sample = computed(() => this.session.missions[this.session.missionIndex()].keys);
@@ -40,16 +43,25 @@ export class ScreenPanelComponent {
     if (event.key !== 'Enter' || event.ctrlKey || event.metaKey || event.altKey) return;
     event.preventDefault();
     this.session.typeKeys('\n');
+    this.echo.set('');
+    (event.target as HTMLInputElement).value = '';
   }
 
+  /** The field keeps what was sent since the last Enter, so the student sees it; a key already sent cannot be taken back. */
   onInput(event: Event): void {
     const field = event.target as HTMLInputElement;
-    this.session.typeKeys(field.value);
-    field.value = '';
+    const sent = this.echo();
+    if (field.value.length > sent.length && field.value.startsWith(sent)) {
+      this.session.typeKeys(field.value.slice(sent.length));
+      this.echo.set(field.value.length >= ECHO_LIMIT ? '' : field.value);
+    }
+    field.value = this.echo();
   }
 
   typeSample(): void {
     const keys = this.sample();
-    if (keys) this.session.typeKeys(keys);
+    if (!keys) return;
+    this.session.typeKeys(keys);
+    this.echo.set(keys.replace(/[\r\n]/g, ''));
   }
 }

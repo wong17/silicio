@@ -18,6 +18,7 @@
       spellcheck="false"
       placeholder="Escribe aquí; cada tecla va al programa"
       [class.waiting]="waiting()"
+      [value]="echo()"
       (keydown)="onKey($event)"
       (input)="onInput($event)"
     />

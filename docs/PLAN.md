@@ -581,6 +581,7 @@ Cada tarea entrega comportamiento comprobable. Tests nuevos para lógica/contrat
 | B. 8086 como EMU8086 | T03, T04a, T04, T04b (opcional) | Transporte único, prácticas del curso con Pantalla y ciclo por fases |
 | C. Memoria y PC moderno | T05, T06, T07 | Memoria por preguntas; PC con archivos, teclado e interrupciones |
 | D. SoC, guías y cierre | T08, T09, T10, T11, T12 (opcional) | SoC replanteado, guías, migración y QA integrada |
+| E. Seguimiento paso a paso | T13 | Visor único por pasos para 8086 y PC (diseño del 20 de octubre; sin implementar) |
 
 T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo con T01–T02b. T06 puede empezar en paralelo con T04 una vez fijado T03.
 
@@ -841,13 +842,135 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 
 **Puerta:** solo datos verificados; no compite con el recorrido principal.
 
+### T13 — Visor paso a paso unificado
+
+**Estado:** segunda iteración implementada el 21 de octubre de 2026. El visor ya no es una columna aparte: es **un solo panel inferior «Paso a paso»** que reúne en tres columnas lo que antes eran Programa, Estado, Fases y Componentes (programa y misión · tarjetas de pasos · estado del paso activo; en el PC: programa y entradas · tarjetas · componentes y salida sin la lista de transferencias). Programa, Estado, Programa y entradas y Componentes y salida quedan cerrados en «Paneles» y las guías los resuelven abriendo este panel. Por debajo de 900 px de ancho útil las columnas se apilan (pasos primero). Faltan la sincronía tarjeta ↔ pieza completa, la tarjeta de espera con campo de entrada, el modo «Instrucción» como tarjeta resumen y la revisión visual en 1024 px y móvil. **Origen:** prueba de uso del 20 de octubre de 2026: seguir un paso obliga a vigilar Programa, Estado, Fases, Componentes y la escena a la vez, y nada lleva la vista al paso en curso.
+**Crear:** laboratory/step-timeline.ts/.spec.ts (modelo puro), shell/stepper/step-viewer.component.* y step-card.component.*.
+**Modificar:** shell/workspace/panel-registry.ts, laboratory/step-presentation.ts y laboratory/pc-activity.ts (solo para exponer datos ya existentes), instruments/cpu/phases/ (lo sustituye el visor), instruments/machine/components/ (queda como consulta), content/learning-paths.ts y shell/guidance/ (anclajes), e2e/.
+**Consume:** T03 (transporte), T04 (presentStep y fases), T06/T07 (eventos del PC). **No toca:** motores, worker ni sesión v3.
+
+#### Ajustes tras la primera prueba de uso (21 de octubre de 2026)
+
+- **Seguimiento de la columna de datos.** Al activar una tarjeta, la columna derecha se desplaza a donde mira esa fase: la ALU («Ruta aritmética») al operar, el registro que cambió al guardar, el bloque de RAM, SSD, interrupciones o monitor en el PC. Solo con las columnas en escritorio; apiladas no se mueve para no sacar los pasos de la vista.
+- **Pantalla (8086)** y **Puertos 8255** anclan abajo, junto a «Paso a paso» y a su altura, en lugar de una columna derecha con espacio vacío.
+- **Sin flechas «→»** en textos, rótulos 3D ni estilos: se dice «a», «y» o una coma según el caso.
+- **Modo exposición:** los paneles se retiran mientras dura (`WorkspaceService.presenting`) sin tocar la distribución guardada; al terminar o salir con Esc vuelven como estaban, en todas las estaciones.
+- **Tutorial de uso por capítulo** (`content/tutorials.ts`, Driver.js): capítulos, barra de control, escena, herramientas, paneles, ayuda, y luego las zonas propias de cada capítulo, con término técnico y comparación cotidiana. Botón en Ayuda, «Empezar»; los popovers miden 44 px de objetivo.
+- **Ayuda:** Empezar con mapa isométrico de la pantalla, tabla de zonas con iconos, siete fases con analogía y guías en tabla; Glosario, Atajos y Alcance del modelo en tablas (en móvil, tarjetas).
+
+#### Problema y principio
+
+Hoy cada panel responde una parte de la misma pregunta («qué pasa en este paso»). El visor responde la pregunta entera en un solo lugar: **un paso = una tarjeta autosuficiente**, y la lista de tarjetas es el recorrido. El resto de paneles pasan a ser de consulta, no de seguimiento.
+
+Prueba de aceptación de diseño: una persona nueva, mirando solo el visor, responde dónde está, qué instrucción se ejecuta, qué pieza actúa, qué dato se mueve, qué cambió y qué sigue; sin abrir otro panel ni leer la escena.
+
+#### Modelo común (puro, sin Angular ni Three.js)
+
+    StepTimeline:
+      kind: '8086' | 'machine'
+      title: string                    // «Instrucción 16 · INT 21h servicio 4Ch» / «Paso 12 · LOAD R1,[0010h]»
+      summary: string                  // una frase con los valores reales (explain() / texto del evento)
+      cards: readonly StepCard[]       // 7 fases en 8086; una por evento de transferencia en PC, agrupadas por fase 0–7
+      activeIndex: number | undefined  // tarjeta que la simulación está mostrando
+      next: string                     // «Siguiente: Interpretar» / «Siguiente instrucción: INC SI»
+
+    StepCard:
+      id: string; index: number; number: number  // numeración del curso (1–7)
+      group: 'Búsqueda' | 'Ejecución' | 'Arranque'
+      title: string; text: string                // texto con valores reales
+      role?: 'processing' | 'storage' | 'transfer' | 'control'   // icono + palabra
+      route?: { source: string; target: string; label: string } // «Memoria → IR»
+      packets: readonly { bus: 'address' | 'data' | 'control'; value: string }[]
+      changes: readonly { label: string; before: string; after: string }[]  // solo lo que cambia en esta tarjeta
+      state: StepState                                             // estado completo DESPUÉS de esta tarjeta
+      pieces: readonly string[]                                    // ids de pieza para escena e inspector
+
+    StepState (compacto, comparable entre tarjetas):
+      registers: { name; value; changed: boolean }[]   // 8086: AX…DX con AH|AL, IP, SP; PC: PC, IR, MAR, MDR, R0–R3
+      flags: { name; value; changed: boolean }[]
+      memory: { label; address; bytes; touched: 'read' | 'write' | undefined }[]   // solo las celdas tocadas ± contexto de 2
+      io: { screen?: string; keyboard: string; ports?: string }
+      pending?: 'keyboard' | 'file'                    // esperas explícitas
+
+Fuentes (todo existe; no hay datos nuevos):
+- **8086:** `StepPresentation.phases` (texto de cada fase) y `projection(i)` (Snapshot tras cada fase) dan `state`; `changes` se calcula comparando `projection(i-1)` con `projection(i)` (IP cambia en la fase 2, registros y memoria en la 6).
+- **PC:** `PcEvent` ya trae `phase`, `role`, `source`, `target`, `bus`, `text` y `changes`; el estado tras cada evento se reconstruye reaplicando los eventos sobre el estado previo del paso (función pura sobre PcState, sin tocar el motor). Un paso con varios eventos produce varias tarjetas con el mismo número de fase.
+- Una función `buildTimeline` por motor; el visor no conoce a ningún motor.
+
+#### Interfaz
+
+    ┌ PASO A PASO ─────────────────────────────── [Instrucción │ Fase] ┐
+    │ Instrucción 16 de 18 · INT 21h servicio 4Ch                      │  ← cabecera fija
+    │ ◀ Atrás   ▶ Siguiente: Cargar operandos                          │  (misma barra del transporte)
+    ├──────────────────────────────────────────────────────────────────┤
+    │ ✓ 1 BÚSQUEDA · Cargar la siguiente instrucción      (plegada)    │
+    │ ✓ 2 BÚSQUEDA · Incrementar el secuenciador  IP 0121h → 0123h     │
+    │ ● 3 BÚSQUEDA · Interpretar                                       │  ← activa: abierta
+    │   «INT 21h» = CD 21 · servicio AH=4Ch                            │
+    │   ┌ Estado tras este paso ────────────────────────────────┐      │
+    │   │ AX 4C00 (AH 4C │ AL 00)  IP 0123h  flags ZF0 CF0       │      │
+    │   │ Pantalla «Hola mundo»   Teclado 0 teclas               │      │
+    │   └────────────────────────────────────────────────────────┘      │
+    │ ○ 4 EJECUCIÓN · Cargar operandos                    (pendiente)  │
+    └──────────────────────────────────────────────────────────────────┘
+
+Reglas:
+1. **Una columna de tarjetas, de arriba abajo en el orden de ejecución.** Hecha = marca y una línea con su resultado; activa = abierta con texto, ruta, paquetes, cambios y estado completo; pendiente = título atenuado. El estado no se transmite solo por color: marca, número y la palabra «activa/pendiente» accesible.
+2. **Estado completo en la tarjeta activa;** en las hechas basta el delta. Un interruptor «Ver estado en todas» abre el estado en cada tarjeta para comparar.
+3. **Seguimiento automático (scroll).** Al cambiar `activeIndex`, el visor lleva la tarjeta activa a una posición estable (tercio superior del área visible), calculada sobre su propio contenedor; nunca desplaza el documento. Con movimiento reducido el salto es instantáneo. Si la persona hace scroll manual, el seguimiento se pausa y aparece «Volver al paso actual» hasta el siguiente avance.
+4. **Escena y visor sincronizados.** Seleccionar una tarjeta enfoca sus `pieces` en escena e inspector y no ejecuta nada (igual que `explainAt`); tocar una pieza lleva su tarjeta a la vista. Navegar por tarjetas no altera resultados ni historial.
+5. **Cabecera fija** con instrucción, avance y «qué sigue». Los botones repiten el transporte; no hay un segundo reloj. Grano: «Instrucción» (una tarjeta resumen que se abre en fases) o «Fase».
+6. **Esperas dentro del flujo:** una tarjeta «Esperando teclado» con el campo de entrada y su eco cuando `pending` existe; al completarse pasa a hecha.
+7. **Salida dentro del visor:** si el paso escribe en Pantalla o monitor, la tarjeta de guardado muestra la salida en tamaño grande, no un enlace a otro panel.
+8. **Un solo visor para 8086 y PC**, con la misma anatomía; las diferencias están en las tarjetas (INT 21h frente a LOAD/STORE y buses).
+
+#### Distribución en el escritorio
+
+- Panel **«Paso a paso»** nuevo, abierto por defecto en 8086 y PC. Estudiar = escena + visor + un instrumento de consulta (Programa en 8086; Programa y entradas en PC), en lugar de la pareja actual.
+- Programa, Estado, Pantalla, Pila, ALU, Señales y Componentes y salida siguen en «Paneles» como **vistas de consulta**; ninguna se elimina ni cambia su motor.
+- El visor admite anclar abajo o a la derecha (§2.2). Mínimo 320 px de ancho; a ≥1280 px prefiere la derecha, porque las tarjetas crecen en vertical.
+- Móvil (<800 px): el visor ocupa el flujo vertical bajo la escena colapsable, con su cabecera fija; Programa y consulta quedan debajo.
+- Presets: Estudiar (escena + visor), Explorar (escena grande, visor reducido a su cabecera de una línea), Comparar (visor + consulta, escena reducida).
+
+#### Accesibilidad y texto
+
+- Lista semántica `ol`, tarjeta activa con `aria-current="step"`; el cambio de paso se anuncia una vez en `aria-live="polite"` con el título y «qué cambió».
+- Teclado: ↑/↓ entre tarjetas, Enter abre/cierra, `.` siguiente y `,` anterior solo con el foco en el visor (los atajos globales siguen sin dispararse desde campos de texto).
+- Texto de lectura 16 px, valores en mono; títulos de tarjeta de hasta dos líneas; sin truncar ni reducir tipografía (§2.5). Objetivos táctiles de 44 px.
+- Sin WebGL el visor funciona igual: es el equivalente 2D del recorrido.
+
+#### Pruebas
+
+- `step-timeline.spec.ts`: cada motor genera siete tarjetas (8086) o las tarjetas por evento (PC); el `state` de la última tarjeta coincide con el estado confirmado del motor; los `changes` de todas las tarjetas suman exactamente los cambios del paso (nada inventado ni omitido); `waiting-input` no crea paso; Atrás reconstruye la misma línea.
+- Componente: tarjeta activa abierta y las demás plegadas; el seguimiento mueve solo el contenedor del visor; el scroll manual pausa el seguimiento y «Volver al paso actual» lo restablece; movimiento reducido sin animación; seleccionar una tarjeta no ejecuta.
+- e2e (Playwright): suma 8086 y misión 11 con el visor y Programa cerrado; «Escribir y ver» en PC muestra «Hola» en la tarjeta de salida; 1366×768, 1024×768 y 390×844.
+- Regresión: las pruebas existentes de step-presentation y pc-activity pasan sin cambios.
+
+#### Tareas
+
+- [x] Tests y modelo `step-timeline.ts` con constructores 8086 y PC (sin UI). *(11 pruebas; el estado de cada tarjeta PC se reconstruye con los valores de los eventos, y la última tarjeta coincide con el motor)*
+- [x] StepViewer con estados hecha/activa/pendiente, seguimiento automático y pausa por scroll manual. *(una sola plantilla; las tarjetas no son un componente aparte)*
+- [ ] Sincronización con escena e inspector (tarjeta ↔ pieza) y con `explainAt`/transporte.
+- [ ] Tarjetas de espera de teclado y de salida (Pantalla/monitor grande).
+- [x] Registro de panel: abre abajo, en todos los tamaños, sustituyendo a la pareja Programa/Estado (el alto por defecto del conjunto inferior pasó de 45 % a 52 %). *(presets y revisión móvil pendientes de captura)*
+- [x] Panel Fases sustituido por el visor (D8, opción recomendada).
+- [ ] Actualizar guías (anclajes `data-guide`), Ayuda y documentación; e2e y capturas a 1366×768, 1024×768 y 390×844.
+
+**Puerta:** suma 8086 y «Escribir y ver» se siguen de principio a fin con solo la escena y el visor, sin abrir otro panel; el scroll acompaña a cada paso; ningún resultado cambia respecto a la versión sin visor.
+
+#### Decisiones para el usuario
+
+- **D6. Orden del visor.** Recomendado: cronológico (la tarjeta activa baja con el avance). Alternativa: la activa fija arriba y las hechas se apilan debajo como historial.
+- **D7. Alcance en PC.** Recomendado: una tarjeta por evento agrupada por fase 0–7. Alternativa: una tarjeta por instrucción del PC con los eventos dentro.
+- **D8. Panel Fases.** Recomendado: sustituirlo por el visor. Alternativa: conservarlo como vista de consulta compacta.
+
 ### Comandos y orden
 
 Verificación existente: npm test -- --watch=false; npm run build; npm run check:geometry; npm run check:offline -- --dist; npm run check:tokens.
 
 check:geometry cubre principalmente superficies CPU; no sustituye tests de otras estaciones ni revisión visual. npm run test:e2e se añade en T11. Filtrar pruebas por tarea según runner instalado; ningún comando no ejecutado se marca como verde.
 
-Orden: T00 → T01 → T02 → T02b → T03 → T04a → T04 → (T04b) → T05 → T06 → T07 → T08 → T09 → T10 → T11 → (T12). T04a puede adelantarse en paralelo desde T00.
+Orden: T00 → T01 → T02 → T02b → T03 → T04a → T04 → (T04b) → T05 → T06 → T07 → T08 → T09 → T10 → T11 → (T12) → T13. T04a puede adelantarse en paralelo desde T00.
 T04a y T06 son las mayores ampliaciones de lógica; T01/T03 son base común. No desarrollar cuatro escritorios o transportes independientes.
 
 ## 11. Definición de terminado

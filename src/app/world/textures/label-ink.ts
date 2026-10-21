@@ -21,6 +21,12 @@ export interface LabelOptions {
   plate?: boolean;
   /** Host surface colour (sRGB hex); defaults to the parent mesh colour. */
   host?: string;
+  /** Exact ink colour, for legends that imitate a display (the monitor's phosphor). */
+  color?: string;
+  /** Largest font size, in px of a 512-wide canvas; the default suits a printed legend, a screen wants more. */
+  maxSize?: number;
+  /** Stands the legend up (facing +z) instead of lying it flat on the board. */
+  upright?: boolean;
 }
 
 /** Ink and outline for a surface of the given relative luminance: the better-contrasting ink, outlined in the opposite tone. */

@@ -126,7 +126,7 @@ export class LearningGuide {
     }
     this.active.set({ path, index });
     const step = path.steps[index];
-    if (step.panel) this.workspace.open(step.panel, false);
+    if (step.panel) this.workspace.reveal(step.panel);
     const waited = await this.waitFor(step.anchor, mine);
     if (mine !== this.serial) return;
     if (!waited) {

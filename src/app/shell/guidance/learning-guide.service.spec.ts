@@ -148,12 +148,13 @@ describe('rutas de aprendizaje', () => {
     memoryActivity: 'store', memoryStep: 0, pcPowered: false, pcSteps: 0, pcHalted: false, pcMonitor: '', socStage: 0, socCompleted: false,
   };
 
-  it('cada experiencia tiene una ruta inicial de hasta cinco pasos con anclaje y texto', () => {
+  it('cada experiencia tiene rutas con anclaje y texto: las guías por acciones de hasta cinco pasos y un tutorial de uso más largo', () => {
     for (const experience of ['8086', 'memory', 'machine', 'apple'] as const) {
       const paths = LEARNING_PATHS.filter((p) => p.experience === experience);
       expect(paths.length, experience).toBeGreaterThan(0);
+      expect(paths.some((p) => p.id === experience.replace('apple', 'soc') + '-tutorial'), experience).toBe(true);
       for (const p of paths) {
-        expect(p.steps.length).toBeLessThanOrEqual(5);
+        expect(p.steps.length).toBeLessThanOrEqual(p.id.endsWith('-tutorial') ? 18 : 5);
         for (const s of p.steps) expect(s.anchor.startsWith('[data-guide="') && s.text.length > 10 && s.title.length > 2, s.id).toBe(true);
       }
     }

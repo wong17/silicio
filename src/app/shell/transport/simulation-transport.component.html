@@ -1,5 +1,5 @@
 @if (state(); as s) {
-  <div class="bar" role="group" [attr.aria-label]="'Simulación activa: ' + s.label">
+  <div class="bar" data-guide="transport-bar" role="group" [attr.aria-label]="'Simulación activa: ' + s.label">
     <p class="goal">
       <span class="led" [class.run]="s.status === 'running'" [class.wait]="s.status === 'waiting-input'" [class.halt]="s.status === 'finished' || s.status === 'error'" aria-hidden="true"></span>
       <strong>{{ s.label }}</strong>

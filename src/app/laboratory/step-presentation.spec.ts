@@ -55,7 +55,7 @@ describe('presentación de un paso', () => {
     expect(operands.number).toBeLessThan(run.number);
     expect(operands.text).toContain('0005h de 2000Ah');
     expect(operands.text).toContain('Lectura de datos');
-    expect(run.text).toContain('0007h y 0005h → 000Ch');
+    expect(run.text).toContain('0007h y 0005h a 000Ch');
     expect(p.phases[0].text).not.toContain('2000Ah');
   });
 
@@ -102,7 +102,7 @@ describe('presentación de un paso', () => {
     expect(presentStep(t[4], ids).explanation).toBe('DIV BL divide AX=132 entre 7: cociente AL=18, resto AH=6.');
   });
 
-  it('una escritura en memoria aparece como cambio antes → después y la instrucción es de almacenamiento', () => {
+  it('una escritura en memoria aparece como cambio antes a después y la instrucción es de almacenamiento', () => {
     const t = traces('MOV BX,20h\nMOV AX,1234h\nMOV [BX],AX\nHLT').trace;
     const p = presentStep(t[2], ids);
     expect(p.event.role).toBe('storage');

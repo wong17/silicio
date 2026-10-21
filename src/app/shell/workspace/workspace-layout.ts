@@ -87,7 +87,7 @@ export function sizeClassOf(area: Area): SizeClass {
 }
 
 function studyBottom(area: Area): number {
-  return Math.round(area.height * 0.45);
+  return Math.round(area.height * 0.52);
 }
 
 export function defaultLayout(specs: readonly PanelSpec[], area: Area, preset: Preset = 'study'): WorkspaceLayout {

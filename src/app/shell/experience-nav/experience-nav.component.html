@@ -5,7 +5,7 @@
   <span class="name">SILICIO</span>
   <small>ARCHIVO DE MÁQUINAS</small>
 </a>
-<nav class="links" #links aria-label="Experiencias" (scroll)="onScroll()">
+<nav class="links" data-guide="experience-nav" #links aria-label="Experiencias" (scroll)="onScroll()">
   @for (e of experiences; track e.id) {
     <a
       [routerLink]="'/' + pathOf(e.id)"

@@ -2,6 +2,7 @@
 
 :host {
   display: inline-flex;
+  gap: 8px;
 }
 
 .trigger {
@@ -227,36 +228,6 @@
   }
 }
 
-.glossary,
-.shortcuts {
-  display: grid;
-  gap: 10px;
-  width: 100%;
-  margin: 0;
-  div {
-    display: grid;
-    gap: 2px;
-  }
-  dt {
-    font: 600 15px kit.$mono;
-    small {
-      margin-left: 6px;
-      color: kit.$dim;
-      font: 400 13px 'Barlow', sans-serif;
-    }
-  }
-  dd {
-    margin: 0;
-    color: kit.$ink;
-    font-size: 15px;
-    line-height: 1.45;
-  }
-}
-
-.shortcuts div {
-  grid-template-columns: 96px 1fr;
-  align-items: center;
-}
 
 kbd {
   display: inline-block;
@@ -343,32 +314,269 @@ kbd {
   }
 }
 
-.guides {
-  display: grid;
+.lead {
+  max-width: 62ch;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  margin: 0 0 16px;
-  padding: 0;
-  list-style: none;
-  > li {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid kit.$amber;
+  border-radius: 10px;
+  background: rgba(215, 172, 111, 0.08);
+  div {
     display: grid;
-    gap: 6px;
-    padding: 10px 12px;
-    border: 1px solid #2d3533;
-    border-radius: 8px;
+    gap: 2px;
+    max-width: 56ch;
+  }
+  span {
+    color: kit.$dim;
+    font-size: 15px;
+  }
+  button {
+    min-height: 44px;
+  }
+}
+
+.iso {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid kit.$edge;
+  border-radius: 10px;
+  background: #101516;
+  figcaption {
+    color: kit.$dim;
+    font-size: 14px;
+  }
+}
+.iso-svg {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  .t {
+    stroke: #46514d;
+    stroke-width: 1;
+    stroke-linejoin: round;
+  }
+  .l,
+  .r {
+    stroke: #2d3533;
+    stroke-width: 1;
+    stroke-linejoin: round;
+  }
+  .a.t {
+    fill: #3a3224;
+    stroke: kit.$amber;
+  }
+  .a.l {
+    fill: #241f16;
+  }
+  .a.r {
+    fill: #2e271b;
+  }
+  .b.t {
+    fill: #1f2c2a;
+    stroke: #6c8f84;
+  }
+  .b.l {
+    fill: #141b1a;
+  }
+  .b.r {
+    fill: #19231f;
+  }
+  .c.t {
+    fill: #232a32;
+    stroke: #7d93ad;
+  }
+  .c.l {
+    fill: #161b21;
+  }
+  .c.r {
+    fill: #1b2129;
+  }
+  .g.t {
+    fill: #1f2e22;
+    stroke: kit.$green;
+  }
+  .g.l {
+    fill: #141f16;
+  }
+  .g.r {
+    fill: #18271b;
+  }
+  line.g {
+    stroke: #7d93ad;
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+  }
+  .lead {
+    stroke: #46514d;
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+  .badge circle {
+    fill: kit.$amber-deep;
+    stroke: kit.$amber;
+  }
+  .badge text {
+    fill: kit.$amber-soft;
+    font: 600 12px kit.$mono;
+    text-anchor: middle;
+  }
+  .cap {
+    fill: kit.$ink;
+    text-anchor: start;
+    font: 500 15px 'Barlow', sans-serif;
+  }
+  .col {
+    fill: kit.$ink;
+    font: 600 13px kit.$mono;
+    text-anchor: middle;
+  }
+}
+
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.45;
+  th,
+  td {
+    padding: 10px 10px;
+    border-bottom: 1px solid kit.$edge;
+    text-align: left;
+    vertical-align: top;
+  }
+  thead th {
+    @include kit.kicker;
+    position: sticky;
+    top: -20px;
+    z-index: 1;
+    background: #15191a;
+  }
+  tbody th {
+    font-weight: 600;
+    color: kit.$ink;
+  }
+  tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  b {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    margin-right: 6px;
+    border: 1px solid kit.$amber;
+    border-radius: 50%;
+    color: kit.$amber-soft;
+    font: 600 12px kit.$mono;
+  }
+  td b {
+    border: 0;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+  }
+  kbd {
+    display: inline-block;
+    min-width: 32px;
+    padding: 3px 8px;
+    border: 1px solid kit.$edge-strong;
+    border-radius: 6px;
+    background: #1c2223;
+    font: 600 14px kit.$mono;
+    text-align: center;
+  }
+  .ico {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+    vertical-align: -4px;
+    fill: none;
+    stroke: kit.$amber;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  details {
+    margin-top: 6px;
+    summary {
+      cursor: pointer;
+      color: kit.$amber-soft;
+      font-size: 14px;
+    }
     ol {
-      margin: 0;
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 0;
       padding-left: 20px;
       font-size: 14px;
-      line-height: 1.5;
-      li {
-        padding: 0;
-        border: 0;
-      }
     }
-    button {
-      justify-self: start;
-      min-height: 44px;
-      padding: 0 12px;
+  }
+  button {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+}
+.glossary tbody th {
+  font-family: kit.$mono;
+  white-space: nowrap;
+}
+.shortcuts tbody th {
+  width: 120px;
+}
+
+@media (max-width: 679px) {
+  // Tables read as cards on a phone: the row title first, then each cell under it.
+  .grid {
+    thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
     }
+    tr,
+    tbody,
+    th,
+    td {
+      display: block;
+    }
+    tr {
+      padding: 10px 0;
+      border-bottom: 1px solid kit.$edge;
+    }
+    th,
+    td {
+      padding: 2px 0;
+      border: 0;
+    }
+  }
+  .glossary tbody th {
+    white-space: normal;
+  }
+  .shortcuts tbody th {
+    width: auto;
+  }
+  .callout button {
+    width: 100%;
+  }
+  // The captions would be tiny here; the numbered badges match the table below the figure.
+  .iso-svg .cap {
+    display: none;
   }
 }
