@@ -15,7 +15,7 @@ npm install, npm start para desarrollo. npm run build y npm run preview para pro
 
 Fuentes, worker, WASM y contenido se empaquetan localmente; referencias externas requieren red. La prueba completamente desconectada aún está pendiente. Antes de exponer, abrir cada estación, compilar suma y comprobar recuperar una sesión.
 
-Pruebas: npm test -- --watch=false. Geometría: npm run check:geometry y node tools/check-memory.mjs. Estado y pendientes: [plan vigente](PLAN.md). Evidencia de la revisión 3: [archivo](archivo/qa/PROGRESO-REVISION-3.md).
+Pruebas: npm test -- --watch=false. Geometría: npm run check:geometry y node tools/check-memory.mjs. Estado y pendientes: [plan vigente](PLAN.md).
 
 ## Modo exposición
 

@@ -66,7 +66,6 @@ Es una aplicación estática de una sola página: sirve `dist/silicio/browser` d
 - [docs/GUIA-DE-EXPOSICION.md](docs/GUIA-DE-EXPOSICION.md): guion para presentar el laboratorio.
 - [DESIGN.md](DESIGN.md): dirección visual, paleta, materiales y tipografía.
 - [PRODUCT.md](PRODUCT.md): contexto del proyecto.
-- `docs/archivo/`: planes y estados anteriores, conservados como referencia.
 
 ## Alcance y límites
 

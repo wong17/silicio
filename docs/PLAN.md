@@ -8,7 +8,7 @@
 **Stack:** conservar Angular 21 (21.2.25 instalado), Three.js 0.186.1, GSAP, Vitest y worker 8086. Proponer Angular CDK compatible para primitivas de interacción y Driver.js diferido para recorridos. Resolver y fijar versiones exactas y licencias al implementar, sin actualizar automáticamente Angular o Three.js.
 **Especificación:** petición inicial (panel derecho, Emu8086, Traza, ventanas, transporte, orden de capítulos, PC moderno, memoria, resoluciones, Three.js), ampliación (integración, rótulos 3D y textos adaptables), sus cuatro capturas y el material de la asignatura en `D:\Documentos de clases\Arquitectura de Maquinas` (carpetas AMC y AMC2), resumido en §1.2. Las decisiones adicionales son recomendaciones de diseño, no preferencias ya confirmadas por el usuario.
 
-Este es el **único plan vivo** indicado por README.md. El anterior se conserva sin cambios en [el archivo de la revisión 4](archivo/plan/PLAN-revision-4-cerrado-2026-10-17.md). Este encargo produce planificación; no modifica la aplicación ni instala dependencias.
+Este es el **único plan vivo** indicado por README.md. Este encargo produce planificación; no modifica la aplicación ni instala dependencias.
 
 ## 0. Qué cambia en esta revisión
 
@@ -600,7 +600,7 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 
 ### T00 — Línea base
 
-**Crear:** docs/qa/redisenio-2026-10/BASELINE.md y capturas. **Depende:** nada.
+**Crear:** la línea base del rediseño. **Depende:** nada.
 
 - [ ] Identificar versiones, GPU, navegador y Git, preservando cambios ajenos.
 - [ ] Ejecutar suite/build actuales una vez y registrar resultados, sin heredar recuentos del README.
@@ -813,7 +813,7 @@ T04a solo toca simulation/ y la fachada del worker: puede empezar en paralelo co
 ### T11 — Gráficos y aceptación integrada
 
 **Modificar según evidencia:** world-engine.ts, effects/, shaders propios, modelos/cámara que fallen y tests.
-**Crear:** playwright.config.ts, e2e/workspace.spec.ts, e2e/learning-paths.spec.ts, e2e/course-programs.spec.ts, e2e/graphics-lifecycle.spec.ts; docs/qa/redisenio-2026-10/RESULTADOS.md.
+**Crear:** playwright.config.ts, e2e/workspace.spec.ts, e2e/learning-paths.spec.ts, e2e/course-programs.spec.ts, e2e/graphics-lifecycle.spec.ts.
 **Consume:** T00–T10. Adelantar arreglos gráficos bloqueantes cuando impidan otra tarea.
 
 - [ ] Corregir o documentar excepción acotada de X4122 siguiendo §8, con shader/capturas; medir compileAsync al cambiar de capítulo.
