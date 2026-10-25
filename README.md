@@ -1,47 +1,73 @@
 # SILICIO
 
-Laboratorio de Arquitectura de Máquinas I y II con Angular, Three.js, GSAP y Lenis. Tema oscuro de banco de inspección usado. Arduino no forma parte del proyecto.
+**Laboratorio interactivo de Arquitectura de Máquinas I y II**
 
-## Iniciar
+![SILICIO: el capítulo «La máquina» ejecutando un programa, con el texto apareciendo en el monitor](docs/assets/silicio-maquina.png)
+
+SILICIO es un banco de laboratorio en 3D, dentro del navegador, donde se ve cómo trabaja una computadora por dentro: una instrucción recorre el procesador fase por fase, un dato viaja por los buses hasta la memoria y el texto escrito en el teclado termina en el monitor. Todo avanza paso a paso y se puede retroceder, repetir y comparar.
+
+> **Proyecto de carácter académico.** Se desarrolló como material de estudio para los cursos de Arquitectura de Máquinas I y II. Sus modelos son didácticos y conceptuales: no pretenden reproducir el hardware real ni medir su rendimiento.
+
+## Qué contiene
+
+La aplicación tiene cuatro capítulos que se recorren como las plantas de un edificio, de lo más pequeño a lo más grande:
+
+| Capítulo | Qué se aprende |
+| --- | --- |
+| **Banco 8086** | Escribir y ensamblar un programa en ensamblador, y seguir cada instrucción por sus siete fases (traer, avanzar, entender, datos, operar, guardar, interrupciones) con registros, ALU y flags a la vista. |
+| **Memoria** | Direcciones segmentadas, banco par e impar, jerarquía de memoria y caché, con predicción antes de ejecutar. |
+| **La máquina** | Un PC completo: CPU, RAM, ROM, SSD, controlador de teclado, interrupción frente a sondeo y monitor. Cuatro programas: escribir y ver, sumar un archivo, editar y guardar, invertir una imagen. |
+| **SoC** | Comparación CISC y RISC con la misma tarea y memoria unificada frente a separada, a partir de un caso de estudio conceptual (Apple M5). |
+
+Herramientas comunes a todos los capítulos:
+
+- **Visor paso a paso**: un solo panel con el ejercicio, las tarjetas de cada paso y los datos. La columna de datos se desplaza sola a lo que cada paso necesita.
+- **Escena en 3D** con piezas inspeccionables, vista del chip por capas, rótulos y cámara con transición.
+- **Tutoriales guiados** de cada capítulo (botón *Tutorial* de la barra superior), guías por acciones, glosario y atajos en la *Ayuda*.
+- **Modo exposición**, que oculta los paneles para presentar y los restaura al terminar.
+- **Paneles reubicables** (abajo, a la derecha o flotantes), guardado automático de la sesión y exportación e importación en JSON.
+- **Diseño adaptable**: se usa en escritorio y en móvil, con objetivos táctiles de 44 px y respeto de *reduced motion*.
+
+## Tecnologías
+
+Angular 21 (componentes independientes y señales), Three.js, Rapier, GSAP, Lenis y Driver.js. El simulador del 8086 corre en un *web worker*. Las fuentes Barlow, Barlow Condensed e IBM Plex Mono se sirven localmente. No hay peticiones a otros orígenes.
+
+## Empezar
+
+Requiere Node.js y npm.
+
 ```sh
 npm install
 npm start
 ```
-Abrir http://localhost:4200. Para validar: `npm test -- --watch=false` y `npm run build`.
 
-## Recorrido
-Atrio → Banco 8086 (ocho experimentos) → Memoria segmentada → Cronoscopio con restauración y captura A/B → Apple Silicon conceptual → Anatomía de la máquina y buses. El estado de ejecución se conserva entre estaciones durante la sesión.
+Abre http://localhost:4200.
+
+## Comandos
+
+| Comando | Para qué sirve |
+| --- | --- |
+| `npm start` | Servidor de desarrollo. |
+| `npm run build` | Compila a `dist/silicio/browser`. |
+| `npm test -- --watch=false` | Pruebas unitarias (Vitest). |
+| `npm run test:e2e` | Pruebas de integración con Playwright (necesitan `npm run build` antes). |
+| `npm run preview` | Sirve el paquete compilado en http://127.0.0.1:4300 (puerto configurable con `SILICIO_PORT`). |
+| `npm run check:offline` | Comprueba que ninguna fuente carga recursos de otro origen (`-- --dist` revisa también el paquete). |
+| `npm run check:geometry` | Comprueba la geometría del banco. |
+
+## Publicación
+
+Es una aplicación estática de una sola página: sirve `dist/silicio/browser` desde cualquier hosting y reescribe las rutas (`/8086`, `/memory`, `/machine`, `/soc`) a `index.html`. El repositorio incluye `netlify.toml`, `vercel.json` y `wrangler.jsonc` (Cloudflare). Para GitHub Pages, copia `index.html` a `404.html`. La carga inicial es de unos 600 kB; la escena y la física Rapier llegan diferidas.
 
 ## Documentación
-- `docs/PLAN.md`: plan único vigente, con el estado verificado, los pendientes y las mejoras.
-- `docs/ARQUITECTURA-DEL-CODIGO.md`: capas, propietarios y reglas para ampliar.
-- `docs/archivo/`: planes y estados anteriores (revisiones 2.0 y 3.0), conservados como referencia.
-- `DESIGN.md`: dirección visual, paleta, materiales y tipografía.
-- `PRODUCT.md`: contexto del proyecto académico.
 
-Las fuentes Barlow, Barlow Condensed e IBM Plex Mono se sirven localmente; sus licencias OFL están en `public/fonts`. El simulador ejecuta un subconjunto educativo, no binarios externos arbitrarios. Los modelos internos de 8086 y Apple son conceptuales.
+- [docs/PLAN.md](docs/PLAN.md): plan vigente, con el estado verificado y los pendientes.
+- [docs/ARQUITECTURA-DEL-CODIGO.md](docs/ARQUITECTURA-DEL-CODIGO.md): capas, responsables y reglas para ampliar.
+- [docs/GUIA-DE-EXPOSICION.md](docs/GUIA-DE-EXPOSICION.md): guion para presentar el laboratorio.
+- [DESIGN.md](DESIGN.md): dirección visual, paleta, materiales y tipografía.
+- [PRODUCT.md](PRODUCT.md): contexto del proyecto.
+- `docs/archivo/`: planes y estados anteriores, conservados como referencia.
 
-## Entrega y comprobación
+## Alcance y límites
 
-El 8086 tiene cuarenta terminales inspeccionables, placa de apoyo y un banco de electrónica. Hay preguntas de comprobación, glosario, exportación y recuperación de sesiones JSON. La ejecución del subconjunto se decodifica desde memoria y se realiza en un worker.
-
-Después de `npm run build`, usar `npm run preview` para el paquete local compilado. El puerto por defecto es4300; se puede cambiar con `SILICIO_PORT`. Comprobar geometría con `npm run check:geometry`. Ver `docs/GUIA-DE-EXPOSICION.md` y `docs/geometry-report.json`.
-
-## Revisión 4 (octubre de 2026)
-
-Plan único en [docs/PLAN.md](docs/PLAN.md). Novedades: cámara con transición, HUD de escena (mapa del banco y bandeja de piezas con miniaturas), animaciones que explican derivadas del estado real (viaje de instrucción del 8086, memoria con fila y columna, cronoscopio como cinta de pasos, buffer compartido del SoC, buses de La máquina), PUSH/POP/CALL/RET, caché comparable, glosario, modo exposición y autoguardado de sesión.
-
-`npm run check:offline` verifica que ninguna fuente carga recursos de otro origen; con `-- --dist` revisa también el paquete de producción.
-
-## Publicar (build y deploy)
-
-```bash
-npm ci
-npm test -- --watch=false     # 308 pruebas
-npm run build                 # dist/silicio/browser
-npm run check:offline -- --dist
-npm run preview               # http://127.0.0.1:4300
-```
-
-Es una aplicación estática de una sola página: sirve `dist/silicio/browser` desde cualquier hosting y reescribe las rutas (`/8086`, `/memory`…) a `index.html`. Ya incluye `netlify.toml` y `vercel.json` (Cloudflare lo resuelve con `wrangler.jsonc`, y un `_redirects` con `/* /index.html 200` allí falla); para GitHub Pages copia `index.html` a `404.html`; para Cloudflare usa `wrangler.jsonc` (Build command `npm run build`, Deploy command `npx wrangler deploy`). Todo (fuentes, worker, WASM) viaja en el paquete: no hace peticiones a otros orígenes. Carga inicial de unos 609 kB; la escena (834 kB) y la física Rapier (4,3 MB, 1,2 MB comprimida) llegan diferidas.
-
+El simulador ejecuta un subconjunto educativo del 8086, no binarios externos arbitrarios. El RISC del capítulo SoC es didáctico, de estilo ARM, y no reproduce codificaciones reales de AArch64. Arduino no forma parte del proyecto.
