@@ -6,10 +6,21 @@
 
 **Videos de las cuatro secciones:**
 
-- [▶ Banco 8086 · ejecución paso a paso](docs/assets/videos/banco-8086.webm)
-- [▶ Memoria · selección de direcciones y bytes](docs/assets/videos/memoria.webm)
-- [▶ La máquina · arranque y ejecución de un programa](docs/assets/videos/maquina.webm)
-- [▶ SoC · CISC/RISC y memoria compartida](docs/assets/videos/soc.webm)
+**Banco 8086 · ejecución paso a paso**
+
+https://github.com/user-attachments/assets/4413077f-8911-4a17-bf01-fe76c7707576
+
+**Memoria · selección de direcciones y bytes**
+
+https://github.com/user-attachments/assets/8a1c15c1-2932-4201-9f30-c0a2c105de45
+
+**La máquina · arranque y ejecución de un programa**
+
+https://github.com/user-attachments/assets/0f7a95cd-3576-4de6-a7f0-7f3a969f4c1c
+
+**SoC · CISC/RISC y memoria compartida**
+
+https://github.com/user-attachments/assets/d5624e9d-208b-4390-8929-cf1227295860
 
 SILICIO es un banco de laboratorio en 3D, dentro del navegador, donde se ve cómo trabaja una computadora por dentro: una instrucción recorre el procesador fase por fase, un dato viaja por los buses hasta la memoria y el texto escrito en el teclado termina en el monitor. Todo avanza paso a paso y se puede retroceder, repetir y comparar.
 
