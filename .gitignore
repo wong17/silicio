@@ -48,3 +48,22 @@ Thumbs.db
 
 test-results/
 playwright-report/
+# Variables de entorno y ajustes privados
+.env
+.env.*
+!.env.example
+!.env.sample
+/.claude/settings.local.json
+
+# Estado local de proveedores de hosting
+/.wrangler/
+/.vercel/
+/.netlify/
+
+# Artefactos locales de agentes y comprobaciones
+/.superpowers/
+/tools/.workshop-check.mjs
+/tools/.memory-check.mjs
+/docs/geometry-report.json
+/.playwright-cli/
+/output/playwright/

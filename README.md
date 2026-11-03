@@ -4,6 +4,13 @@
 
 ![SILICIO: el capítulo «La máquina» ejecutando un programa, con el texto apareciendo en el monitor](docs/assets/silicio-maquina.png)
 
+**Videos de las cuatro secciones:**
+
+- [▶ Banco 8086 · ejecución paso a paso](docs/assets/videos/banco-8086.webm)
+- [▶ Memoria · selección de direcciones y bytes](docs/assets/videos/memoria.webm)
+- [▶ La máquina · arranque y ejecución de un programa](docs/assets/videos/maquina.webm)
+- [▶ SoC · CISC/RISC y memoria compartida](docs/assets/videos/soc.webm)
+
 SILICIO es un banco de laboratorio en 3D, dentro del navegador, donde se ve cómo trabaja una computadora por dentro: una instrucción recorre el procesador fase por fase, un dato viaja por los buses hasta la memoria y el texto escrito en el teclado termina en el monitor. Todo avanza paso a paso y se puede retroceder, repetir y comparar.
 
 > **Proyecto de carácter académico.** Se desarrolló como material de estudio para los cursos de Arquitectura de Máquinas I y II. Sus modelos son didácticos y conceptuales: no pretenden reproducir el hardware real ni medir su rendimiento.
@@ -55,15 +62,10 @@ Abre http://localhost:4200.
 | `npm run check:offline` | Comprueba que ninguna fuente carga recursos de otro origen (`-- --dist` revisa también el paquete). |
 | `npm run check:geometry` | Comprueba la geometría del banco. |
 
-## Publicación
-
-Es una aplicación estática de una sola página: sirve `dist/silicio/browser` desde cualquier hosting y reescribe las rutas (`/8086`, `/memory`, `/machine`, `/soc`) a `index.html`. El repositorio incluye `netlify.toml`, `vercel.json` y `wrangler.jsonc` (Cloudflare). Para GitHub Pages, copia `index.html` a `404.html`. La carga inicial es de unos 600 kB; la escena y la física Rapier llegan diferidas.
-
 ## Documentación
 
 - [docs/PLAN.md](docs/PLAN.md): plan vigente, con el estado verificado y los pendientes.
 - [docs/ARQUITECTURA-DEL-CODIGO.md](docs/ARQUITECTURA-DEL-CODIGO.md): capas, responsables y reglas para ampliar.
-- [docs/GUIA-DE-EXPOSICION.md](docs/GUIA-DE-EXPOSICION.md): guion para presentar el laboratorio.
 - [DESIGN.md](DESIGN.md): dirección visual, paleta, materiales y tipografía.
 - [PRODUCT.md](PRODUCT.md): contexto del proyecto.
 
